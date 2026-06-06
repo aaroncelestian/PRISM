@@ -130,13 +130,92 @@ const CRYSTAL_LEVELS = [
     redFlags: ["'Minor chip' that actually cleaves through a main face", "Contact along the display face called 'trivial'"] },
   { key: "good",    score: "40–64",  label: "Good / Collector", color: "#00c880",
     traits: ["Several chips, visible without loupe", "Some faces etched or frosted", "Termination may be slightly off-center or worn", "Still clearly identifiable crystal form"],
-    redFlags: ["Described as 'fine' when chips are obvious to the naked eye", "Frosted faces called 'natural etching' to excuse low luster"] },
+    redFlags: ["Described as 'fine' when chips are obvious to the naked eye", "Random frosting across all surfaces called 'natural etching' — true etching follows crystallographic patterns, not random wear"] },
   { key: "rough",   score: "20–39",  label: "Rough / Study",    color: "#b0a060",
     traits: ["Multiple significant chips and breaks", "Faces abraded or partially missing", "Crystal form recognizable but imperfect", "Suitable for scientific study or beginners"],
     redFlags: ["Sold as 'collector grade' without mention of damage", "Heavy matrix hiding breakage"] },
   { key: "damaged", score: "0–19",   label: "Heavily Damaged",  color: "#c06060",
     traits: ["Major breakage across crystal body", "Missing faces or partial crystal only", "Significant instability or reconstruction", "Value largely in species/locality, not form"],
     redFlags: ["Any attempt to grade this as 'good' or 'fine'", "'Repairs' not disclosed", "Sold as broken piece of a larger specimen at full specimen price"] },
+];
+
+// ── Natural character features ───────────────────────────────────────────────
+// The key insight: natural chemical processes follow crystallographic rules.
+// Mechanical damage is random. Learning this distinction is the foundation
+// of specimen evaluation.
+const NATURAL_CHARACTER = [
+  {
+    key: "etching",
+    label: "Dissolution Etching",
+    icon: "🔭",
+    color: "#e0a860",
+    isNatural: true,
+    examples: "Tanzanian garnets, Erongo aquamarine, many fluorites",
+    looks: "Geometric etch pits, trigonal or hexagonal channels, corrosion grooves running parallel to crystal edges. The surface has texture but the underlying crystal form is preserved.",
+    howToID: "Natural etching follows the crystal symmetry — pits are triangular on octahedra, hexagonal on quartz prisms. Random frosting that ignores crystal geometry is likely wear or acid damage.",
+    scoring: "Crystal Quality: may drop 10–25 pts from 'perfect' baseline. Aesthetics: can increase significantly if the patterns are striking. Scientific: slight increase for well-developed forms. Net result: often scores comparably to a clean specimen of similar quality.",
+    noviceTip: "A garnet covered in beautiful geometric etch pits is not a 'damaged' garnet. It is a garnet that sat in a corrosive fluid long enough to show its internal symmetry on the outside. This is a feature, not a flaw.",
+  },
+  {
+    key: "skeletal",
+    label: "Skeletal & Hoppered Growth",
+    icon: "🦴",
+    color: "#a0d4c0",
+    isNatural: true,
+    examples: "Hoppered halite, skeletal quartz, skeletal bismuth, frame calcite",
+    looks: "Crystals where edges and corners grew faster than faces, leaving hollow faces or step-like indentations inward. The crystal form is structurally complete but faces are not flat.",
+    howToID: "Hoppered growth is perfectly symmetric — the indentations mirror the crystal symmetry exactly. You can trace the ghost of the 'perfect' crystal form in the skeleton. Damage is asymmetric and random.",
+    scoring: "Crystal Quality: 30–60 depending on how complete the form is. Scientific: 20–40 bonus for well-developed examples. Aesthetics: often high — skeletal forms are visually dramatic. Score the aesthetic impact generously.",
+    noviceTip: "Hoppered halite cubes have stepped hollow faces — this is how they grew, not how they broke. They are among the most scientifically interesting crystal forms you can own.",
+  },
+  {
+    key: "phantoms",
+    label: "Phantoms & Growth Zones",
+    icon: "👻",
+    color: "#c0a0e0",
+    isNatural: true,
+    examples: "Phantom quartz, zoned fluorite, color-zoned tourmaline, elestial quartz",
+    looks: "Internal outlines of earlier growth stages visible through the crystal, often outlined by inclusions or color change. The crystal grew, stopped, then continued.",
+    howToID: "Phantoms are internal and follow the crystal's own symmetry exactly. They are ghosts of earlier crystal faces. Internal features that don't follow crystal symmetry may be fractures or inclusions.",
+    scoring: "Crystal Quality: neutral to slightly positive — phantoms don't affect surface quality. Scientific: 20–50 increase. Aesthetics: highly variable — a 'ghost crystal within a crystal' is visually compelling and should score well.",
+    noviceTip: "A quartz crystal with a green chlorite phantom inside it grew in two stages: the chlorite coated it, then clear quartz continued growing over the top. You are looking at a record of geological time.",
+  },
+  {
+    key: "striations",
+    label: "Natural Growth Striations",
+    icon: "≡",
+    color: "#90b8d0",
+    isNatural: true,
+    examples: "Tourmaline (always striated), pyrite cubes, quartz prism faces, stibnite",
+    looks: "Parallel lines running along crystal faces, parallel to the crystal's growth direction. They are a record of step-growth during crystallisation.",
+    howToID: "Striations are always parallel to each other and to a crystallographic axis. Scratches are random in direction and depth. Pyrite cubes are always striated on their faces — this is normal and expected.",
+    scoring: "Crystal Quality: do NOT penalize for species that always show striations (tourmaline, pyrite). Penalize only if striations are unusually coarse and obscure the crystal form entirely.",
+    noviceTip: "If every single tourmaline you've ever seen has striated faces — that's because all tourmalines have striated faces. It is not a defect.",
+  },
+  {
+    key: "resorption",
+    label: "Resorption & Rounding",
+    icon: "🔵",
+    color: "#e0c0a0",
+    isNatural: true,
+    examples: "Spessartine garnets (almost always rounded), hessonite, some corundum",
+    looks: "Crystal faces are curved or rounded rather than flat. Edges are smooth rather than sharp. The crystal looks like it partially melted back.",
+    howToID: "Resorption is uniform and smooth — rounding follows the crystal form evenly. It often occurs across an entire suite of crystals from the same locality. Chipping is sharp-edged and random.",
+    scoring: "Crystal Quality: drop 10–30 pts from 'ideal' for the species, but check: is this normal for the locality? Spessartine from Loliondo, Tanzania is always rounded and resorbed. Score it against what's achievable from that deposit.",
+    noviceTip: "Famous Loliondo spessartine garnets are vitreous, richly orange, and heavily rounded — that rounding is natural resorption in the host rock. The finest examples of this species look nothing like a 'perfect' crystal, and they're worth a great deal.",
+  },
+  {
+    key: "iridescence",
+    label: "Iridescence & Interference Colors",
+    icon: "🌈",
+    color: "#d0a0e8",
+    isNatural: true,
+    examples: "Labradorite (labradorescence), bornite (peacock ore), iris quartz, covellite",
+    looks: "Colors that shift as the viewing angle changes. Can be surface iridescence (thin-film interference) or internal scattering.",
+    howToID: "True iridescence shifts with angle and is repeatable. Surface coatings applied artificially also shift with angle — check whether iridescence is mentioned as typical for the species from that locality.",
+    scoring: "Aesthetics: significant increase — 30 to 50 point uplift for exceptional iridescence. Crystal Quality: neutral — iridescence is a surface optical property, not a crystal quality issue. Scientific: modest increase if phenomenon is well-documented.",
+    noviceTip: "Peacock ore (bornite with tarnish iridescence) is one of the most visually striking beginner specimens. The iridescent surface colors are from a natural thin-film tarnish — real, natural, and beautiful. Beware acid-treated specimens sold as 'peacock ore.'",
+  },
 ];
 
 const PROVENANCE_GUIDE = [
@@ -252,7 +331,7 @@ const SCIENTIFIC_FACTORS = [
 const SCORE_CALIBRATION = [
   {
     key: "crystal", label: "Crystal Quality", icon: "💎", color: "#00d4ff",
-    note: "Assess under 10× loupe in multiple lighting conditions before scoring.",
+    note: "Assess under 10× loupe in multiple lighting conditions. Natural features (etching, striations, resorption) follow crystal symmetry. Mechanical damage is random — they are not the same thing.",
     ranges: [
       { band: "80–100", label: "Gem / Museum",   text: "No damage visible under loupe. Complete termination, pristine faces, exceptional luster. Best-in-class example you could find." },
       { band: "60–79",  label: "Very Fine",      text: "Minor damage in non-critical areas only. Excellent luster, complete or nearly complete termination. Passes the show-table test." },
@@ -262,15 +341,19 @@ const SCORE_CALIBRATION = [
     ],
   },
   {
-    key: "speciesRarity", label: "Species Rarity", icon: "🧬", color: "#e0a040",
-    note: "Score the species globally, not the individual specimen. Fine pyrite is not rare pyrite.",
+    key: "speciesRarity", label: "Species / Variety Rarity", icon: "🧬", color: "#e0a040",
+    note: "Score whichever is rarer: the species globally, OR this specific variety/form/coating if it's unique to one locality. A common species with a unique variety should score as rare.",
     ranges: [
-      { band: "80–100", label: "Extreme Rarity",  text: "Fewer than 5 known localities worldwide. IMA-recognised species, rarely available on the open market." },
-      { band: "60–79",  label: "Genuinely Rare",  text: "10–30 localities globally. Seldom available. Collectors actively seek specimens." },
-      { band: "40–59",  label: "Uncommon",        text: "Recognisable but not common in the market. Available but not abundant." },
-      { band: "20–39",  label: "Common Species",  text: "Widely available (quartz, calcite, pyrite, fluorite). Fine crystals exist but the species itself is not rare." },
-      { band: "0–19",   label: "Ubiquitous",      text: "Found virtually everywhere. No rarity premium applies — value comes purely from crystal quality." },
+      { band: "80–100", label: "Unique variety / extreme",  text: "One locality worldwide for this form or coating. OR fewer than 5 localities for the species. The rarest thing about this specimen is something no other locality produces." },
+      { band: "60–79",  label: "Rare variety or species",   text: "Distinctive form/coating from very few localities. OR genuinely rare species (10–30 localities globally)." },
+      { band: "40–59",  label: "Uncommon",                  text: "Recognisable form not widely available. OR species that exists but is not abundant in the market." },
+      { band: "20–39",  label: "Common species/variety",    text: "Widely available in this form (quartz, calcite, pyrite, typical fluorite). Fine crystals exist but nothing unique." },
+      { band: "0–19",   label: "Ubiquitous",                text: "Found virtually everywhere in this form. No rarity premium applies — all value comes from crystal quality and aesthetics." },
     ],
+    example: {
+      title: "Worked example: Metallic-coated Almandine, Aquarius Mtns, Arizona",
+      text: "Almandine-spessartine as a species scores ~10 (thousands of localities worldwide). But metallic-coated almandine from the Aquarius Mountains is documented from one locality on Earth. Score the variety: 90+. The coating is the rare thing, not the garnet species.",
+    },
   },
   {
     key: "localityRarity", label: "Locality Rarity", icon: "📍", color: "#90d070",
@@ -447,6 +530,56 @@ export default function BuyerGuide({ onClose }) {
 
               <div style={{ fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.5, fontStyle: "italic", padding: "8px 12px", borderRadius: "4px", background: "var(--bg-panel)", border: "1px solid var(--border-dim)" }}>
                 💡 Always examine under your own 10× loupe in multiple lighting angles. Dealers often display under bright directed light that hides chips and frosting. Natural or diffuse light is more honest.
+              </div>
+
+              {/* Natural Character section */}
+              <div style={{ marginTop: "6px" }}>
+                <div style={{ padding: "10px 14px", background: "rgba(0,200,128,0.06)", border: "1px solid rgba(0,200,128,0.25)", borderRadius: "6px", marginBottom: "12px" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#00c880", marginBottom: "5px" }}>Natural Character vs. Mechanical Damage</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6 }}>
+                    The most important skill in specimen evaluation is distinguishing <strong style={{ color: "var(--text)" }}>natural geological processes</strong> from <strong style={{ color: "#ff8080" }}>physical damage</strong>. Natural features follow <em>crystallographic rules</em> — they are symmetric, orderly, and repeat across the specimen. Damage is random, sharp-edged, and appears on corners and edges.
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "10px" }}>
+                    <div style={{ padding: "8px 10px", background: "rgba(0,200,128,0.07)", borderRadius: "4px", border: "1px solid rgba(0,200,128,0.2)" }}>
+                      <div style={{ fontSize: "10px", fontWeight: 700, color: "#00c880", marginBottom: "5px" }}>✓ Natural Features</div>
+                      {["Follows crystal symmetry","Consistent across the specimen","Found on crystal faces (not edges)","Seen across whole suites from same locality","Cannot be replicated in a lab accidentally"].map(t => (
+                        <div key={t} style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.55 }}>· {t}</div>
+                      ))}
+                    </div>
+                    <div style={{ padding: "8px 10px", background: "rgba(255,100,80,0.06)", borderRadius: "4px", border: "1px solid rgba(255,100,80,0.2)" }}>
+                      <div style={{ fontSize: "10px", fontWeight: 700, color: "#ff8080", marginBottom: "5px" }}>✗ Mechanical Damage</div>
+                      {["Random location — usually edges/corners","Sharp, conchoidal fracture surfaces","Inconsistent across specimen","Not seen on comparable specimens","Often accompanied by white powder (calcite dust)"].map(t => (
+                        <div key={t} style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.55 }}>· {t}</div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: "9px", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Common Natural Character Features</div>
+                {NATURAL_CHARACTER.map(feat => (
+                  <div key={feat.key} style={{ marginBottom: "10px", padding: "12px 14px", background: "var(--bg-panel)", border: `1px solid ${feat.color}25`, borderRadius: "6px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "5px" }}>
+                      <span style={{ fontSize: "18px" }}>{feat.icon}</span>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: "12px", fontWeight: 700, color: feat.color }}>{feat.label}</span>
+                        <span style={{ marginLeft: "8px", fontSize: "9px", color: "var(--text-muted)", fontStyle: "italic" }}>{feat.examples}</span>
+                      </div>
+                      <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "rgba(0,200,128,0.1)", border: "1px solid rgba(0,200,128,0.25)", color: "#00c880" }}>NATURAL</span>
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: "6px" }}>
+                      <strong style={{ color: "var(--text-muted)", fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Looks like: </strong>{feat.looks}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: "6px" }}>
+                      <strong style={{ color: "var(--text-muted)", fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em" }}>How to identify: </strong>{feat.howToID}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: "6px", padding: "6px 9px", background: "var(--bg)", borderRadius: "4px", border: "1px solid var(--border-dim)" }}>
+                      <strong style={{ color: "var(--text-muted)", fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em" }}>How to score in PRISM: </strong>{feat.scoring}
+                    </div>
+                    <div style={{ fontSize: "11px", color: feat.color, lineHeight: 1.55, padding: "7px 9px", background: `${feat.color}08`, borderRadius: "4px", border: `1px solid ${feat.color}25` }}>
+                      💡 {feat.noviceTip}
+                    </div>
+                  </div>
+                ))}
               </div>
             </>
           )}
@@ -726,6 +859,12 @@ export default function BuyerGuide({ onClose }) {
                             <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.55 }}>{r.text}</div>
                           </div>
                         ))}
+                        {dim.example && (
+                          <div style={{ marginTop: "8px", padding: "10px 12px", background: `${dim.color}08`, border: `1px solid ${dim.color}30`, borderRadius: "5px" }}>
+                            <div style={{ fontSize: "9px", letterSpacing: "0.14em", textTransform: "uppercase", color: dim.color, marginBottom: "5px" }}>📋 {dim.example.title}</div>
+                            <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6 }}>{dim.example.text}</div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
