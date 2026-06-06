@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { HelpCircle } from "lucide-react";
 import { DIMS, WEIGHTS } from "../data/prism.js";
+import { useBreakpoint } from "../hooks/useWindowSize.js";
 import ScorePanel from "./ScorePanel.jsx";
 import TierSelector from "./TierSelector.jsx";
 import CriteriaChecklist from "./CriteriaChecklist.jsx";
@@ -107,14 +108,16 @@ function DimRow({ dim, score, weight, onChange, sciCriteria, onSciCriteriaChange
 
 export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciCriteria, onSciCriteriaChange }) {
   const W = WEIGHTS[ctx];
+  const { isMobile } = useBreakpoint();
 
   return (
     <div style={{
-      display: "grid",
-      gridTemplateColumns: "1fr 290px",
+      display: isMobile ? "flex" : "grid",
+      flexDirection: isMobile ? "column" : undefined,
+      gridTemplateColumns: isMobile ? undefined : "1fr 380px",
       flex: 1,
       minHeight: 0,
-      overflow: "hidden",
+      overflow: isMobile ? "auto" : "hidden",
     }}>
 
       {/* ── Left: inputs ── */}
@@ -176,8 +179,11 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
       </div>
 
       {/* ── Right: score panel ── */}
-      <div style={{ overflowY: "auto" }}>
-        <ScorePanel scores={scores} ctx={ctx} />
+      <div style={isMobile
+        ? { borderTop: "1px solid var(--border)" }
+        : { overflow: "hidden", display: "flex", flexDirection: "column" }
+      }>
+        <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} />
       </div>
     </div>
   );

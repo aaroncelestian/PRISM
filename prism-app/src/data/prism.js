@@ -11,7 +11,8 @@ export const GRADES = [
   { min: 75, label: "Exhibition", color: "#90c0f0", emoji: "✨", desc: "Show-quality specimen — impressive enough to display prominently." },
   { min: 60, label: "Collector",  color: "#00c880", emoji: "💎", desc: "A solid collector piece with clear appeal and value." },
   { min: 45, label: "Study",      color: "#5090ff", emoji: "🔬", desc: "Good for research, teaching, or reference collections." },
-  { min: 0,  label: "General",    color: "#8aaccc", emoji: "🪨", desc: "Common specimen — fine for beginners or bulk collections." },
+  { min: 20, label: "General",    color: "#8aaccc", emoji: "🪨", desc: "Common specimen — minimal collector distinction; fine for beginners or decorative use." },
+  { min: 0,  label: "Bulk",       color: "#505060", emoji: "📦", desc: "Below collector grade — suitable for bulk, tumbling, or classroom use only." },
 ];
 
 export const CONTEXTS = [
@@ -147,6 +148,55 @@ export const COMPOUND_GRADES = [
     rarity: "Uncommon",
   },
 ];
+
+// Helper: detect suspicious score combinations that may indicate input errors
+// Returns array of { key, level ('warn'|'info'), dim, msg }
+export function detectInconsistencies(scores, spec, sciCriteria) {
+  const warnings = [];
+  const s = scores ?? {};
+
+  // Scientific score > 0 but no criteria checked (expert slider set without checklist)
+  if ((s.scientific ?? 0) > 0 && Array.isArray(sciCriteria) && sciCriteria.every(c => !c)) {
+    warnings.push({
+      key: "sci_no_criteria", level: "warn", dim: "scientific",
+      msg: "Scientific Value is above 0 but no criteria are checked. Use the checklist to set this score, or adjust the slider to 0.",
+    });
+  }
+
+  // High species rarity but no species entered
+  if ((s.speciesRarity ?? 50) > 60 && !spec?.species?.trim()) {
+    warnings.push({
+      key: "species_no_name", level: "warn", dim: "speciesRarity",
+      msg: "Species Rarity is high (>60) but no mineral species is entered. Add the species name to support this score.",
+    });
+  }
+
+  // High locality rarity but no locality entered
+  if ((s.localityRarity ?? 50) > 60 && !spec?.locality?.trim()) {
+    warnings.push({
+      key: "locality_no_name", level: "warn", dim: "localityRarity",
+      msg: "Locality Rarity is high (>60) but no locality is entered. Add the locality to support this score.",
+    });
+  }
+
+  // Gem-grade crystal but very low aesthetics — unusual combo
+  if ((s.crystal ?? 50) >= 85 && (s.aesthetics ?? 50) < 25) {
+    warnings.push({
+      key: "crystal_aesthetic_mismatch", level: "info", dim: "aesthetics",
+      msg: "Crystal Quality is gem-grade (85+) but Aesthetics is very low (<25). This combination is unusual — verify both scores.",
+    });
+  }
+
+  // Excellent documentation on the most common possible material
+  if ((s.provenance ?? 50) >= 85 && (s.speciesRarity ?? 50) <= 15 && (s.localityRarity ?? 50) <= 15) {
+    warnings.push({
+      key: "provenance_common", level: "info", dim: "provenance",
+      msg: "Excellent provenance on a ubiquitous species and active locality. Documentation adds credibility but won't drive collector value for common material.",
+    });
+  }
+
+  return warnings;
+}
 
 // Helper: compute which compound grades a specimen achieves
 export function detectCompoundGrades(allCtxScores) {

@@ -298,7 +298,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
   const [copied, setCopied] = useState(false);
   const grade = primaryCtx.grade;
 
-  const qrPayload = JSON.stringify({
+  const certData = {
     v: 1, id: certId, t: issued,
     sp: { n: spec.name, s: spec.species, l: spec.locality, sz: sizeClass },
     sc: {
@@ -314,12 +314,13 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
       rd: attestations.repairsDisclosed, nr: attestations.noRestrictions, he: attestations.honestEvaluation,
     },
     ev: evaluatorName, org: evaluatorOrg,
-  });
+  };
+  const verifyUrl = `${window.location.origin}${window.location.pathname}?verify=${btoa(JSON.stringify(certData))}`;
 
   useEffect(() => {
-    QRCode.toDataURL(qrPayload, { width: 160, margin: 2, color: { dark: "#0d1520", light: "#ffffff" } })
+    QRCode.toDataURL(verifyUrl, { width: 160, margin: 2, color: { dark: "#0d1520", light: "#ffffff" } })
       .then(setQrUrl).catch(console.error);
-  }, [qrPayload]);
+  }, [verifyUrl]);
 
   const handlePrint = () => {
     const style = document.createElement("style");

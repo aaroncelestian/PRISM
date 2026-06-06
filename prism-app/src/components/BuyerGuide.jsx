@@ -162,10 +162,169 @@ const PROVENANCE_GUIDE = [
     redFlag: "Common for bulk purchased, re-labeled, or recently looted material" },
 ];
 
+// ── Aesthetics factors ────────────────────────────────────────────────────────
+const AESTHETICS_FACTORS = [
+  {
+    key: "color", label: "Color & Saturation", icon: "🎨", color: "#ff80a0",
+    desc: "Depth, saturation, and purity of color. The most immediate aesthetic driver.",
+    ranges: [
+      { band: "80–100", label: "Exceptional",  text: "Saturated, vivid color at peak for the species. Azurite blue, vanadinite orange, rhodonite pink — immediately arresting. Consistent across the specimen." },
+      { band: "60–79",  label: "Very Good",    text: "Good saturation with minor zoning or inconsistency. Still visually appealing and clearly colored." },
+      { band: "40–59",  label: "Moderate",     text: "Paler than ideal, slightly washed out, or noticeably inconsistent across the specimen." },
+      { band: "20–39",  label: "Weak",         text: "Faded or dull color typical of the species but lacking visual impact. Not a selling point." },
+      { band: "0–19",   label: "Absent",       text: "Colorless, heavily oxidized, or so dull as to be visually unremarkable." },
+    ],
+    tip: "Bright directed light oversaturates colors artificially. Always examine in diffuse or natural light before scoring.",
+  },
+  {
+    key: "matrix", label: "Matrix Presentation", icon: "🪨", color: "#a0c0e0",
+    desc: "How crystals sit on, contrast with, or emerge from their matrix.",
+    ranges: [
+      { band: "80–100", label: "Exceptional",  text: "Crystals elevated prominently above contrasting matrix. Natural pedestal effect, clean base, self-contained composition. A perfect floater also scores here." },
+      { band: "60–79",  label: "Good",         text: "Good matrix contrast, crystals well-separated and accessible. Perhaps slightly crowded or with minor base damage." },
+      { band: "40–59",  label: "Moderate",     text: "Displayable but crystals partially buried, matrix is plain, or specimen requires an awkward angle to show its best face." },
+      { band: "20–39",  label: "Poor",         text: "Crystals partially encrusted, matrix same color/texture as specimen, or heavily saw-trimmed showing cut marks." },
+      { band: "0–19",   label: "Detracting",   text: "Broken base, unattractive grinding marks, specimen won't stand without a mount, or matrix actively hides the specimen." },
+    ],
+    tip: "A perfect floater is not penalized here — score based on presentation quality, not whether matrix exists.",
+  },
+  {
+    key: "composition", label: "Composition & Symmetry", icon: "⚖️", color: "#80d0c0",
+    desc: "Natural balance, visual weight distribution, and compositional harmony.",
+    ranges: [
+      { band: "80–100", label: "Exceptional",  text: "Clear visual center and natural balance. Whether single crystal or multi-crystal group, the composition reads as intentional and complete." },
+      { band: "60–79",  label: "Good",         text: "Mostly balanced. One dominant crystal appropriate to the cluster, or good density without chaos." },
+      { band: "40–59",  label: "Moderate",     text: "Slightly awkward — off-center, front-heavy, or visually incomplete (e.g. broken half of a cluster)." },
+      { band: "20–39",  label: "Poor",         text: "Visually chaotic, obviously a broken fragment, or no satisfying compositional arrangement." },
+      { band: "0–19",   label: "Fragment",     text: "Obvious breakage, clearly a portion of a larger piece with no aesthetic independence." },
+    ],
+    tip: "Thumbnail specimens often score well here — small but complete is better than large but broken.",
+  },
+  {
+    key: "luster", label: "Luster & Surface", icon: "✨", color: "#e0d080",
+    desc: "Quality of light interaction — vitreous, adamantine, silky, or metallic brilliance.",
+    ranges: [
+      { band: "80–100", label: "Exceptional",  text: "Outstanding luster for the species. Adamantine, vitreous with internal reflections, or metallic mirror finish. No frosting or etching." },
+      { band: "60–79",  label: "Very Good",    text: "Good luster. Minor etching or frosting in non-critical areas. Still reflective and catches light well." },
+      { band: "40–59",  label: "Moderate",     text: "Visible etching, partial frosting, or dulled surfaces that reduce sparkle significantly." },
+      { band: "20–39",  label: "Dull",         text: "Heavily frosted, etched throughout, or luster inappropriate for the species." },
+      { band: "0–19",   label: "None",         text: "Completely dull, heavily corroded, or surface so altered as to be unrecognizable." },
+    ],
+    tip: "Over-cleaning with acid removes luster permanently. 'Cleaned' specimens often suffer here compared to untouched material.",
+  },
+];
+
+// ── Scientific value factors ────────────────────────────────────────────────
+const SCIENTIFIC_FACTORS = [
+  {
+    key: "type_loc", label: "Type Locality Material", icon: "📍", color: "#a080ff", score: "60–100",
+    desc: "Specimens from the locality used to formally define and describe a mineral species.",
+    detail: "If a specimen is from the type locality of its species — the place where the species was first scientifically described — it carries irreplaceable scientific value. Examples: rhodonite from Franklin NJ (its type locality), sinhalite from Sri Lanka. Type locality material becomes more important over time as mines close. Verify against IMA (International Mineralogical Association) records.",
+    redFlag: "'Type locality' is used loosely by some dealers to mean simply 'famous locality.' Only IMA-registered type localities qualify for high scientific credit.",
+  },
+  {
+    key: "habit", label: "Unusual Crystal Habit", icon: "🔬", color: "#60c0ff", score: "40–85",
+    desc: "Distortions, elongations, scepters, phantoms, or growth forms not typical for the species.",
+    detail: "Crystals showing unusual morphology — spinel-law twins in magnetite, hoppered halite cubes, scepter quartz, phantom quartz with included growth zones, skeletal fluorite — provide information about growth conditions and are scientifically interesting beyond aesthetics. Document all anomalous features in the notes field.",
+    redFlag: "Scepters are frequently faked by re-soldering broken crystals. Check the contact zone under 10× magnification — natural overgrowth shows crystal-on-crystal contact with no adhesive.",
+  },
+  {
+    key: "paragenesis", label: "Paragenesis Documentation", icon: "🔗", color: "#80e0a0", score: "30–70",
+    desc: "The complete mineral assemblage tells a story about deposit formation conditions.",
+    detail: "A specimen showing the full paragenetic sequence — multiple mineral generations, early and late-stage minerals coexisting — is scientifically more valuable than a single-species specimen. List all visible associated minerals in your documentation notes. A labeled specimen from a specific pocket with known paragenesis is a scientific document.",
+    redFlag: "Associated minerals can be glued onto specimens. Check attachment points under magnification — natural intergrowths show crystal-on-crystal contact with consistent surface alteration.",
+  },
+  {
+    key: "pseudomorph", label: "Pseudomorphs & Epitaxy", icon: "🔄", color: "#ffa060", score: "50–90",
+    desc: "One mineral replacing another while keeping the original crystal shape, or oriented overgrowths.",
+    detail: "Pseudomorphs — malachite after azurite, native copper after cuprite, quartz after calcite — show mineral transformation processes and are scientifically compelling. Epitaxial overgrowths (one mineral crystallizing in oriented relationship on another) document crystal chemical relationships. Both types are scientifically and visually interesting.",
+    redFlag: "True pseudomorphs have subtle surface textures showing the replacement process. Casts or composite pieces lack these. A complete, 'too perfect' pseudomorph warrants scrutiny.",
+  },
+  {
+    key: "historical", label: "Historical Mine Documentation", icon: "📋", color: "#e0c060", score: "40–80",
+    desc: "Specimens from historically significant closed localities with original documentation.",
+    detail: "A specimen from Tsumeb (Namibia), Franklin (NJ), or Broken Hill (Australia) with original mine labels, auction records, or collection tags becomes progressively more scientifically important as those deposits are exhausted. Documentation of where in a mine a specimen came from (stope, level, date) adds scientific value that cannot be reconstructed later.",
+    redFlag: "Old labels can be forged. If provenance is a major value driver, consider having paper/ink authenticated by a specialist for high-value acquisitions.",
+  },
+];
+
+// ── Score calibration rubric ────────────────────────────────────────────────
+const SCORE_CALIBRATION = [
+  {
+    key: "crystal", label: "Crystal Quality", icon: "💎", color: "#00d4ff",
+    note: "Assess under 10× loupe in multiple lighting conditions before scoring.",
+    ranges: [
+      { band: "80–100", label: "Gem / Museum",   text: "No damage visible under loupe. Complete termination, pristine faces, exceptional luster. Best-in-class example you could find." },
+      { band: "60–79",  label: "Very Fine",      text: "Minor damage in non-critical areas only. Excellent luster, complete or nearly complete termination. Passes the show-table test." },
+      { band: "40–59",  label: "Fine",           text: "Some visible damage, partial termination, or dulled surfaces — but clearly a quality specimen with real appeal." },
+      { band: "20–39",  label: "Average",        text: "Notable damage, heavy etching, or partial crystal development. Reference quality. Would not be a centrepiece." },
+      { band: "0–19",   label: "Below Grade",    text: "Heavily damaged fragment or surface so compromised that crystal quality is not a selling point." },
+    ],
+  },
+  {
+    key: "speciesRarity", label: "Species Rarity", icon: "🧬", color: "#e0a040",
+    note: "Score the species globally, not the individual specimen. Fine pyrite is not rare pyrite.",
+    ranges: [
+      { band: "80–100", label: "Extreme Rarity",  text: "Fewer than 5 known localities worldwide. IMA-recognised species, rarely available on the open market." },
+      { band: "60–79",  label: "Genuinely Rare",  text: "10–30 localities globally. Seldom available. Collectors actively seek specimens." },
+      { band: "40–59",  label: "Uncommon",        text: "Recognisable but not common in the market. Available but not abundant." },
+      { band: "20–39",  label: "Common Species",  text: "Widely available (quartz, calcite, pyrite, fluorite). Fine crystals exist but the species itself is not rare." },
+      { band: "0–19",   label: "Ubiquitous",      text: "Found virtually everywhere. No rarity premium applies — value comes purely from crystal quality." },
+    ],
+  },
+  {
+    key: "localityRarity", label: "Locality Rarity", icon: "📍", color: "#90d070",
+    note: "Score the locality's prestige and scarcity, not your confidence that the locality is correct.",
+    ranges: [
+      { band: "80–100", label: "World-Class / Closed", text: "Iconic locality — Tsumeb, Herja, Broken Hill, Minas Gerais classic pockets. Often exhausted. Immediately recognised by any serious collector." },
+      { band: "60–79",  label: "Notable Classic",      text: "Well-documented locality with strong collector recognition. May still be active but associated with quality material." },
+      { band: "40–59",  label: "Recognised",           text: "Known locality but not famous. Moderate collector interest and modest locality premium." },
+      { band: "20–39",  label: "Generic Location",     text: "Province or country known but no specific locality. Minimal premium — evaluate on crystal quality alone." },
+      { band: "0–19",   label: "Unknown",              text: "No verified locality. Cannot exceed 20 regardless of visual quality." },
+    ],
+  },
+  {
+    key: "provenance", label: "Provenance", icon: "📜", color: "#e8b840",
+    note: "Provenance cannot be invented after the fact — only discovered. Default to the lowest tier you can prove.",
+    ranges: [
+      { band: "80–100", label: "Fully Documented",  text: "Original mine labels, auction catalogue, or museum deaccession with complete verifiable chain of custody." },
+      { band: "60–79",  label: "Strong",            text: "Named collection with labels, invoices, or photographs. At least one traceable ownership link." },
+      { band: "40–59",  label: "Dealer Documented", text: "Dealer label with locality and approximate date. No prior ownership chain but current purchase documented." },
+      { band: "20–39",  label: "Locality Stated",   text: "Locality stated verbally or via generic label. No chain of custody. Common for show purchases." },
+      { band: "0–19",   label: "Unknown",           text: "No information. Apply maximum scepticism for any price reflecting documented provenance." },
+    ],
+  },
+  {
+    key: "aesthetics", label: "Aesthetics", icon: "🎨", color: "#ff80a0",
+    note: "Score overall visual impact: color, luster, matrix, composition together.",
+    ranges: [
+      { band: "80–100", label: "Display Masterpiece", text: "Stops people in their tracks. Exceptional color, luster, composition, and matrix. Would be the centrepiece of any display." },
+      { band: "60–79",  label: "Display Quality",     text: "Clearly beautiful. Looks good in any collection. Good color, reasonable composition, no major flaws from display angle." },
+      { band: "40–59",  label: "Presentable",         text: "Attractive but not remarkable. Solid for reference or mid-tier display. Visible flaws at close inspection." },
+      { band: "20–39",  label: "Study Grade",         text: "Aesthetics are not a selling point. Scientifically or locality-interesting but not visually compelling." },
+      { band: "0–19",   label: "No Aesthetic Merit",  text: "Fragment, heavily damaged, or completely unremarkable. No display value." },
+    ],
+  },
+  {
+    key: "scientific", label: "Scientific Value", icon: "🔬", color: "#5090ff",
+    note: "Most collector specimens score 0–20 here. That is normal and expected — not a failure.",
+    ranges: [
+      { band: "80–100", label: "Publication Quality", text: "Type locality material, exceptional pseudomorph, or feature that represents undocumented science. Publishable interest." },
+      { band: "60–79",  label: "Research Interest",   text: "Unusual habit, well-documented paragenesis, or historically significant mine with original labels." },
+      { band: "40–59",  label: "Educational Value",   text: "Good teaching specimen. Clearly illustrates crystal forms, species traits, or paragenetic relationships." },
+      { band: "20–39",  label: "Reference Quality",   text: "Correctly identified with locality. Suitable for reference collection. Standard educational use." },
+      { band: "0–19",   label: "No Special Value",    text: "Common species, no documentation, nothing unusual. Score reflects absence of scientific interest, not specimen failure." },
+    ],
+  },
+];
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function BuyerGuide({ onClose }) {
   const [tab, setTab] = useState("crystal");
+  const [expandedAesthetic, setExpandedAesthetic] = useState(null);
+  const [expandedScientific, setExpandedScientific] = useState(null);
+  const [expandedCalib, setExpandedCalib] = useState("crystal");
   const [localitySearch, setLocalitySearch] = useState("");
   const [expandedLocality, setExpandedLocality] = useState(null);
   const [expandedLevel, setExpandedLevel] = useState(null);
@@ -175,10 +334,13 @@ export default function BuyerGuide({ onClose }) {
     : LOCALITIES.filter(l => l.significance === "world_class");
 
   const tabs = [
-    { key: "crystal",   label: "Crystal Quality" },
-    { key: "locality",  label: "Localities" },
-    { key: "species",   label: "Common Species" },
-    { key: "provenance",label: "Provenance" },
+    { key: "crystal",    label: "Crystal Quality" },
+    { key: "locality",   label: "Localities" },
+    { key: "species",    label: "Common Species" },
+    { key: "provenance", label: "Provenance" },
+    { key: "aesthetics", label: "Aesthetics" },
+    { key: "scientific", label: "Scientific" },
+    { key: "calibration",label: "Score Guide" },
   ];
 
   return (
@@ -210,13 +372,13 @@ export default function BuyerGuide({ onClose }) {
           </div>
 
           {/* Tabs */}
-          <div style={{ display: "flex", gap: "2px" }}>
+          <div style={{ display: "flex", gap: "2px", overflowX: "auto", scrollbarWidth: "none" }}>
             {tabs.map(t => (
               <button key={t.key} onClick={() => setTab(t.key)} style={{
-                padding: "7px 14px", border: "none", borderRadius: "4px 4px 0 0",
+                flexShrink: 0, padding: "7px 14px", border: "none", borderRadius: "4px 4px 0 0",
                 background: tab === t.key ? "var(--bg-panel)" : "transparent",
                 color: tab === t.key ? "var(--cyan)" : "var(--text-muted)",
-                fontSize: "11px", fontWeight: tab === t.key ? 600 : 400,
+                fontSize: "11px", fontWeight: tab === t.key ? 600 : 400, whiteSpace: "nowrap",
                 cursor: "pointer", borderBottom: tab === t.key ? "2px solid var(--cyan)" : "2px solid transparent",
               }}>
                 {t.label}
@@ -432,6 +594,146 @@ export default function BuyerGuide({ onClose }) {
 
               <div style={{ padding: "10px 12px", background: "rgba(0,200,128,0.05)", border: "1px solid rgba(0,200,128,0.2)", borderRadius: "5px", fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6 }}>
                 💡 <strong style={{ color: "var(--text)" }}>The golden rule:</strong> A legitimate dealer will always have a paper receipt, a label, or a collection record. If they can't produce any documentation and the price reflects documented provenance, walk away or price it at T4–T5 levels.
+              </div>
+            </>
+          )}
+
+          {/* ── AESTHETICS TAB ── */}
+          {tab === "aesthetics" && (
+            <>
+              <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, padding: "10px 12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
+                <strong style={{ color: "var(--text)" }}>What aesthetics measures:</strong> Visual impact — color saturation, luster quality, matrix presentation, and compositional balance. Score what you actually see, not what the specimen "should" look like for the species.
+              </div>
+
+              {AESTHETICS_FACTORS.map(factor => {
+                const open = expandedAesthetic === factor.key;
+                return (
+                  <div key={factor.key} style={{ borderRadius: "7px", border: `1px solid ${factor.color}30`, background: "var(--bg-panel)", overflow: "hidden" }}>
+                    <button onClick={() => setExpandedAesthetic(open ? null : factor.key)}
+                      style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: "13px 15px", textAlign: "left" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ fontSize: "22px", flexShrink: 0 }}>{factor.icon}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "13px", fontWeight: 700, color: factor.color, marginBottom: "3px" }}>{factor.label}</div>
+                          <div style={{ fontSize: "11px", color: "var(--text-dim)" }}>{factor.desc}</div>
+                        </div>
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)", flexShrink: 0 }}>{open ? "▲" : "▼"}</span>
+                      </div>
+                    </button>
+                    {open && (
+                      <div style={{ padding: "0 15px 14px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                        {factor.ranges.map(r => (
+                          <div key={r.band} style={{ display: "flex", gap: "10px", padding: "8px 10px", borderRadius: "4px", background: "var(--bg)", border: "1px solid var(--border-dim)" }}>
+                            <div style={{ flexShrink: 0, textAlign: "center", minWidth: "52px" }}>
+                              <div style={{ fontSize: "10px", fontFamily: "var(--mono)", color: factor.color, fontWeight: 600 }}>{r.band}</div>
+                              <div style={{ fontSize: "9px", color: "var(--text-muted)" }}>{r.label}</div>
+                            </div>
+                            <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>{r.text}</div>
+                          </div>
+                        ))}
+                        <div style={{ fontSize: "10px", color: "var(--cyan)", lineHeight: 1.5, padding: "7px 10px", background: "rgba(0,212,255,0.05)", borderRadius: "4px", border: "1px solid rgba(0,212,255,0.15)", marginTop: "4px" }}>
+                          💡 {factor.tip}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          )}
+
+          {/* ── SCIENTIFIC TAB ── */}
+          {tab === "scientific" && (
+            <>
+              <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, padding: "10px 12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
+                <strong style={{ color: "var(--text)" }}>What scientific value measures:</strong> Documentation quality, locality significance for the species, and any features of scientific interest. Most collector specimens score 0–20 here — that is normal. This dimension drives Museum-context scores.
+              </div>
+
+              <div style={{ padding: "8px 12px", background: "rgba(80,144,255,0.06)", border: "1px solid rgba(80,144,255,0.2)", borderRadius: "5px", fontSize: "11px", color: "#78a8ff", lineHeight: 1.5 }}>
+                🔬 The Study and Museum contexts weight scientific value at <strong>42%</strong> and <strong>20%</strong> respectively. A specimen with poor science scores will never reach those grades regardless of beauty.
+              </div>
+
+              {SCIENTIFIC_FACTORS.map(factor => {
+                const open = expandedScientific === factor.key;
+                return (
+                  <div key={factor.key} style={{ borderRadius: "7px", border: `1px solid ${factor.color}30`, background: "var(--bg-panel)", overflow: "hidden" }}>
+                    <button onClick={() => setExpandedScientific(open ? null : factor.key)}
+                      style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: "13px 15px", textAlign: "left" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                        <span style={{ fontSize: "20px", flexShrink: 0, marginTop: "1px" }}>{factor.icon}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
+                            <span style={{ fontSize: "13px", fontWeight: 700, color: factor.color }}>{factor.label}</span>
+                            <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: factor.color, background: `${factor.color}18`, padding: "2px 7px", borderRadius: "3px" }}>Score {factor.score}</span>
+                          </div>
+                          <div style={{ fontSize: "11px", color: "var(--text-dim)" }}>{factor.desc}</div>
+                        </div>
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)", flexShrink: 0 }}>{open ? "▲" : "▼"}</span>
+                      </div>
+                    </button>
+                    {open && (
+                      <div style={{ padding: "0 15px 14px", borderTop: "1px solid var(--border-dim)", paddingTop: "12px" }}>
+                        <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.65, marginBottom: "10px" }}>{factor.detail}</div>
+                        <div style={{ fontSize: "10px", color: "#ff6060", lineHeight: 1.5, padding: "7px 10px", background: "rgba(255,96,96,0.05)", borderRadius: "4px", border: "1px solid rgba(255,96,96,0.2)" }}>
+                          ⚠ Watch for: {factor.redFlag}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              <div style={{ padding: "10px 12px", background: "var(--bg-panel)", border: "1px solid var(--border-dim)", borderRadius: "5px", fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6 }}>
+                💡 <strong style={{ color: "var(--text)" }}>CriteriaChecklist:</strong> In Expert Mode, expand the Scientific dimension to check specific criteria boxes. Each box adds to the scientific score with appropriate weight. Use the notes field to document your observations.
+              </div>
+            </>
+          )}
+
+          {/* ── SCORE CALIBRATION TAB ── */}
+          {tab === "calibration" && (
+            <>
+              <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, padding: "10px 12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
+                <strong style={{ color: "var(--text)" }}>How to use this guide:</strong> For each dimension, find the description that best matches what you observe. Use the corresponding score band as your starting point, then fine-tune within that band. When in doubt, score conservatively.
+              </div>
+
+              {SCORE_CALIBRATION.map(dim => {
+                const open = expandedCalib === dim.key;
+                return (
+                  <div key={dim.key} style={{ borderRadius: "7px", border: `1px solid ${dim.color}30`, background: "var(--bg-panel)", overflow: "hidden" }}>
+                    <button onClick={() => setExpandedCalib(open ? null : dim.key)}
+                      style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: "12px 15px", textAlign: "left" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ fontSize: "20px", flexShrink: 0 }}>{dim.icon}</span>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: "13px", fontWeight: 700, color: dim.color }}>{dim.label}</span>
+                          {!open && <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>{dim.note}</div>}
+                        </div>
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)", flexShrink: 0 }}>{open ? "▲" : "▼"}</span>
+                      </div>
+                    </button>
+                    {open && (
+                      <div style={{ padding: "0 15px 14px" }}>
+                        <div style={{ fontSize: "10px", color: "var(--cyan)", lineHeight: 1.5, marginBottom: "10px", padding: "6px 10px", background: "rgba(0,212,255,0.05)", borderRadius: "4px", border: "1px solid rgba(0,212,255,0.15)" }}>
+                          💡 {dim.note}
+                        </div>
+                        {dim.ranges.map((r, i) => (
+                          <div key={r.band} style={{ display: "flex", gap: "10px", padding: "9px 10px", marginBottom: "5px", borderRadius: "5px", background: i === 0 ? `${dim.color}08` : "var(--bg)", border: `1px solid ${i === 0 ? dim.color + "25" : "var(--border-dim)"}` }}>
+                            <div style={{ flexShrink: 0, textAlign: "center", minWidth: "60px" }}>
+                              <div style={{ fontSize: "11px", fontFamily: "var(--mono)", color: dim.color, fontWeight: 600 }}>{r.band}</div>
+                              <div style={{ fontSize: "9px", color: "var(--text-muted)", marginTop: "2px", lineHeight: 1.3 }}>{r.label}</div>
+                            </div>
+                            <div style={{ width: "1px", background: "var(--border-dim)", flexShrink: 0 }} />
+                            <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.55 }}>{r.text}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              <div style={{ padding: "10px 12px", background: "rgba(255,160,40,0.06)", border: "1px solid rgba(255,160,40,0.2)", borderRadius: "5px", fontSize: "11px", color: "#ffa028", lineHeight: 1.6 }}>
+                ⚠️ <strong style={{ color: "var(--text)" }}>Calibration principle:</strong> Two evaluators scoring the same specimen should arrive within 10 points of each other on each dimension. If you’re frequently using the full 0–100 range, you’re likely over-scoring extremes. Most real specimens land in the 30–70 range per dimension.
               </div>
             </>
           )}

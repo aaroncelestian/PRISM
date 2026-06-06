@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Wand2, SlidersHorizontal, RotateCcw } from "lucide-react";
-import { CONTEXTS, WEIGHTS } from "../data/prism.js";
+import { CONTEXTS, WEIGHTS, GRADES, detectCompoundGrades } from "../data/prism.js";
+import { useBreakpoint } from "../hooks/useWindowSize.js";
 import WizardMode from "./WizardMode.jsx";
 import ExpertMode from "./ExpertMode.jsx";
 import DonationEval from "./DonationEval.jsx";
@@ -8,6 +9,22 @@ import PricingTool from "./PricingTool.jsx";
 import BuyerGuide from "./BuyerGuide.jsx";
 import CertGenerator from "./CertGenerator.jsx";
 import QuickExport from "./QuickExport.jsx";
+import CollectionHistory from "./CollectionHistory.jsx";
+import VerifyView from "./VerifyView.jsx";
+import { useLocalCollection } from "../hooks/useLocalCollection.js";
+
+const THRESHOLD = 70;
+function computePrimary(scores) {
+  const all = CONTEXTS.map(c => {
+    const W = WEIGHTS[c.key];
+    const score = Math.round(Object.entries(W).reduce((a,[k,w]) => a + (scores[k]??50)*w, 0));
+    return { ...c, score };
+  });
+  const passing = all.find(c => c.score >= THRESHOLD) || all[0];
+  const grade = GRADES.find(g => passing.score >= g.min) || GRADES[GRADES.length-1];
+  const allCtxScores = Object.fromEntries(all.map(c => [c.key, c.score]));
+  return { score: passing.score, grade, compoundGrades: detectCompoundGrades(allCtxScores) };
+}
 
 const DEFAULT_SCORES = {
   crystal: 50, speciesRarity: 50, localityRarity: 50,
@@ -25,11 +42,37 @@ export default function PRISM() {
   const [showBuyerGuide, setShowBuyerGuide] = useState(false);
   const [showCert,       setShowCert]       = useState(false);
   const [showExport,     setShowExport]     = useState(false);
+  const [showHistory,    setShowHistory]    = useState(false);
+  const [savedFlash,     setSavedFlash]     = useState(false);
   const [spSource,       setSpSource]       = useState(null); // SpecimenPro integration
+  const { records, saveRecord, deleteRecord, clearAll } = useLocalCollection();
+  const [verifyPayload, setVerifyPayload] = useState(null);
+  const [showTools, setShowTools] = useState(false);
+  const { isMobile } = useBreakpoint();
 
-  // ── Read URL params (SpecimenPro deep-link) ───────────────────────────────
+  useEffect(() => {
+    if (!showTools) return;
+    const close = (e) => { if (!e.target.closest('[data-tools-menu]')) setShowTools(false); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [showTools]);
+
+  // ── Read URL params ───────────────────────────────────────────────────
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
+
+    // QR certificate verification
+    const verifyParam = p.get("verify");
+    if (verifyParam) {
+      try {
+        const data = JSON.parse(atob(verifyParam));
+        setVerifyPayload(data);
+        return; // Don't parse other params when verifying
+      } catch {
+        console.warn("Invalid verify payload");
+      }
+    }
+
     if (p.get("source") === "specimenPro") {
       const name     = p.get("name")     || "";
       const species  = p.get("species")  || "";
@@ -61,6 +104,9 @@ export default function PRISM() {
     setSciCriteria([false, false, false, false, false]);
   };
 
+  // QR verification mode — render standalone page instead of app
+  if (verifyPayload) return <VerifyView payload={verifyPayload} />;
+
   return (
     <div style={{
       fontFamily: "var(--sans)",
@@ -73,227 +119,170 @@ export default function PRISM() {
       {/* ── Header ── */}
       <div style={{
         borderBottom: "1px solid var(--border)",
-        padding: "0 22px",
         background: "var(--bg-panel)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        height: "48px",
         flexShrink: 0,
       }}>
 
-        {/* Logo + tagline */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: "12px" }}>
-          <span style={{
-            fontFamily: "var(--mono)", fontWeight: 600, fontSize: "15px",
-            color: "var(--cyan)", letterSpacing: "0.1em",
-          }}>
-            PRISM
-          </span>
-          <span style={{
-            fontSize: "10px", color: "var(--text-muted)",
-            letterSpacing: "0.14em", textTransform: "uppercase",
-          }}>
-            Precision Rating Index · Specimen Minerals
-          </span>
-          {spSource && (
-            <span style={{
-              fontSize: "9px", padding: "2px 8px", borderRadius: "3px",
-              background: "rgba(0,200,128,0.1)", border: "1px solid rgba(0,200,128,0.3)",
-              color: "#00c880", letterSpacing: "0.1em",
-            }}>
-              ↳ SpecimenPro{spSource.name ? `: ${spSource.name}` : ""}
-            </span>
-          )}
-        </div>
-
-        {/* Controls */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-
-          {/* Context switcher — diagnostic mode, highlights weight profile only */}
-          {mode === "expert" && (
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginRight: "8px" }}>
-              <span style={{
-                fontSize: "9px", color: "var(--text-muted)",
-                letterSpacing: "0.12em", textTransform: "uppercase",
-              }}>
-                Diagnostic:
+        {/* Primary row */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: isMobile ? "0 14px" : "0 22px",
+          height: "48px",
+        }}>
+          {/* Logo */}
+          <div style={{ display: "flex", alignItems: "baseline", gap: "10px", minWidth: 0 }}>
+            <span style={{ fontFamily: "var(--mono)", fontWeight: 600, fontSize: "15px", color: "var(--cyan)", letterSpacing: "0.1em", flexShrink: 0 }}>PRISM</span>
+            {!isMobile && (
+              <span style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.14em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                Precision Rating Index · Specimen Minerals
               </span>
-              <div style={{ display: "flex", gap: "3px" }}>
-              {CONTEXTS.map(c => (
-                <button
-                  key={c.key}
-                  onClick={() => setCtx(c.key)}
-                  title={c.desc}
-                  style={{
-                    padding: "4px 11px", borderRadius: "3px",
-                    border: ctx === c.key
-                      ? "1px solid rgba(0,212,255,0.45)"
-                      : "1px solid var(--border)",
-                    background: ctx === c.key ? "rgba(0,212,255,0.08)" : "transparent",
-                    color: ctx === c.key ? "var(--cyan)" : "var(--text-muted)",
-                    fontSize: "10px", fontWeight: ctx === c.key ? 600 : 400,
-                    letterSpacing: "0.1em", textTransform: "uppercase",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  {c.icon} {c.label}
-                </button>
-              ))}
-              </div>
-            </div>
-          )}
-
-          {/* Mode toggle */}
-          <div style={{
-            display: "flex",
-            background: "var(--bg-card)",
-            border: "1px solid var(--border)",
-            borderRadius: "5px",
-            overflow: "hidden",
-          }}>
-            {[
-              { key: "wizard", label: "Guided", Icon: Wand2 },
-              { key: "expert", label: "Expert", Icon: SlidersHorizontal },
-            ].map(({ key, label, Icon }) => (
-              <button
-                key={key}
-                onClick={() => setMode(key)}
-                style={{
-                  display: "flex", alignItems: "center", gap: "5px",
-                  padding: "5px 12px",
-                  background: mode === key ? "rgba(0,212,255,0.1)" : "transparent",
-                  border: "none",
-                  borderRight: key === "wizard" ? "1px solid var(--border)" : "none",
-                  color: mode === key ? "var(--cyan)" : "var(--text-muted)",
-                  fontSize: "11px", fontWeight: mode === key ? 600 : 400,
-                  letterSpacing: "0.06em",
-                  transition: "all 0.15s",
-                }}
-              >
-                <Icon size={12} />
-                {label}
-              </button>
-            ))}
+            )}
+            {spSource && (
+              <span style={{ fontSize: "9px", padding: "2px 8px", borderRadius: "3px", background: "rgba(0,200,128,0.1)", border: "1px solid rgba(0,200,128,0.3)", color: "#00c880", letterSpacing: "0.1em", whiteSpace: "nowrap" }}>
+                ↳ {isMobile ? "SP" : `SpecimenPro${spSource.name ? ": " + spSource.name : ""}`}
+              </span>
+            )}
           </div>
 
-          {/* Export */}
-          <button
-            onClick={() => setShowExport(true)}
-            title="Export a quick specimen record with optional photo"
-            style={{
-              display: "flex", alignItems: "center", gap: "5px",
-              padding: "5px 12px",
-              background: "transparent",
-              border: "1px solid var(--border)",
-              borderRadius: "5px",
-              color: "var(--text-muted)",
-              fontSize: "11px",
-              letterSpacing: "0.06em",
-              transition: "all 0.15s",
-            }}
-          >
-            📤 Export
-          </button>
+          {/* Primary controls */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
 
-          {/* Certificate */}
-          <button
-            onClick={() => setShowCert(true)}
-            title="Generate a PRISM certificate with QR code"
-            style={{
-              display: "flex", alignItems: "center", gap: "5px",
-              padding: "5px 12px",
-              background: "transparent",
-              border: "1px solid var(--border)",
-              borderRadius: "5px",
-              color: "var(--text-muted)",
-              fontSize: "11px",
-              letterSpacing: "0.06em",
-              transition: "all 0.15s",
-            }}
-          >
-            🏅 Certificate
-          </button>
+            {/* Context switcher (expert mode, desktop only) */}
+            {mode === "expert" && !isMobile && (
+              <div style={{ display: "flex", alignItems: "center", gap: "5px", marginRight: "6px" }}>
+                <span style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase" }}>Ctx:</span>
+                <div style={{ display: "flex", gap: "3px" }}>
+                  {CONTEXTS.map(c => (
+                    <button key={c.key} onClick={() => setCtx(c.key)} title={c.desc} style={{
+                      padding: "4px 9px", borderRadius: "3px",
+                      border: ctx === c.key ? "1px solid rgba(0,212,255,0.45)" : "1px solid var(--border)",
+                      background: ctx === c.key ? "rgba(0,212,255,0.08)" : "transparent",
+                      color: ctx === c.key ? "var(--cyan)" : "var(--text-muted)",
+                      fontSize: "10px", fontWeight: ctx === c.key ? 600 : 400,
+                      letterSpacing: "0.08em", textTransform: "uppercase", transition: "all 0.15s",
+                    }}>{c.icon} {c.label}</button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-          {/* Buyer Guide */}
-          <button
-            onClick={() => setShowBuyerGuide(true)}
-            title="Buyer's reference guide — crystal quality, localities, provenance"
-            style={{
-              display: "flex", alignItems: "center", gap: "5px",
-              padding: "5px 12px",
-              background: "transparent",
-              border: "1px solid var(--border)",
-              borderRadius: "5px",
-              color: "var(--text-muted)",
-              fontSize: "11px",
-              letterSpacing: "0.06em",
-              transition: "all 0.15s",
-            }}
-          >
-            🎓 Buyer Guide
-          </button>
+            {/* Mode toggle */}
+            <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "5px", overflow: "hidden" }}>
+              {[
+                { key: "wizard", label: "Guided", Icon: Wand2 },
+                { key: "expert", label: "Expert", Icon: SlidersHorizontal },
+              ].map(({ key, label, Icon }) => (
+                <button key={key} onClick={() => setMode(key)} style={{
+                  display: "flex", alignItems: "center", gap: "4px",
+                  padding: isMobile ? "5px 10px" : "5px 12px",
+                  background: mode === key ? "rgba(0,212,255,0.1)" : "transparent", border: "none",
+                  borderRight: key === "wizard" ? "1px solid var(--border)" : "none",
+                  color: mode === key ? "var(--cyan)" : "var(--text-muted)",
+                  fontSize: "11px", fontWeight: mode === key ? 600 : 400, letterSpacing: "0.06em", transition: "all 0.15s",
+                }}>
+                  <Icon size={12} />{!isMobile && label}
+                </button>
+              ))}
+            </div>
 
-          {/* Sell / Trade */}
-          <button
-            onClick={() => setShowPricing(true)}
-            title="Get a selling/trading price estimate"
-            style={{
-              display: "flex", alignItems: "center", gap: "5px",
-              padding: "5px 12px",
-              background: "transparent",
-              border: "1px solid var(--border)",
-              borderRadius: "5px",
-              color: "var(--text-muted)",
-              fontSize: "11px",
-              letterSpacing: "0.06em",
-              transition: "all 0.15s",
-            }}
-          >
-            💰 Sell / Trade
-          </button>
+            {/* Action buttons — desktop only in primary row */}
+            {!isMobile && (
+              <>
+                <button onClick={() => { const { score, grade, compoundGrades } = computePrimary(scores); saveRecord(spec, scores, ctx, grade.label, grade.emoji, score, compoundGrades); setSavedFlash(true); setTimeout(() => setSavedFlash(false), 1800); }}
+                  title="Save to collection"
+                  style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: savedFlash ? "rgba(0,200,128,0.15)" : "transparent", border: `1px solid ${savedFlash ? "rgba(0,200,128,0.5)" : "var(--border)"}`, borderRadius: "5px", color: savedFlash ? "#00c880" : "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.2s" }}>
+                  {savedFlash ? "✓ Saved" : "💾 Save"}
+                </button>
+                <button onClick={() => setShowHistory(true)} title="Collection history"
+                  style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: records.length > 0 ? "rgba(0,212,255,0.06)" : "transparent", border: `1px solid ${records.length > 0 ? "rgba(0,212,255,0.25)" : "var(--border)"}`, borderRadius: "5px", color: records.length > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.2s" }}>
+                  📚{records.length > 0 ? ` ${records.length}` : ""} History
+                </button>
+                {/* Tools dropdown */}
+                <div data-tools-menu style={{ position: "relative" }}>
+                  <button onClick={() => setShowTools(t => !t)}
+                    style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: showTools ? "rgba(0,212,255,0.08)" : "transparent", border: `1px solid ${showTools ? "rgba(0,212,255,0.35)" : "var(--border)"}`, borderRadius: "5px", color: showTools ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.15s" }}>
+                    �️ Tools ▾
+                  </button>
+                  {showTools && (
+                    <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 200, minWidth: "180px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", boxShadow: "0 8px 24px rgba(0,0,0,0.45)", overflow: "hidden" }}>
+                      {[
+                        { label: "📤 Export Record",      action: () => { setShowExport(true);     setShowTools(false); } },
+                        { label: "🎖️ Certificate",        action: () => { setShowCert(true);       setShowTools(false); } },
+                        { label: "🎓 Buyer Guide",        action: () => { setShowBuyerGuide(true); setShowTools(false); } },
+                        { label: "💰 Sell / Trade",       action: () => { setShowPricing(true);    setShowTools(false); } },
+                        { label: "🏛️ Donate to Museum",  action: () => { setShowDonation(true);  setShowTools(false); } },
+                      ].map(item => (
+                        <button key={item.label} onClick={item.action} style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 16px", background: "none", border: "none", borderBottom: "1px solid var(--border-dim)", color: "var(--text-dim)", fontSize: "12px", cursor: "pointer", transition: "background 0.1s" }}
+                          onMouseEnter={e => e.currentTarget.style.background = "rgba(0,212,255,0.06)"}
+                          onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
-          {/* Museum Donation Eval */}
-          <button
-            onClick={() => setShowDonation(true)}
-            title="Evaluate this specimen for museum donation"
-            style={{
-              display: "flex", alignItems: "center", gap: "5px",
-              padding: "5px 12px",
-              background: "transparent",
-              border: "1px solid var(--border)",
-              borderRadius: "5px",
-              color: "var(--text-muted)",
-              fontSize: "11px",
-              letterSpacing: "0.06em",
-              transition: "all 0.15s",
-            }}
-          >
-            🏛️ Donate to Museum
-          </button>
-
-          {/* Reset */}
-          <button
-            onClick={reset}
-            title="Reset everything"
-            style={{
-              display: "flex", alignItems: "center",
-              padding: "5px 10px",
-              background: "transparent",
-              border: "1px solid var(--border)",
-              borderRadius: "5px",
-              color: "var(--text-muted)",
-              fontSize: "11px",
-              transition: "all 0.15s",
-            }}
-          >
-            <RotateCcw size={12} />
-          </button>
+            {/* Reset */}
+            <button onClick={reset} title="Reset everything" style={{ display: "flex", alignItems: "center", padding: "5px 10px", background: "transparent", border: "1px solid var(--border)", borderRadius: "5px", color: "var(--text-muted)", fontSize: "11px", transition: "all 0.15s" }}>
+              <RotateCcw size={12} />
+            </button>
+          </div>
         </div>
+
+        {/* Mobile action row — horizontally scrollable */}
+        {isMobile && (
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 14px 8px", overflowX: "auto", borderTop: "1px solid var(--border-dim)", scrollbarWidth: "none" }}>
+            {mode === "expert" && (
+              <>
+                {CONTEXTS.map(c => (
+                  <button key={c.key} onClick={() => setCtx(c.key)}
+                    style={{ flexShrink: 0, padding: "5px 10px", borderRadius: "4px", border: ctx === c.key ? "1px solid rgba(0,212,255,0.45)" : "1px solid var(--border)", background: ctx === c.key ? "rgba(0,212,255,0.08)" : "transparent", color: ctx === c.key ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", whiteSpace: "nowrap" }}>
+                    {c.icon} {c.label}
+                  </button>
+                ))}
+                <div style={{ width: "1px", height: "20px", background: "var(--border-dim)", flexShrink: 0 }} />
+              </>
+            )}
+            <button onClick={() => { const { score, grade, compoundGrades } = computePrimary(scores); saveRecord(spec, scores, ctx, grade.label, grade.emoji, score, compoundGrades); setSavedFlash(true); setTimeout(() => setSavedFlash(false), 1800); }}
+              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: savedFlash ? "rgba(0,200,128,0.15)" : "transparent", border: `1px solid ${savedFlash ? "rgba(0,200,128,0.5)" : "var(--border)"}`, color: savedFlash ? "#00c880" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
+              {savedFlash ? "✓" : "💾"} Save
+            </button>
+            <button onClick={() => setShowHistory(true)}
+              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: records.length > 0 ? "rgba(0,212,255,0.06)" : "transparent", border: `1px solid ${records.length > 0 ? "rgba(0,212,255,0.25)" : "var(--border)"}`, color: records.length > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
+              📚{records.length > 0 ? ` ${records.length}` : ""} History
+            </button>
+            <button onClick={() => setShowTools(t => !t)}
+              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: showTools ? "rgba(0,212,255,0.08)" : "transparent", border: `1px solid ${showTools ? "rgba(0,212,255,0.35)" : "var(--border)"}`, color: showTools ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
+              �️ Tools ▾
+            </button>
+          </div>
+        )}
+
+        {/* Tools dropdown (shared desktop + mobile) — positioned fixed on mobile */}
+        {showTools && isMobile && (
+          <>
+            <div onClick={() => setShowTools(false)} style={{ position: "fixed", inset: 0, zIndex: 199 }} />
+            <div style={{ position: "fixed", top: "96px", right: "14px", zIndex: 200, minWidth: "200px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", boxShadow: "0 8px 24px rgba(0,0,0,0.5)", overflow: "hidden" }}>
+              {[
+                { label: "📤 Export Record",     action: () => { setShowExport(true);     setShowTools(false); } },
+                { label: "🎖️ Certificate",       action: () => { setShowCert(true);       setShowTools(false); } },
+                { label: "🎓 Buyer Guide",       action: () => { setShowBuyerGuide(true); setShowTools(false); } },
+                { label: "💰 Sell / Trade",      action: () => { setShowPricing(true);    setShowTools(false); } },
+                { label: "🏛️ Donate to Museum", action: () => { setShowDonation(true);  setShowTools(false); } },
+              ].map(item => (
+                <button key={item.label} onClick={item.action} style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", background: "none", border: "none", borderBottom: "1px solid var(--border-dim)", color: "var(--text-dim)", fontSize: "13px", cursor: "pointer" }}>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* ── Body ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: isMobile ? "auto" : "hidden" }}>
 
       {showDonation && (
         <DonationEval scores={scores} spec={spec} onClose={() => setShowDonation(false)} />
@@ -309,6 +298,19 @@ export default function PRISM() {
       )}
       {showExport && (
         <QuickExport scores={scores} spec={spec} spSource={spSource} onClose={() => setShowExport(false)} />
+      )}
+      {showHistory && (
+        <CollectionHistory
+          records={records}
+          onLoad={rec => {
+            setScores(rec.scores);
+            setSpec(rec.spec);
+            setCtx(rec.ctx);
+          }}
+          onDelete={deleteRecord}
+          onClearAll={clearAll}
+          onClose={() => setShowHistory(false)}
+        />
       )}
         {mode === "wizard" ? (
           <WizardMode
