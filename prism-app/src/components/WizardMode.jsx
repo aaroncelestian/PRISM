@@ -102,7 +102,7 @@ function ContextCard({ ctx, selected, onClick }) {
   );
 }
 
-export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSpec, sciCriteria, onSciCriteriaChange }) {
+export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSpec, sciCriteria, onSciCriteriaChange, onReset, onExport }) {
   const [step, setStep] = useState(0);
   const [showTip, setShowTip] = useState(null);
 
@@ -160,7 +160,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
           }} />
         </div>
 
-        {/* Step counter */}
+        {/* Step counter + Start Over */}
         <div style={{
           padding: "10px 22px",
           borderBottom: "1px solid var(--border-dim)",
@@ -172,11 +172,26 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
           <span style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
             Step {step + 1} of {TOTAL_STEPS}
           </span>
-          {currentDim && (
-            <span style={{ fontSize: "10px", color: "rgba(0,212,255,0.5)", letterSpacing: "0.08em" }}>
-              {currentDim.icon} {currentDim.label}
-            </span>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {currentDim && (
+              <span style={{ fontSize: "10px", color: "rgba(0,212,255,0.5)", letterSpacing: "0.08em" }}>
+                {currentDim.icon} {currentDim.label}
+              </span>
+            )}
+            {step > 0 && (
+              <button
+                onClick={() => { setStep(0); onReset?.(); }}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  fontSize: "10px", color: "var(--text-muted)",
+                  letterSpacing: "0.08em", textDecoration: "underline",
+                  padding: "2px 0",
+                }}
+              >
+                ↺ Start Over
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ── Scrollable content ── */}
@@ -357,7 +372,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
 
           {/* Done state (last step) */}
           {isLastStep && currentDim === null && (
-            <div style={{ textAlign: "center", paddingTop: "40px" }}>
+            <div style={{ textAlign: "center", paddingTop: "32px" }}>
               <div style={{ fontSize: "48px", marginBottom: "14px" }}>✅</div>
               <h2 style={{
                 fontFamily: "var(--sans)", fontSize: "22px", fontWeight: 600,
@@ -365,10 +380,39 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
               }}>
                 Your PRISM score is ready!
               </h2>
-              <p style={{ fontSize: "13px", color: "var(--text-dim)", lineHeight: 1.6 }}>
+              <p style={{ fontSize: "13px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: "28px" }}>
                 Check the panel on the right to see your score, grade, and profile.
-                You can switch to Expert Mode anytime to fine-tune individual values.
+                Switch to Expert Mode anytime to fine-tune individual values.
               </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "center" }}>
+                <button
+                  onClick={() => onExport?.()}
+                  style={{
+                    width: "220px", padding: "11px 20px",
+                    background: "rgba(0,212,255,0.08)",
+                    border: "1px solid rgba(0,212,255,0.4)",
+                    borderRadius: "6px", color: "var(--cyan)",
+                    fontSize: "12px", fontWeight: 600,
+                    letterSpacing: "0.08em", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                  }}
+                >
+                  📤 Export Record
+                </button>
+                <button
+                  onClick={() => { setStep(0); onReset?.(); }}
+                  style={{
+                    width: "220px", padding: "11px 20px",
+                    background: "transparent",
+                    border: "1px solid var(--border)",
+                    borderRadius: "6px", color: "var(--text-dim)",
+                    fontSize: "12px", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                  }}
+                >
+                  ↺ Start Over — New Specimen
+                </button>
+              </div>
             </div>
           )}
         </div>

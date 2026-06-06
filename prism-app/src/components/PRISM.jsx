@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Wand2, SlidersHorizontal, RotateCcw } from "lucide-react";
 import { CONTEXTS, WEIGHTS } from "../data/prism.js";
 import WizardMode from "./WizardMode.jsx";
@@ -7,6 +7,7 @@ import DonationEval from "./DonationEval.jsx";
 import PricingTool from "./PricingTool.jsx";
 import BuyerGuide from "./BuyerGuide.jsx";
 import CertGenerator from "./CertGenerator.jsx";
+import QuickExport from "./QuickExport.jsx";
 
 const DEFAULT_SCORES = {
   crystal: 50, speciesRarity: 50, localityRarity: 50,
@@ -23,6 +24,29 @@ export default function PRISM() {
   const [showPricing,    setShowPricing]    = useState(false);
   const [showBuyerGuide, setShowBuyerGuide] = useState(false);
   const [showCert,       setShowCert]       = useState(false);
+  const [showExport,     setShowExport]     = useState(false);
+  const [spSource,       setSpSource]       = useState(null); // SpecimenPro integration
+
+  // ── Read URL params (SpecimenPro deep-link) ───────────────────────────────
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("source") === "specimenPro") {
+      const name     = p.get("name")     || "";
+      const species  = p.get("species")  || "";
+      const locality = p.get("locality") || "";
+      const ctxParam = p.get("ctx");
+      const provenance = parseInt(p.get("provenance") || "0", 10);
+      const objectId = p.get("objectId") || "";
+
+      if (name || species || locality) setSpec({ name, species, locality });
+      if (ctxParam && CONTEXTS.some(c => c.key === ctxParam)) setCtx(ctxParam);
+      if (provenance > 0) setScores(s => ({ ...s, provenance: Math.min(provenance, 100) }));
+      setSpSource({ objectId, name });
+      setMode("wizard");
+      // Jump to step 2 (first dimension) since specimen info is pre-filled
+      // This is handled via a ref in WizardMode; for now start at wizard beginning
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSciCriteria = (newCriteria) => {
     setSciCriteria(newCriteria);
@@ -72,6 +96,15 @@ export default function PRISM() {
           }}>
             Precision Rating Index · Specimen Minerals
           </span>
+          {spSource && (
+            <span style={{
+              fontSize: "9px", padding: "2px 8px", borderRadius: "3px",
+              background: "rgba(0,200,128,0.1)", border: "1px solid rgba(0,200,128,0.3)",
+              color: "#00c880", letterSpacing: "0.1em",
+            }}>
+              ↳ SpecimenPro{spSource.name ? `: ${spSource.name}` : ""}
+            </span>
+          )}
         </div>
 
         {/* Controls */}
@@ -143,6 +176,25 @@ export default function PRISM() {
               </button>
             ))}
           </div>
+
+          {/* Export */}
+          <button
+            onClick={() => setShowExport(true)}
+            title="Export a quick specimen record with optional photo"
+            style={{
+              display: "flex", alignItems: "center", gap: "5px",
+              padding: "5px 12px",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              borderRadius: "5px",
+              color: "var(--text-muted)",
+              fontSize: "11px",
+              letterSpacing: "0.06em",
+              transition: "all 0.15s",
+            }}
+          >
+            📤 Export
+          </button>
 
           {/* Certificate */}
           <button
@@ -255,6 +307,9 @@ export default function PRISM() {
       {showCert && (
         <CertGenerator scores={scores} spec={spec} onClose={() => setShowCert(false)} />
       )}
+      {showExport && (
+        <QuickExport scores={scores} spec={spec} spSource={spSource} onClose={() => setShowExport(false)} />
+      )}
         {mode === "wizard" ? (
           <WizardMode
             scores={scores}
@@ -265,6 +320,8 @@ export default function PRISM() {
             setSpec={setSpec}
             sciCriteria={sciCriteria}
             onSciCriteriaChange={handleSciCriteria}
+            onReset={reset}
+            onExport={() => setShowExport(true)}
           />
         ) : (
           <ExpertMode
