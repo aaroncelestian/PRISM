@@ -3,6 +3,10 @@ import { Wand2, SlidersHorizontal, RotateCcw } from "lucide-react";
 import { CONTEXTS, WEIGHTS } from "../data/prism.js";
 import WizardMode from "./WizardMode.jsx";
 import ExpertMode from "./ExpertMode.jsx";
+import DonationEval from "./DonationEval.jsx";
+import PricingTool from "./PricingTool.jsx";
+import BuyerGuide from "./BuyerGuide.jsx";
+import CertGenerator from "./CertGenerator.jsx";
 
 const DEFAULT_SCORES = {
   crystal: 50, speciesRarity: 50, localityRarity: 50,
@@ -15,6 +19,10 @@ export default function PRISM() {
   const [scores, setScores] = useState(DEFAULT_SCORES);
   const [spec, setSpec] = useState({ name: "", species: "", locality: "" });
   const [sciCriteria, setSciCriteria] = useState([false, false, false, false, false]);
+  const [showDonation,   setShowDonation]   = useState(false);
+  const [showPricing,    setShowPricing]    = useState(false);
+  const [showBuyerGuide, setShowBuyerGuide] = useState(false);
+  const [showCert,       setShowCert]       = useState(false);
 
   const handleSciCriteria = (newCriteria) => {
     setSciCriteria(newCriteria);
@@ -136,6 +144,82 @@ export default function PRISM() {
             ))}
           </div>
 
+          {/* Certificate */}
+          <button
+            onClick={() => setShowCert(true)}
+            title="Generate a PRISM certificate with QR code"
+            style={{
+              display: "flex", alignItems: "center", gap: "5px",
+              padding: "5px 12px",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              borderRadius: "5px",
+              color: "var(--text-muted)",
+              fontSize: "11px",
+              letterSpacing: "0.06em",
+              transition: "all 0.15s",
+            }}
+          >
+            🏅 Certificate
+          </button>
+
+          {/* Buyer Guide */}
+          <button
+            onClick={() => setShowBuyerGuide(true)}
+            title="Buyer's reference guide — crystal quality, localities, provenance"
+            style={{
+              display: "flex", alignItems: "center", gap: "5px",
+              padding: "5px 12px",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              borderRadius: "5px",
+              color: "var(--text-muted)",
+              fontSize: "11px",
+              letterSpacing: "0.06em",
+              transition: "all 0.15s",
+            }}
+          >
+            🎓 Buyer Guide
+          </button>
+
+          {/* Sell / Trade */}
+          <button
+            onClick={() => setShowPricing(true)}
+            title="Get a selling/trading price estimate"
+            style={{
+              display: "flex", alignItems: "center", gap: "5px",
+              padding: "5px 12px",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              borderRadius: "5px",
+              color: "var(--text-muted)",
+              fontSize: "11px",
+              letterSpacing: "0.06em",
+              transition: "all 0.15s",
+            }}
+          >
+            💰 Sell / Trade
+          </button>
+
+          {/* Museum Donation Eval */}
+          <button
+            onClick={() => setShowDonation(true)}
+            title="Evaluate this specimen for museum donation"
+            style={{
+              display: "flex", alignItems: "center", gap: "5px",
+              padding: "5px 12px",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              borderRadius: "5px",
+              color: "var(--text-muted)",
+              fontSize: "11px",
+              letterSpacing: "0.06em",
+              transition: "all 0.15s",
+            }}
+          >
+            🏛️ Donate to Museum
+          </button>
+
           {/* Reset */}
           <button
             onClick={reset}
@@ -158,6 +242,19 @@ export default function PRISM() {
 
       {/* ── Body ── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+      {showDonation && (
+        <DonationEval scores={scores} spec={spec} onClose={() => setShowDonation(false)} />
+      )}
+      {showPricing && (
+        <PricingTool scores={scores} spec={spec} onClose={() => setShowPricing(false)} />
+      )}
+      {showBuyerGuide && (
+        <BuyerGuide onClose={() => setShowBuyerGuide(false)} />
+      )}
+      {showCert && (
+        <CertGenerator scores={scores} spec={spec} onClose={() => setShowCert(false)} />
+      )}
         {mode === "wizard" ? (
           <WizardMode
             scores={scores}
