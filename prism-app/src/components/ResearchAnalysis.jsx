@@ -199,8 +199,34 @@ export default function ResearchAnalysis({ comps }) {
       return { ...c, expectedPrice, delta, pct };
     }).sort((a, b) => (a.pct ?? 999) - (b.pct ?? 999));
 
+    // Locality premium analysis (score-adjusted)
+    const localityMap = {};
+    pricedAndScored.forEach(c => {
+      const loc = (c.locality || "Unknown").trim();
+      if (!localityMap[loc]) localityMap[loc] = [];
+      localityMap[loc].push(c);
+    });
+    const byLocality = Object.entries(localityMap)
+      .map(([loc, items]) => {
+        const avgActual = Math.round(mean(items.map(c => Number(c.askingPrice))));
+        const avgScore  = Math.round(mean(items.map(c => c.prismScore)));
+        const species   = [...new Set(items.map(c => c.species).filter(Boolean))];
+        const premiums  = items.map(c => {
+          const sp = (c.species || "Unknown").trim();
+          const activeReg = speciesRegs[sp]?.reg || reg;
+          if (!activeReg) return null;
+          const expected = Math.exp(activeReg.slope * c.prismScore + activeReg.intercept);
+          return (Number(c.askingPrice) - expected) / expected * 100;
+        }).filter(x => x != null);
+        const avgPremium = premiums.length ? Math.round(mean(premiums)) : null;
+        return { loc, count: items.length, avgActual, avgScore, avgPremium, species };
+      })
+      .filter(x => x.avgPremium != null)
+      .sort((a, b) => a.avgPremium - b.avgPremium);
+
     return { priced, scored, pricedAndScored, avgPrice, medPrice, minPrice, maxPrice,
-             bySpecies, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg, speciesRegs, hasSpeciesCurves };
+             bySpecies, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg,
+             speciesRegs, hasSpeciesCurves, byLocality };
   }, [comps]);
 
   const speciesList = useMemo(() =>
@@ -246,7 +272,7 @@ export default function ResearchAnalysis({ comps }) {
 
   const { priced, scored, pricedAndScored, avgPrice, medPrice, minPrice, maxPrice,
           bySpecies, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg,
-          speciesRegs, hasSpeciesCurves } = analysis;
+          speciesRegs, hasSpeciesCurves, byLocality } = analysis;
 
   if (!comps.length) {
     return (
@@ -376,11 +402,11 @@ export default function ResearchAnalysis({ comps }) {
             </div>
           )}
           <ResponsiveContainer width="100%" height={220}>
-            <ScatterChart margin={{ left: 0, right: 20, top: 8, bottom: 0 }}>
+            <ScatterChart margin={{ left: 0, right: 20, top: 8, bottom: 18 }}>
               <CartesianGrid stroke="#1e2d3d" />
               <XAxis type="number" dataKey="x" name="PRISM Score" domain={["auto", "auto"]}
                 tick={{ fill: "#8899aa", fontSize: 10 }} axisLine={false} tickLine={false}
-                label={{ value: "PRISM Score", position: "insideBottom", offset: -2, fill: "#6a7f94", fontSize: 9 }} />
+                label={{ value: "PRISM Score", position: "insideBottom", offset: -8, fill: "#6a7f94", fontSize: 9 }} />
               <YAxis type="number" dataKey="y" name="Price" tickFormatter={fmtK}
                 scale={priceScale === "log" ? "log" : "auto"}
                 domain={priceScale === "log" ? ["auto", "auto"] : [0, "auto"]}
@@ -481,6 +507,62 @@ export default function ResearchAnalysis({ comps }) {
           </div>
         </div>
       )}
+
+      {/* ── Locality premium ────────────────────────────────────────────── */}
+      {byLocality.length >= 2 && (() => {
+        const maxAbs = Math.max(...byLocality.map(l => Math.abs(l.avgPremium ?? 0)), 10);
+        return (
+          <div>
+            <SectionTitle>Locality Premium — Score-Adjusted</SectionTitle>
+            <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "10px", lineHeight: 1.6 }}>
+              Average asking price vs what the regression expects for those PRISM scores.
+              Removes the quality effect so only the <em>locality premium</em> remains.
+              <span style={{ color: "#00c880" }}> Green</span> = underpriced for the quality ·
+              <span style={{ color: "#ff8060" }}> Orange</span> = locality commands a premium.
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+              {byLocality.map(l => {
+                const pct = l.avgPremium ?? 0;
+                const color = pct > 10 ? "#ff8060" : pct < -10 ? "#00c880" : "#8899aa";
+                const cappedPct = Math.max(-maxAbs, Math.min(maxAbs, pct));
+                const halfW = (Math.abs(cappedPct) / maxAbs) * 48;
+                const barStyle = cappedPct >= 0
+                  ? { left: "50%", width: `${halfW}%` }
+                  : { left: `${50 - halfW}%`, width: `${halfW}%` };
+                return (
+                  <div key={l.loc} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <div style={{ width: "145px", flexShrink: 0 }}>
+                      <div style={{ fontSize: "11px", color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={l.loc}>{l.loc}</div>
+                      <div style={{ display: "flex", gap: "3px", marginTop: "2px", flexWrap: "wrap" }}>
+                        {l.species.map(sp => (
+                          <span key={sp} style={{ fontSize: "8px", padding: "0px 4px", background: "rgba(0,212,255,0.07)", border: "1px solid rgba(0,212,255,0.18)", borderRadius: "2px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{sp}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, height: "8px", background: "var(--border-dim)", borderRadius: "4px", position: "relative" }}>
+                      <div style={{ position: "absolute", left: "50%", top: 0, width: "1px", height: "100%", background: "var(--border)", zIndex: 1 }} />
+                      <div style={{ position: "absolute", ...barStyle, top: 0, height: "100%", background: color, borderRadius: "2px", opacity: 0.7 }} />
+                    </div>
+                    <div style={{ width: "38px", textAlign: "right", fontSize: "10px", fontFamily: "var(--mono)", fontWeight: 600, color }}>
+                      {pct > 0 ? "+" : ""}{pct}%
+                    </div>
+                    <div style={{ width: "48px", textAlign: "right", fontSize: "10px", color: "var(--text-muted)", fontFamily: "var(--mono)" }}>
+                      {fmtK(l.avgActual)}
+                    </div>
+                    <div style={{ width: "22px", textAlign: "right", fontSize: "9px", color: "var(--border)", fontFamily: "var(--mono)" }}>
+                      ×{l.count}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ display: "flex", gap: "16px", marginTop: "8px", fontSize: "9px", color: "var(--text-muted)", opacity: 0.7 }}>
+              <span>Score used: avg {Math.round(mean(byLocality.map(l => l.avgScore)))} across localities</span>
+              <span>Bars scaled to ±{maxAbs}%</span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── By source ──────────────────────────────────────────────────── */}
       {bySource.length >= 2 && (() => {
