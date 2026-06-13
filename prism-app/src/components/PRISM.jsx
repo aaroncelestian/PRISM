@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Wand2, SlidersHorizontal, RotateCcw, Search } from "lucide-react";
 import { CONTEXTS, WEIGHTS, GRADES, detectCompoundGrades } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
@@ -53,6 +53,8 @@ export default function PRISM() {
   const [spSource,       setSpSource]       = useState(null); // SpecimenPro integration
   const [scoringCompId,  setScoringCompId]  = useState(null); // Research mode comp being scored
   const [wizardKey,      setWizardKey]      = useState(0);     // increment to reset WizardMode step
+  const [confirmReset,   setConfirmReset]   = useState(false);
+  const resetTimerRef = useRef(null);
   const { records, saveRecord, deleteRecord, clearAll, importRecords } = useLocalCollection();
   const { comps, addComp, updateComp, deleteComp, clearAll: clearComps, importComps } = useComparables();
   const [verifyPayload, setVerifyPayload] = useState(null);
@@ -265,8 +267,31 @@ export default function PRISM() {
             )}
 
             {/* Reset */}
-            <button onClick={reset} title="Reset everything" style={{ display: "flex", alignItems: "center", padding: "5px 10px", background: "transparent", border: "1px solid var(--border)", borderRadius: "5px", color: "var(--text-muted)", fontSize: "11px", transition: "all 0.15s" }}>
+            <button
+              onClick={() => {
+                if (!confirmReset) {
+                  setConfirmReset(true);
+                  resetTimerRef.current = setTimeout(() => setConfirmReset(false), 3000);
+                } else {
+                  clearTimeout(resetTimerRef.current);
+                  setConfirmReset(false);
+                  reset();
+                }
+              }}
+              onBlur={() => { clearTimeout(resetTimerRef.current); setConfirmReset(false); }}
+              title={confirmReset ? "Tap again to confirm reset" : "Reset everything"}
+              style={{
+                display: "flex", alignItems: "center", gap: "5px",
+                padding: "5px 10px", borderRadius: "5px", fontSize: "11px",
+                cursor: "pointer", transition: "all 0.2s",
+                background: confirmReset ? "rgba(255,60,60,0.12)" : "transparent",
+                border: confirmReset ? "1px solid rgba(255,80,80,0.5)" : "1px solid var(--border)",
+                color: confirmReset ? "#ff6060" : "var(--text-muted)",
+                fontWeight: confirmReset ? 600 : 400,
+              }}
+            >
               <RotateCcw size={12} />
+              {confirmReset && <span>Reset?</span>}
             </button>
           </div>
         </div>
