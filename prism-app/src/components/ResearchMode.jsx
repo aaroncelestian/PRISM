@@ -343,7 +343,7 @@ function saveToFile(data, filename) {
   URL.revokeObjectURL(url);
 }
 
-export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScoreComp, onImport }) {
+export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScoreComp, onImport, onClearAll }) {
   const { isMobile } = useBreakpoint();
   const [view, setView]             = useState("listings");  // "listings" | "analysis"
   const [search, setSearch]         = useState("");
@@ -386,7 +386,18 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
   const handleEdit = (comp) => { setEditing(comp); setShowForm(false); };
   const handleCancel = () => { setShowForm(false); setEditing(null); };
 
-  const handleSave = () => saveToFile(wrapForSave(comps, "prism-research", COMPS_SCHEMA), "prism-research.json");
+  const handleSave = () => {
+    const raw = window.prompt("Save as:", "prism-research");
+    if (raw === null) return;
+    const name = raw.trim() || "prism-research";
+    const filename = name.endsWith(".json") ? name : `${name}.json`;
+    saveToFile(wrapForSave(comps, "prism-research", COMPS_SCHEMA), filename);
+  };
+
+  const handleClearAll = () => {
+    if (!window.confirm(`Clear all ${comps.length} listing${comps.length !== 1 ? "s" : ""}?\n\nThis cannot be undone. Save a backup first if you want to keep this data.`)) return;
+    onClearAll();
+  };
 
   const handleOpen = (e) => {
     const file = e.target.files[0];
@@ -453,10 +464,18 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
           <Plus size={13} /> Add Listing
         </button>
         {comps.length > 0 && (
-          <button onClick={handleSave} title="Save database to device"
-            style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
-            <Download size={13} /> Save
-          </button>
+          <>
+            <button onClick={handleSave} title="Save database to device"
+              style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
+              <Download size={13} /> Save
+            </button>
+            <button onClick={handleClearAll} title="Clear all listings"
+              style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: "none", border: "1px solid rgba(255,100,100,0.3)", borderRadius: "4px", color: "rgba(255,100,100,0.7)", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,100,100,0.08)"; e.currentTarget.style.borderColor = "rgba(255,100,100,0.55)"; e.currentTarget.style.color = "#ff6464"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.borderColor = "rgba(255,100,100,0.3)"; e.currentTarget.style.color = "rgba(255,100,100,0.7)"; }}>
+              🗑 Clear All
+            </button>
+          </>
         )}
         <button onClick={() => openInputRef.current?.click()} title="Open a saved database file"
           style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>

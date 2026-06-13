@@ -51,7 +51,7 @@ export default function PRISM() {
   const [spSource,       setSpSource]       = useState(null); // SpecimenPro integration
   const [scoringCompId,  setScoringCompId]  = useState(null); // Research mode comp being scored
   const { records, saveRecord, deleteRecord, clearAll, importRecords } = useLocalCollection();
-  const { comps, addComp, updateComp, deleteComp, importComps } = useComparables();
+  const { comps, addComp, updateComp, deleteComp, clearAll: clearComps, importComps } = useComparables();
   const [verifyPayload, setVerifyPayload] = useState(null);
   const [showTools, setShowTools] = useState(false);
   const { isMobile } = useBreakpoint();
@@ -407,6 +407,7 @@ export default function PRISM() {
             onDelete={deleteComp}
             onScoreComp={handleScoreComp}
             onImport={importComps}
+            onClearAll={clearComps}
           />
         )}
       </div>

@@ -37,7 +37,13 @@ export default function CollectionHistory({ records, onLoad, onDelete, onClearAl
   const [confirmClear, setConfirmClear] = useState(false);
   const openInputRef = useRef();
 
-  const handleSave = () => saveToFile(wrapForSave(records, "prism-collection", COLLECTION_SCHEMA), "prism-collection.json");
+  const handleSave = () => {
+    const raw = window.prompt("Save as:", "prism-collection");
+    if (raw === null) return;
+    const name = raw.trim() || "prism-collection";
+    const filename = name.endsWith(".json") ? name : `${name}.json`;
+    saveToFile(wrapForSave(records, "prism-collection", COLLECTION_SCHEMA), filename);
+  };
 
   const handleOpen = (e) => {
     const file = e.target.files[0];
