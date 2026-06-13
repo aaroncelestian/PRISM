@@ -2,6 +2,9 @@ import { useState, useMemo, useRef } from "react";
 import { Plus, X, Search, Edit2, Trash2, Award, Camera, Download, FolderOpen } from "lucide-react";
 import { GRADES, WEIGHTS, CONTEXTS } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
+import { COMPS_SCHEMA } from "../version.js";
+import { migrateComp, wrapForSave, unwrapFromFile } from "../utils/dbMigrations.js";
+import ResearchAnalysis from "./ResearchAnalysis.jsx";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -342,6 +345,7 @@ function saveToFile(data, filename) {
 
 export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScoreComp, onImport }) {
   const { isMobile } = useBreakpoint();
+  const [view, setView]             = useState("listings");  // "listings" | "analysis"
   const [search, setSearch]         = useState("");
   const [filterSpecies, setFilter]  = useState("all");
   const [showForm, setShowForm]     = useState(false);
@@ -382,7 +386,7 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
   const handleEdit = (comp) => { setEditing(comp); setShowForm(false); };
   const handleCancel = () => { setShowForm(false); setEditing(null); };
 
-  const handleSave = () => saveToFile(comps, "prism-research.json");
+  const handleSave = () => saveToFile(wrapForSave(comps, "prism-research", COMPS_SCHEMA), "prism-research.json");
 
   const handleOpen = (e) => {
     const file = e.target.files[0];
@@ -391,9 +395,11 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
     reader.onload = (ev) => {
       try {
         const parsed = JSON.parse(ev.target.result);
-        if (Array.isArray(parsed)) { onImport(parsed); }
-        else { alert("Invalid file — expected a PRISM Research database JSON."); }
-      } catch { alert("Could not read file."); }
+        const { data, error, warning } = unwrapFromFile(parsed, "prism-research", COMPS_SCHEMA);
+        if (error) { alert(error); return; }
+        if (warning && !window.confirm(warning + "\n\nOpen anyway?")) return;
+        onImport(data.map(migrateComp).filter(Boolean));
+      } catch { alert("Could not read file — make sure it is a valid PRISM Research JSON."); }
       e.target.value = "";
     };
     reader.readAsText(file);
@@ -402,7 +408,32 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "12px 14px" : "20px 24px" }}>
 
-      {/* Toolbar */}
+      {/* View toggle */}
+      <div style={{ display: "flex", gap: "6px", marginBottom: "14px" }}>
+        {[
+          { key: "listings", label: "📋 Listings" },
+          { key: "analysis", label: "📊 Analysis", disabled: comps.length < 2 },
+        ].map(({ key, label, disabled }) => (
+          <button key={key} onClick={() => !disabled && setView(key)}
+            title={disabled ? "Add at least 2 listings to see analysis" : undefined}
+            style={{
+              padding: "5px 14px", borderRadius: "4px", fontSize: "11px", fontWeight: view === key ? 600 : 400,
+              cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.4 : 1,
+              background: view === key ? "rgba(0,212,255,0.1)" : "transparent",
+              border: view === key ? "1px solid rgba(0,212,255,0.45)" : "1px solid var(--border)",
+              color: view === key ? "var(--cyan)" : "var(--text-muted)",
+              transition: "all 0.15s",
+            }}>{label}</button>
+        ))}
+      </div>
+
+      {/* Analysis panel */}
+      {view === "analysis" && (
+        <ResearchAnalysis comps={filtered.length < comps.length ? filtered : comps} />
+      )}
+
+      {/* Listings view */}
+      {view === "listings" && (<>
       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px", flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: "200px", position: "relative" }}>
           <Search size={13} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} />
@@ -499,6 +530,7 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
           ))}
         </div>
       )}
+      </>)}
     </div>
   );
 }

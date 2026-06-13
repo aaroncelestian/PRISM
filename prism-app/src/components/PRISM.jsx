@@ -12,6 +12,7 @@ import QuickExport from "./QuickExport.jsx";
 import CollectionHistory from "./CollectionHistory.jsx";
 import VerifyView from "./VerifyView.jsx";
 import { useLocalCollection } from "../hooks/useLocalCollection.js";
+import { APP_VERSION } from "../version.js";
 import { useComparables } from "../hooks/useComparables.js";
 import ResearchMode from "./ResearchMode.jsx";
 
@@ -45,7 +46,8 @@ export default function PRISM() {
   const [showCert,       setShowCert]       = useState(false);
   const [showExport,     setShowExport]     = useState(false);
   const [showHistory,    setShowHistory]    = useState(false);
-  const [savedFlash,     setSavedFlash]     = useState(false);
+  const [savedFlash,     setSavedFlash]     = useState(null);  // null | "saved" | "already"
+  const [lastSavedKey,   setLastSavedKey]   = useState(null);
   const [spSource,       setSpSource]       = useState(null); // SpecimenPro integration
   const [scoringCompId,  setScoringCompId]  = useState(null); // Research mode comp being scored
   const { records, saveRecord, deleteRecord, clearAll, importRecords } = useLocalCollection();
@@ -105,6 +107,21 @@ export default function PRISM() {
     setMode("wizard");
     setSciCriteria([false, false, false, false, false]);
     setScoringCompId(null);
+    setLastSavedKey(null);
+  };
+
+  const handleSaveToCollection = () => {
+    const key = JSON.stringify({ scores, spec, ctx });
+    if (key === lastSavedKey) {
+      setSavedFlash("already");
+      setTimeout(() => setSavedFlash(null), 1800);
+      return;
+    }
+    const { score, grade, compoundGrades } = computePrimary(scores);
+    saveRecord(spec, scores, ctx, grade.label, grade.emoji, score, compoundGrades);
+    setLastSavedKey(key);
+    setSavedFlash("saved");
+    setTimeout(() => setSavedFlash(null), 1800);
   };
 
   const handleScoreComp = (comp) => {
@@ -157,6 +174,7 @@ export default function PRISM() {
           {/* Logo */}
           <div style={{ display: "flex", alignItems: "baseline", gap: "10px", minWidth: 0 }}>
             <span style={{ fontFamily: "var(--mono)", fontWeight: 600, fontSize: "15px", color: "var(--cyan)", letterSpacing: "0.1em", flexShrink: 0 }}>PRISM</span>
+            <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)", opacity: 0.55, flexShrink: 0 }}>v{APP_VERSION}</span>
             {!isMobile && (
               <span style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.14em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 Precision Rating Index · Specimen Minerals
@@ -218,10 +236,15 @@ export default function PRISM() {
             {/* Action buttons — desktop only in primary row */}
             {!isMobile && (
               <>
-                <button onClick={() => { const { score, grade, compoundGrades } = computePrimary(scores); saveRecord(spec, scores, ctx, grade.label, grade.emoji, score, compoundGrades); setSavedFlash(true); setTimeout(() => setSavedFlash(false), 1800); }}
-                  title="Save to collection"
-                  style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: savedFlash ? "rgba(0,200,128,0.15)" : "transparent", border: `1px solid ${savedFlash ? "rgba(0,200,128,0.5)" : "var(--border)"}`, borderRadius: "5px", color: savedFlash ? "#00c880" : "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.2s" }}>
-                  {savedFlash ? "✓ Saved" : "💾 Save"}
+                <button onClick={handleSaveToCollection}
+                  title={savedFlash === "already" ? "No changes since last save" : "Save current score to collection"}
+                  style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px",
+                    background: savedFlash === "saved" ? "rgba(0,200,128,0.15)" : savedFlash === "already" ? "rgba(170,170,170,0.07)" : "transparent",
+                    border: `1px solid ${savedFlash === "saved" ? "rgba(0,200,128,0.5)" : savedFlash === "already" ? "rgba(170,170,170,0.3)" : "var(--border)"}`,
+                    borderRadius: "5px",
+                    color: savedFlash === "saved" ? "#00c880" : savedFlash === "already" ? "var(--text-muted)" : "var(--text-muted)",
+                    fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.2s" }}>
+                  {savedFlash === "saved" ? "✓ Saved" : savedFlash === "already" ? "✓ Already saved" : "💾 Save"}
                 </button>
                 <button onClick={() => setShowHistory(true)} title="Collection history"
                   style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: records.length > 0 ? "rgba(0,212,255,0.06)" : "transparent", border: `1px solid ${records.length > 0 ? "rgba(0,212,255,0.25)" : "var(--border)"}`, borderRadius: "5px", color: records.length > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.2s" }}>
@@ -275,9 +298,12 @@ export default function PRISM() {
                 <div style={{ width: "1px", height: "20px", background: "var(--border-dim)", flexShrink: 0 }} />
               </>
             )}
-            <button onClick={() => { const { score, grade, compoundGrades } = computePrimary(scores); saveRecord(spec, scores, ctx, grade.label, grade.emoji, score, compoundGrades); setSavedFlash(true); setTimeout(() => setSavedFlash(false), 1800); }}
-              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: savedFlash ? "rgba(0,200,128,0.15)" : "transparent", border: `1px solid ${savedFlash ? "rgba(0,200,128,0.5)" : "var(--border)"}`, color: savedFlash ? "#00c880" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
-              {savedFlash ? "✓" : "💾"} Save
+            <button onClick={handleSaveToCollection}
+              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", whiteSpace: "nowrap", fontSize: "12px",
+                background: savedFlash === "saved" ? "rgba(0,200,128,0.15)" : savedFlash === "already" ? "rgba(170,170,170,0.07)" : "transparent",
+                border: `1px solid ${savedFlash === "saved" ? "rgba(0,200,128,0.5)" : savedFlash === "already" ? "rgba(170,170,170,0.3)" : "var(--border)"}`,
+                color: savedFlash === "saved" ? "#00c880" : "var(--text-muted)" }}>
+              {savedFlash === "saved" ? "✓" : savedFlash === "already" ? "↩" : "💾"} Save
             </button>
             <button onClick={() => setShowHistory(true)}
               style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: records.length > 0 ? "rgba(0,212,255,0.06)" : "transparent", border: `1px solid ${records.length > 0 ? "rgba(0,212,255,0.25)" : "var(--border)"}`, color: records.length > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
@@ -336,6 +362,7 @@ export default function PRISM() {
             setScores(rec.scores);
             setSpec(rec.spec);
             setCtx(rec.ctx);
+            setLastSavedKey(JSON.stringify({ scores: rec.scores, spec: rec.spec, ctx: rec.ctx }));
           }}
           onDelete={deleteRecord}
           onClearAll={clearAll}

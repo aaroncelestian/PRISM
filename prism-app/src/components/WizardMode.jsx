@@ -6,7 +6,7 @@ import ScorePanel from "./ScorePanel.jsx";
 import TierSelector from "./TierSelector.jsx";
 import CriteriaChecklist from "./CriteriaChecklist.jsx";
 
-const TOTAL_STEPS = 2 + DIMS.length; // intro (context + specimen) + 6 dims
+const TOTAL_STEPS = 2 + DIMS.length + 1; // intro (context + specimen) + 6 dims + done
 
 function Tooltip({ text, onClose }) {
   return (
@@ -390,7 +390,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
           )}
 
           {/* Done state (last step) */}
-          {isLastStep && currentDim === null && (
+          {isLastStep && !currentDim && (
             <div style={{ textAlign: "center", paddingTop: "32px" }}>
               <div style={{ fontSize: "48px", marginBottom: "14px" }}>✅</div>
               <h2 style={{

@@ -1,6 +1,8 @@
 import { useState, useRef } from "react";
 import { X, Trash2, Upload, Search, Download, FolderOpen } from "lucide-react";
 import { GRADES } from "../data/prism.js";
+import { COLLECTION_SCHEMA } from "../version.js";
+import { migrateCollectionRecord, wrapForSave, unwrapFromFile } from "../utils/dbMigrations.js";
 
 const GRADE_COLOR = Object.fromEntries(GRADES.map(g => [g.label, g.color]));
 
@@ -35,7 +37,7 @@ export default function CollectionHistory({ records, onLoad, onDelete, onClearAl
   const [confirmClear, setConfirmClear] = useState(false);
   const openInputRef = useRef();
 
-  const handleSave = () => saveToFile(records, "prism-collection.json");
+  const handleSave = () => saveToFile(wrapForSave(records, "prism-collection", COLLECTION_SCHEMA), "prism-collection.json");
 
   const handleOpen = (e) => {
     const file = e.target.files[0];
@@ -44,9 +46,11 @@ export default function CollectionHistory({ records, onLoad, onDelete, onClearAl
     reader.onload = (ev) => {
       try {
         const parsed = JSON.parse(ev.target.result);
-        if (Array.isArray(parsed)) { onImport(parsed); }
-        else { alert("Invalid file — expected a PRISM Collection JSON."); }
-      } catch { alert("Could not read file."); }
+        const { data, error, warning } = unwrapFromFile(parsed, "prism-collection", COLLECTION_SCHEMA);
+        if (error) { alert(error); return; }
+        if (warning && !window.confirm(warning + "\n\nOpen anyway?")) return;
+        onImport(data.map(migrateCollectionRecord).filter(Boolean));
+      } catch { alert("Could not read file — make sure it is a valid PRISM Collection JSON."); }
       e.target.value = "";
     };
     reader.readAsText(file);

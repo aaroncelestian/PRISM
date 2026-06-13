@@ -1,0 +1,514 @@
+import { useMemo, useState } from "react";
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
+  ScatterChart, Scatter, ReferenceLine, CartesianGrid,
+} from "recharts";
+
+// ── Maths helpers ─────────────────────────────────────────────────────────────
+
+function median(arr) {
+  if (!arr.length) return 0;
+  const s = [...arr].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+function mean(arr) {
+  return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+}
+
+function linearRegression(points) {
+  const n = points.length;
+  if (n < 2) return null;
+  const sx  = points.reduce((s, p) => s + p.x, 0);
+  const sy  = points.reduce((s, p) => s + p.y, 0);
+  const sxy = points.reduce((s, p) => s + p.x * p.y, 0);
+  const sx2 = points.reduce((s, p) => s + p.x * p.x, 0);
+  const denom = n * sx2 - sx * sx;
+  if (!denom) return null;
+  const slope = (n * sxy - sx * sy) / denom;
+  const intercept = (sy - slope * sx) / n;
+  return { slope, intercept };
+}
+
+// ── Formatting ─────────────────────────────────────────────────────────────────
+
+const fmt  = (n) => n != null ? "$" + Number(n).toLocaleString() : "—";
+const fmtK = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)}`;
+
+// ── Sub-components ─────────────────────────────────────────────────────────────
+
+function StatCard({ label, value, sub, color = "var(--cyan)" }) {
+  return (
+    <div style={{
+      background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "8px",
+      padding: "14px 16px", display: "flex", flexDirection: "column", gap: "4px",
+    }}>
+      <div style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase" }}>{label}</div>
+      <div style={{ fontSize: "20px", fontWeight: 700, fontFamily: "var(--mono)", color }}>{value}</div>
+      {sub && <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>{sub}</div>}
+    </div>
+  );
+}
+
+function SectionTitle({ children }) {
+  return (
+    <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "10px", marginTop: "8px" }}>
+      {children}
+    </div>
+  );
+}
+
+function EmptyHint({ children }) {
+  return (
+    <div style={{ padding: "20px", textAlign: "center", fontSize: "11px", color: "var(--text-muted)", border: "1px dashed var(--border)", borderRadius: "6px" }}>
+      {children}
+    </div>
+  );
+}
+
+// ── Bubble scatter constants ──────────────────────────────────────────────────
+
+const SIZE_NUM   = { thumbnail: 1, miniature: 2, small_cab: 3, cabinet: 4, large_cab: 5, museum: 6 };
+const SIZE_SHORT = { 1: "Thumb", 2: "Mini", 3: "S.Cab", 4: "Cabinet", 5: "L.Cab", 6: "Museum" };
+const COND_RANK  = { pristine: 5, excellent: 4, good: 3, repaired: 2, damaged: 1 };
+const COND_LABEL = { pristine: "Pristine 💎", excellent: "Display ✨", good: "Minor chips 🔶", repaired: "Repaired 🔧", damaged: "Damaged ⚠️" };
+const BUBBLE_PALETTE = ["#00d4ff", "#7c5cfc", "#00c880", "#ffb347", "#ff8060", "#a0c4ff", "#f472b6"];
+
+function BubbleDot({ cx, cy, r, color }) {
+  if (cx == null || cy == null) return null;
+  return (
+    <circle cx={cx} cy={cy} r={r || 6}
+      fill={color || "#00d4ff"} fillOpacity={0.78}
+      stroke={color || "#00d4ff"} strokeWidth={1} strokeOpacity={0.35} />
+  );
+}
+
+const CUSTOM_TOOLTIP_STYLE = {
+  background: "#0d1625", border: "1px solid #2a3a50", borderRadius: "6px",
+  padding: "8px 12px", fontSize: "11px", color: "#cdd6e0",
+};
+
+// ── Main component ─────────────────────────────────────────────────────────────
+
+export default function ResearchAnalysis({ comps }) {
+  const [driversSpecies, setDriversSpecies] = useState("all");
+  const analysis = useMemo(() => {
+    const priced  = comps.filter(c => Number(c.askingPrice) > 0);
+    const scored  = comps.filter(c => c.prismScore != null);
+    const pricedAndScored = scored.filter(c => Number(c.askingPrice) > 0);
+    const prices  = priced.map(c => Number(c.askingPrice));
+
+    // ── Price stats ──────────────────────────────────────────────────────────
+    const avgPrice  = prices.length ? mean(prices) : null;
+    const medPrice  = prices.length ? median(prices) : null;
+    const minPrice  = prices.length ? Math.min(...prices) : null;
+    const maxPrice  = prices.length ? Math.max(...prices) : null;
+
+    // ── By species ───────────────────────────────────────────────────────────
+    const speciesMap = {};
+    priced.forEach(c => {
+      const sp = c.species || "Unknown";
+      if (!speciesMap[sp]) speciesMap[sp] = [];
+      speciesMap[sp].push(Number(c.askingPrice));
+    });
+    const bySpecies = Object.entries(speciesMap)
+      .map(([sp, ps]) => ({ species: sp, avg: Math.round(mean(ps)), median: Math.round(median(ps)), count: ps.length }))
+      .sort((a, b) => b.avg - a.avg)
+      .slice(0, 10);
+
+    // ── By size class ─────────────────────────────────────────────────────────
+    const sizeMap = {};
+    priced.forEach(c => {
+      const sz = c.sizeClass || "unknown";
+      if (!sizeMap[sz]) sizeMap[sz] = [];
+      sizeMap[sz].push(Number(c.askingPrice));
+    });
+    const SIZE_ORDER = ["thumbnail","miniature","small_cab","cabinet","large_cab","museum"];
+    const SIZE_LABELS = { thumbnail:"Thumb", miniature:"Mini", small_cab:"SmCab", cabinet:"Cabinet", large_cab:"LgCab", museum:"Museum" };
+    const bySize = SIZE_ORDER
+      .filter(k => sizeMap[k]?.length)
+      .map(k => ({ size: SIZE_LABELS[k] || k, avg: Math.round(mean(sizeMap[k])), count: sizeMap[k].length }));
+
+    // ── By source ─────────────────────────────────────────────────────────────
+    const sourceMap = {};
+    priced.forEach(c => {
+      const src = c.source?.trim() || "Unknown";
+      if (!sourceMap[src]) sourceMap[src] = [];
+      sourceMap[src].push(Number(c.askingPrice));
+    });
+    const bySource = Object.entries(sourceMap)
+      .map(([src, ps]) => ({ source: src, avg: Math.round(mean(ps)), count: ps.length }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+
+    // ── Score stats ───────────────────────────────────────────────────────────
+    const scoredScores = scored.map(c => c.prismScore);
+    const avgScore = scoredScores.length ? Math.round(mean(scoredScores)) : null;
+
+    // ── Regression + market position ─────────────────────────────────────────
+    const regPoints = pricedAndScored.map(c => ({ x: c.prismScore, y: Number(c.askingPrice), label: c.species || "?" }));
+    const reg = linearRegression(regPoints);
+    const regLine = reg && regPoints.length >= 2 ? (() => {
+      const xs = regPoints.map(p => p.x);
+      const x0 = Math.min(...xs), x1 = Math.max(...xs);
+      return [
+        { x: x0, y: Math.max(0, Math.round(reg.slope * x0 + reg.intercept)) },
+        { x: x1, y: Math.max(0, Math.round(reg.slope * x1 + reg.intercept)) },
+      ];
+    })() : null;
+
+    const marketPosition = pricedAndScored.map(c => {
+      const expectedPrice = reg ? Math.max(0, Math.round(reg.slope * c.prismScore + reg.intercept)) : null;
+      const delta = expectedPrice != null ? Number(c.askingPrice) - expectedPrice : null;
+      const pct   = expectedPrice ? Math.round((delta / expectedPrice) * 100) : null;
+      return { ...c, expectedPrice, delta, pct };
+    }).sort((a, b) => (a.pct ?? 999) - (b.pct ?? 999));
+
+    return { priced, scored, pricedAndScored, avgPrice, medPrice, minPrice, maxPrice,
+             bySpecies, bySize, bySource, avgScore, regPoints, regLine, marketPosition, reg };
+  }, [comps]);
+
+  const speciesList = useMemo(() =>
+    [...new Set(comps.map(c => c.species).filter(Boolean))].sort(), [comps]);
+
+  const { bubbleData, colorDimLabel, topColorValues } = useMemo(() => {
+    const base = comps.filter(c => Number(c.askingPrice) > 0);
+    const filtered = driversSpecies === "all" ? base : base.filter(c => c.species === driversSpecies);
+    const colorDim = driversSpecies === "all" ? "species" : "locality";
+    const colorDimLabel = driversSpecies === "all" ? "species" : "locality";
+
+    const counts = {};
+    filtered.forEach(c => {
+      const v = (c[colorDim] || "Unknown").trim() || "Unknown";
+      counts[v] = (counts[v] || 0) + 1;
+    });
+    const topColorValues = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1]).slice(0, 6).map(([v]) => v);
+
+    const bubbleData = filtered.map((c, i) => {
+      const colorVal = (c[colorDim] || "Unknown").trim() || "Unknown";
+      const colorIdx = topColorValues.indexOf(colorVal);
+      const color = colorIdx >= 0 ? BUBBLE_PALETTE[colorIdx] : "#3d4f60";
+      const sizeNum = SIZE_NUM[c.sizeClass] || 2;
+      const jitter = ((i * 0.6180339887) % 1 - 0.5) * 0.38;
+      const condRank = COND_RANK[c.condition] || 3;
+      return {
+        id: c.id, x: sizeNum + jitter, y: Number(c.askingPrice),
+        color, colorLabel: colorVal,
+        species: c.species || "Unknown", locality: c.locality || "Unknown",
+        sizeLabel: SIZE_SHORT[sizeNum] || c.sizeClass,
+        condition: c.condition || "unknown",
+        r: 5 + condRank * 2,
+        prismScore: c.prismScore ?? null,
+      };
+    });
+
+    return { bubbleData, colorDimLabel, topColorValues };
+  }, [comps, driversSpecies]);
+
+  const { priced, scored, pricedAndScored, avgPrice, medPrice, minPrice, maxPrice,
+          bySpecies, bySize, bySource, avgScore, regPoints, regLine, marketPosition } = analysis;
+
+  if (!comps.length) {
+    return (
+      <div style={{ padding: "60px 20px", textAlign: "center", color: "var(--text-muted)" }}>
+        <div style={{ fontSize: "36px", marginBottom: "12px" }}>📊</div>
+        <div style={{ fontSize: "14px" }}>Add some listings first, then come back here for analysis.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+
+      {/* ── Price summary ──────────────────────────────────────────────── */}
+      <div>
+        <SectionTitle>Price Summary — {priced.length} priced listing{priced.length !== 1 ? "s" : ""}</SectionTitle>
+        {!priced.length ? (
+          <EmptyHint>No listings have prices yet. Add asking prices to see analysis.</EmptyHint>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: "10px" }}>
+            <StatCard label="Avg Price"   value={fmtK(avgPrice)}                                color="var(--cyan)" />
+            <StatCard label="Median"      value={fmtK(medPrice)}                                color="var(--cyan)" />
+            <StatCard label="Range"       value={fmtK(minPrice)}  sub={`to ${fmtK(maxPrice)}`} color="#a0b4cc" />
+            <StatCard label="Scored"      value={scored.length}   sub={`of ${comps.length} total`} color={scored.length ? "#00c880" : "var(--text-muted)"} />
+            {avgScore != null && <StatCard label="Avg PRISM" value={avgScore} sub="out of 100" color="#7c5cfc" />}
+          </div>
+        )}
+      </div>
+
+      {/* ── By species ─────────────────────────────────────────────────── */}
+      {bySpecies.length >= 2 && (
+        <div>
+          <SectionTitle>Avg Price by Species (top {bySpecies.length})</SectionTitle>
+          <ResponsiveContainer width="100%" height={Math.max(140, bySpecies.length * 34)}>
+            <BarChart data={bySpecies} layout="vertical" margin={{ left: 8, right: 40, top: 0, bottom: 0 }}>
+              <CartesianGrid horizontal={false} stroke="#1e2d3d" />
+              <XAxis type="number" dataKey="avg" tickFormatter={fmtK} tick={{ fill: "#6a7f94", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="species" width={110} tick={{ fill: "#8899aa", fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                cursor={{ fill: "rgba(0,212,255,0.04)" }}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0].payload;
+                  return (
+                    <div style={CUSTOM_TOOLTIP_STYLE}>
+                      <div style={{ fontWeight: 600, marginBottom: "4px" }}>{d.species}</div>
+                      <div>Avg: <strong>{fmt(d.avg)}</strong></div>
+                      <div>Median: {fmt(d.median)}</div>
+                      <div style={{ color: "#6a7f94" }}>{d.count} listing{d.count !== 1 ? "s" : ""}</div>
+                    </div>
+                  );
+                }}
+              />
+              <Bar dataKey="avg" radius={[0, 3, 3, 0]}>
+                {bySpecies.map((_, i) => (
+                  <Cell key={i} fill={i === 0 ? "#00d4ff" : `rgba(0,212,255,${0.65 - i * 0.05})`} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* ── By size class ──────────────────────────────────────────────── */}
+      {bySize.length >= 2 && (
+        <div>
+          <SectionTitle>Avg Price by Size Class</SectionTitle>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={bySize} margin={{ left: 0, right: 20, top: 4, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke="#1e2d3d" />
+              <XAxis dataKey="size" tick={{ fill: "#8899aa", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={fmtK} tick={{ fill: "#6a7f94", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                cursor={{ fill: "rgba(0,212,255,0.04)" }}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0].payload;
+                  return (
+                    <div style={CUSTOM_TOOLTIP_STYLE}>
+                      <div style={{ fontWeight: 600, marginBottom: "4px" }}>{d.size}</div>
+                      <div>Avg: <strong>{fmt(d.avg)}</strong></div>
+                      <div style={{ color: "#6a7f94" }}>{d.count} listing{d.count !== 1 ? "s" : ""}</div>
+                    </div>
+                  );
+                }}
+              />
+              <Bar dataKey="avg" fill="rgba(124,92,252,0.8)" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* ── Price vs PRISM score scatter ───────────────────────────────── */}
+      {regPoints.length >= 3 && (
+        <div>
+          <SectionTitle>Price vs PRISM Score — {regPoints.length} scored listings</SectionTitle>
+          <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "8px" }}>
+            The line shows expected market price at each score level. Points <span style={{ color: "#00c880" }}>below the line</span> may be underpriced; points <span style={{ color: "#ff8060" }}>above</span> are priced at a premium.
+          </div>
+          <ResponsiveContainer width="100%" height={220}>
+            <ScatterChart margin={{ left: 0, right: 20, top: 8, bottom: 0 }}>
+              <CartesianGrid stroke="#1e2d3d" />
+              <XAxis type="number" dataKey="x" name="PRISM Score" domain={["auto", "auto"]}
+                tick={{ fill: "#8899aa", fontSize: 10 }} axisLine={false} tickLine={false} label={{ value: "PRISM Score", position: "insideBottom", offset: -2, fill: "#6a7f94", fontSize: 9 }} />
+              <YAxis type="number" dataKey="y" name="Price" tickFormatter={fmtK}
+                tick={{ fill: "#6a7f94", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                cursor={{ strokeDasharray: "3 3", stroke: "#2a3a50" }}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0].payload;
+                  return (
+                    <div style={CUSTOM_TOOLTIP_STYLE}>
+                      <div style={{ fontWeight: 600, marginBottom: "4px" }}>{d.label}</div>
+                      <div>Score: <strong>{d.x}</strong></div>
+                      <div>Price: <strong>{fmt(d.y)}</strong></div>
+                    </div>
+                  );
+                }}
+              />
+              {regLine && (
+                <ReferenceLine
+                  segment={regLine}
+                  stroke="rgba(0,212,255,0.4)" strokeWidth={1.5} strokeDasharray="5 3"
+                  label={{ value: "Expected", fill: "rgba(0,212,255,0.5)", fontSize: 9 }}
+                />
+              )}
+              <Scatter data={regPoints} fill="#00d4ff">
+                {regPoints.map((p, i) => {
+                  const expected = analysis.reg ? analysis.reg.slope * p.x + analysis.reg.intercept : p.y;
+                  const color = p.y < expected * 0.9 ? "#00c880" : p.y > expected * 1.1 ? "#ff8060" : "#00d4ff";
+                  return <Cell key={i} fill={color} />;
+                })}
+              </Scatter>
+            </ScatterChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+      {regPoints.length > 0 && regPoints.length < 3 && (
+        <EmptyHint>Score {3 - regPoints.length} more listing{3 - regPoints.length !== 1 ? "s" : ""} with PRISM to unlock the Price vs Score chart.</EmptyHint>
+      )}
+
+      {/* ── Market position table ──────────────────────────────────────── */}
+      {marketPosition.length >= 2 && (
+        <div>
+          <SectionTitle>Market Position — scored listings vs expected price</SectionTitle>
+          <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "8px" }}>
+            Expected price is estimated from a linear regression of all your scored comps.
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {marketPosition.map(c => (
+              <div key={c.id} style={{
+                display: "grid", gridTemplateColumns: "1fr 72px 72px 72px 80px", gap: "8px",
+                alignItems: "center", padding: "8px 12px",
+                background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px",
+                fontSize: "11px",
+              }}>
+                <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <span style={{ color: "var(--text)", fontWeight: 600 }}>{c.species || "Unknown"}</span>
+                  {c.locality && <span style={{ color: "var(--text-muted)", marginLeft: "6px" }}>{c.locality}</span>}
+                </div>
+                <div style={{ fontFamily: "var(--mono)", color: "var(--text-dim)", textAlign: "right" }}>{fmt(c.askingPrice)}</div>
+                <div style={{ fontFamily: "var(--mono)", color: "#7c5cfc", textAlign: "right" }}>{c.prismScore}</div>
+                <div style={{ fontFamily: "var(--mono)", color: "var(--text-muted)", textAlign: "right" }}>{fmt(c.expectedPrice)}</div>
+                <div style={{ textAlign: "right" }}>
+                  {c.pct != null && (
+                    <span style={{
+                      padding: "2px 7px", borderRadius: "3px", fontFamily: "var(--mono)", fontWeight: 600,
+                      fontSize: "10px",
+                      background: c.pct < -10 ? "rgba(0,200,128,0.12)" : c.pct > 10 ? "rgba(255,128,96,0.12)" : "rgba(170,170,170,0.08)",
+                      color:      c.pct < -10 ? "#00c880"              : c.pct > 10 ? "#ff8060"              : "#8899aa",
+                      border:     `1px solid ${c.pct < -10 ? "rgba(0,200,128,0.3)" : c.pct > 10 ? "rgba(255,128,96,0.3)" : "var(--border)"}`,
+                    }}>
+                      {c.pct > 0 ? "+" : ""}{c.pct}%
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: "16px", marginTop: "8px", fontSize: "10px", color: "var(--text-muted)" }}>
+            <span><span style={{ color: "#00c880" }}>●</span> &gt;10% below expected — potentially underpriced</span>
+            <span><span style={{ color: "#ff8060" }}>●</span> &gt;10% above — priced at a premium</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── By source ──────────────────────────────────────────────────── */}
+      {bySource.length >= 2 && (
+        <div>
+          <SectionTitle>By Source</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            {bySource.map(s => {
+              const pct = Math.round((s.count / priced.length) * 100);
+              return (
+                <div key={s.source} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "11px" }}>
+                  <div style={{ width: "110px", flexShrink: 0, color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.source}</div>
+                  <div style={{ flex: 1, height: "6px", background: "var(--border-dim)", borderRadius: "3px", overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${pct}%`, background: "rgba(0,212,255,0.5)", borderRadius: "3px" }} />
+                  </div>
+                  <div style={{ width: "28px", textAlign: "right", color: "var(--text-muted)", fontSize: "10px", fontFamily: "var(--mono)" }}>{s.count}</div>
+                  <div style={{ width: "56px", textAlign: "right", color: "var(--text-muted)", fontSize: "10px", fontFamily: "var(--mono)" }}>{fmtK(s.avg)} avg</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Price Drivers bubble scatter ─────────────────────────────────── */}
+      {comps.filter(c => Number(c.askingPrice) > 0).length >= 3 && (
+        <div>
+          <SectionTitle>Price Drivers — Size · {colorDimLabel === "locality" ? "Locality" : "Species"} · Condition</SectionTitle>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.06em" }}>Focus on:</span>
+            <select value={driversSpecies} onChange={e => setDriversSpecies(e.target.value)}
+              style={{ fontSize: "11px", padding: "4px 8px", background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "4px", color: driversSpecies !== "all" ? "var(--cyan)" : "var(--text-dim)", cursor: "pointer" }}>
+              <option value="all">All species</option>
+              {speciesList.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <span style={{ fontSize: "10px", color: "var(--text-muted)", opacity: 0.7 }}>
+              {bubbleData.length} listing{bubbleData.length !== 1 ? "s" : ""} plotted
+            </span>
+          </div>
+
+          <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "10px", lineHeight: 1.6 }}>
+            <strong style={{ color: "var(--text-dim)" }}>X</strong> = physical size &nbsp;·&nbsp;
+            <strong style={{ color: "var(--text-dim)" }}>Y</strong> = price &nbsp;·&nbsp;
+            <strong style={{ color: "var(--text-dim)" }}>Color</strong> = {colorDimLabel} &nbsp;·&nbsp;
+            <strong style={{ color: "var(--text-dim)" }}>Dot size</strong> = condition quality
+          </div>
+
+          <ResponsiveContainer width="100%" height={260}>
+            <ScatterChart margin={{ left: 0, right: 20, top: 8, bottom: 24 }}>
+              <CartesianGrid stroke="#1e2d3d" />
+              <XAxis type="number" dataKey="x" domain={[0.5, 6.5]} ticks={[1,2,3,4,5,6]}
+                tickFormatter={n => SIZE_SHORT[Math.round(n)] || ""}
+                tick={{ fill: "#8899aa", fontSize: 9 }} axisLine={false} tickLine={false} />
+              <YAxis type="number" dataKey="y" tickFormatter={fmtK}
+                tick={{ fill: "#6a7f94", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                cursor={{ strokeDasharray: "3 3", stroke: "#2a3a50" }}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0]?.payload || {};
+                  return (
+                    <div style={CUSTOM_TOOLTIP_STYLE}>
+                      <div style={{ fontWeight: 600, marginBottom: "4px", color: d.color }}>{d.species}</div>
+                      <div style={{ color: "#8899aa" }}>📍 {d.locality || "—"}</div>
+                      <div>💰 <strong>{fmt(d.y)}</strong></div>
+                      <div>📏 {d.sizeLabel}</div>
+                      <div>{COND_LABEL[d.condition] || d.condition}</div>
+                      {d.prismScore != null && (
+                        <div style={{ marginTop: "3px" }}>🔬 PRISM: <strong style={{ color: "#7c5cfc" }}>{d.prismScore}</strong></div>
+                      )}
+                    </div>
+                  );
+                }}
+              />
+              <Scatter data={bubbleData} shape={<BubbleDot />} />
+            </ScatterChart>
+          </ResponsiveContainer>
+
+          {/* Color legend */}
+          {topColorValues.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "8px" }}>
+              {topColorValues.map((v, i) => (
+                <div key={v} style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "var(--text-muted)" }}>
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: BUBBLE_PALETTE[i], flexShrink: 0 }} />
+                  {v}
+                </div>
+              ))}
+              {bubbleData.some(d => d.color === "#3d4f60") && (
+                <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "var(--text-muted)" }}>
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#3d4f60", flexShrink: 0 }} />
+                  Other
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Condition size legend */}
+          <div style={{ display: "flex", gap: "14px", marginTop: "10px", flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Dot size =</span>
+            {[["pristine",5],["excellent",4],["good",3],["repaired",2],["damaged",1]].map(([cond, rank]) => {
+              const r = 5 + rank * 2;
+              return (
+                <div key={cond} style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "var(--text-muted)" }}>
+                  <svg width={r*2+2} height={r*2+2} style={{ flexShrink: 0 }}>
+                    <circle cx={r+1} cy={r+1} r={r} fill="rgba(180,200,220,0.2)" stroke="rgba(180,200,220,0.45)" strokeWidth={1} />
+                  </svg>
+                  {cond}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}

@@ -1,10 +1,13 @@
 import { useState, useCallback } from "react";
+import { migrateCollectionRecord } from "../utils/dbMigrations.js";
 
 const KEY = "prism_collection_v1";
 
 function load() {
-  try { return JSON.parse(localStorage.getItem(KEY) || "[]"); }
-  catch { return []; }
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY) || "[]");
+    return (Array.isArray(raw) ? raw : []).map(migrateCollectionRecord).filter(Boolean);
+  } catch { return []; }
 }
 
 function persist(records) {

@@ -1,7 +1,13 @@
 import { useState, useCallback } from "react";
+import { migrateComp } from "../utils/dbMigrations.js";
 
 const KEY = "prism_comps_v1";
-const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch { return []; } };
+const load = () => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY) || "[]");
+    return (Array.isArray(raw) ? raw : []).map(migrateComp).filter(Boolean);
+  } catch { return []; }
+};
 const persist = (data) => localStorage.setItem(KEY, JSON.stringify(data));
 
 export function useComparables() {
