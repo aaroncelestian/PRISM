@@ -1,0 +1,244 @@
+{
+  "_prism": "prism-research",
+  "_appVersion": "1.0.0",
+  "_schema": 1,
+  "_savedAt": "2026-06-13T00:00:00.000Z",
+  "_count": 24,
+  "data": [
+
+    {
+      "id": "comp-001", "addedAt": "2026-03-04T10:00:00.000Z",
+      "species": "Wulfenite", "locality": "Red Cloud Mine, La Paz Co., Arizona, USA",
+      "sizeClass": "cabinet", "condition": "pristine",
+      "askingPrice": "1850", "soldPrice": "", "source": "iRocks.com",
+      "sourceUrl": "https://irocks.com", "notes": "Brilliant orange tabular crystals on matrix, classic Red Cloud habit",
+      "photo": null,
+      "scores": { "crystal": 88, "speciesRarity": 72, "localityRarity": 85, "provenance": 65, "aesthetics": 90, "scientific": 45 },
+      "prismScore": 83, "grade": "Exhibition", "gradeEmoji": "🖼️", "ctx": "exhibition"
+    },
+    {
+      "id": "comp-002", "addedAt": "2026-03-11T14:30:00.000Z",
+      "species": "Wulfenite", "locality": "Red Cloud Mine, La Paz Co., Arizona, USA",
+      "sizeClass": "miniature", "condition": "good",
+      "askingPrice": "245", "soldPrice": "", "source": "eBay",
+      "sourceUrl": "https://ebay.com", "notes": "Small cluster, minor edge chip on one crystal, still attractive",
+      "photo": null,
+      "scores": null, "prismScore": null, "grade": null, "gradeEmoji": null, "ctx": null
+    },
+    {
+      "id": "comp-003", "addedAt": "2026-03-18T09:15:00.000Z",
+      "species": "Wulfenite", "locality": "Red Cloud Mine, La Paz Co., Arizona, USA",
+      "sizeClass": "small_cab", "condition": "excellent",
+      "askingPrice": "680", "soldPrice": "", "source": "Weinrich Minerals",
+      "sourceUrl": "https://weinrichminerals.com", "notes": "Gemmy orange plates, excellent luster, minor matrix damage",
+      "photo": null,
+      "scores": { "crystal": 78, "speciesRarity": 72, "localityRarity": 85, "provenance": 60, "aesthetics": 80, "scientific": 40 },
+      "prismScore": 76, "grade": "Exhibition", "gradeEmoji": "🖼️", "ctx": "exhibition"
+    },
+    {
+      "id": "comp-004", "addedAt": "2026-04-02T16:00:00.000Z",
+      "species": "Wulfenite", "locality": "Red Cloud Mine, La Paz Co., Arizona, USA",
+      "sizeClass": "large_cab", "condition": "pristine",
+      "askingPrice": "3200", "soldPrice": "", "source": "The Arkenstone",
+      "sourceUrl": "https://arkenstone.com", "notes": "Museum-quality floater, deep orange color saturation, no matrix damage",
+      "photo": null,
+      "scores": null, "prismScore": null, "grade": null, "gradeEmoji": null, "ctx": null
+    },
+
+    {
+      "id": "comp-005", "addedAt": "2026-03-06T11:00:00.000Z",
+      "species": "Wulfenite", "locality": "Los Lamentos, Chihuahua, Mexico",
+      "sizeClass": "miniature", "condition": "excellent",
+      "askingPrice": "320", "soldPrice": "", "source": "iRocks.com",
+      "sourceUrl": "https://irocks.com", "notes": "Thin tabular crystals, typical Lamentos habit, nice luster",
+      "photo": null,
+      "scores": { "crystal": 72, "speciesRarity": 68, "localityRarity": 62, "provenance": 50, "aesthetics": 74, "scientific": 35 },
+      "prismScore": 68, "grade": "Collector", "gradeEmoji": "⭐", "ctx": "exhibition"
+    },
+    {
+      "id": "comp-006", "addedAt": "2026-03-20T08:45:00.000Z",
+      "species": "Wulfenite", "locality": "Los Lamentos, Chihuahua, Mexico",
+      "sizeClass": "thumbnail", "condition": "good",
+      "askingPrice": "85", "soldPrice": "", "source": "eBay",
+      "sourceUrl": "https://ebay.com", "notes": "Lot of small crystals on limonite, some damage visible",
+      "photo": null,
+      "scores": null, "prismScore": null, "grade": null, "gradeEmoji": null, "ctx": null
+    },
+    {
+      "id": "comp-007", "addedAt": "2026-04-08T13:20:00.000Z",
+      "species": "Wulfenite", "locality": "Los Lamentos, Chihuahua, Mexico",
+      "sizeClass": "cabinet", "condition": "excellent",
+      "askingPrice": "720", "soldPrice": "", "source": "Weinrich Minerals",
+      "sourceUrl": "https://weinrichminerals.com", "notes": "Large plate of intergrown crystals, rich orange-yellow color",
+      "photo": null,
+      "scores": { "crystal": 75, "speciesRarity": 68, "localityRarity": 62, "provenance": 55, "aesthetics": 78, "scientific": 35 },
+      "prismScore": 72, "grade": "Collector", "gradeEmoji": "⭐", "ctx": "exhibition"
+    },
+    {
+      "id": "comp-008", "addedAt": "2026-04-15T10:00:00.000Z",
+      "species": "Wulfenite", "locality": "Los Lamentos, Chihuahua, Mexico",
+      "sizeClass": "small_cab", "condition": "pristine",
+      "askingPrice": "495", "soldPrice": "", "source": "The Arkenstone",
+      "sourceUrl": "https://arkenstone.com", "notes": "Floater specimen, doubly terminated crystals, exceptional condition",
+      "photo": null,
+      "scores": null, "prismScore": null, "grade": null, "gradeEmoji": null, "ctx": null
+    },
+
+    {
+      "id": "comp-009", "addedAt": "2026-03-10T15:00:00.000Z",
+      "species": "Wulfenite", "locality": "Tsumeb Mine, Tsumeb, Namibia",
+      "sizeClass": "small_cab", "condition": "pristine",
+      "askingPrice": "890", "soldPrice": "", "source": "iRocks.com",
+      "sourceUrl": "https://irocks.com", "notes": "Rich yellow wulfenite with mimetite, classic Tsumeb assemblage",
+      "photo": null,
+      "scores": { "crystal": 82, "speciesRarity": 75, "localityRarity": 90, "provenance": 68, "aesthetics": 80, "scientific": 65 },
+      "prismScore": 80, "grade": "Exhibition", "gradeEmoji": "🖼️", "ctx": "exhibition"
+    },
+    {
+      "id": "comp-010", "addedAt": "2026-03-25T09:00:00.000Z",
+      "species": "Wulfenite", "locality": "Tsumeb Mine, Tsumeb, Namibia",
+      "sizeClass": "thumbnail", "condition": "good",
+      "askingPrice": "180", "soldPrice": "", "source": "eBay",
+      "sourceUrl": "https://ebay.com", "notes": "Small piece with bright yellow crystals, minor matrix chip",
+      "photo": null,
+      "scores": null, "prismScore": null, "grade": null, "gradeEmoji": null, "ctx": null
+    },
+    {
+      "id": "comp-011", "addedAt": "2026-04-01T14:00:00.000Z",
+      "species": "Wulfenite", "locality": "Tsumeb Mine, Tsumeb, Namibia",
+      "sizeClass": "cabinet", "condition": "excellent",
+      "askingPrice": "1450", "soldPrice": "", "source": "Weinrich Minerals",
+      "sourceUrl": "https://weinrichminerals.com", "notes": "Superb Tsumeb specimen with wulfenite and tennanite, well-documented",
+      "photo": null,
+      "scores": null, "prismScore": null, "grade": null, "gradeEmoji": null, "ctx": null
+    },
+    {
+      "id": "comp-012", "addedAt": "2026-04-20T11:30:00.000Z",
+      "species": "Wulfenite", "locality": "Tsumeb Mine, Tsumeb, Namibia",
+      "sizeClass": "miniature", "condition": "excellent",
+      "askingPrice": "420", "soldPrice": "", "source": "The Arkenstone",
+      "sourceUrl": "https://arkenstone.com", "notes": "Gemmy yellow-orange crystals, very fine for size",
+      "photo": null,
+      "scores": { "crystal": 76, "speciesRarity": 75, "localityRarity": 90, "provenance": 60, "aesthetics": 76, "scientific": 60 },
+      "prismScore": 75, "grade": "Exhibition", "gradeEmoji": "🖼️", "ctx": "exhibition"
+    },
+
+    {
+      "id": "comp-013", "addedAt": "2026-02-14T10:00:00.000Z",
+      "species": "Rhodochrosite", "locality": "Sweet Home Mine, Park Co., Colorado, USA",
+      "sizeClass": "cabinet", "condition": "pristine",
+      "askingPrice": "4800", "soldPrice": "", "source": "iRocks.com",
+      "sourceUrl": "https://irocks.com", "notes": "Exceptional floater with sharp rhombohedral crystals, deep red color",
+      "photo": null,
+      "scores": { "crystal": 92, "speciesRarity": 85, "localityRarity": 95, "provenance": 80, "aesthetics": 94, "scientific": 60 },
+      "prismScore": 91, "grade": "Museum", "gradeEmoji": "🏛️", "ctx": "collector"
+    },
+    {
+      "id": "comp-014", "addedAt": "2026-02-20T08:00:00.000Z",
+      "species": "Rhodochrosite", "locality": "Sweet Home Mine, Park Co., Colorado, USA",
+      "sizeClass": "miniature", "condition": "excellent",
+      "askingPrice": "680", "soldPrice": "", "source": "eBay",
+      "sourceUrl": "https://ebay.com", "notes": "Nice miniature with sharp crystals, some matrix damage but crystals perfect",
+      "photo": null,
+      "scores": null, "prismScore": null, "grade": null, "gradeEmoji": null, "ctx": null
+    },
+    {
+      "id": "comp-015", "addedAt": "2026-03-01T12:00:00.000Z",
+      "species": "Rhodochrosite", "locality": "Sweet Home Mine, Park Co., Colorado, USA",
+      "sizeClass": "small_cab", "condition": "excellent",
+      "askingPrice": "1950", "soldPrice": "", "source": "Weinrich Minerals",
+      "sourceUrl": "https://weinrichminerals.com", "notes": "Classic Sweet Home floater, vivid raspberry-red, excellent display piece",
+      "photo": null,
+      "scores": { "crystal": 86, "speciesRarity": 85, "localityRarity": 95, "provenance": 72, "aesthetics": 88, "scientific": 55 },
+      "prismScore": 86, "grade": "Exhibition", "gradeEmoji": "🖼️", "ctx": "collector"
+    },
+    {
+      "id": "comp-016", "addedAt": "2026-03-15T16:45:00.000Z",
+      "species": "Rhodochrosite", "locality": "Sweet Home Mine, Park Co., Colorado, USA",
+      "sizeClass": "large_cab", "condition": "pristine",
+      "askingPrice": "8500", "soldPrice": "", "source": "The Arkenstone",
+      "sourceUrl": "https://arkenstone.com", "notes": "One of the finest Sweet Home pieces seen in years, museum deaccession with history",
+      "photo": null,
+      "scores": null, "prismScore": null, "grade": null, "gradeEmoji": null, "ctx": null
+    },
+
+    {
+      "id": "comp-017", "addedAt": "2026-02-18T11:00:00.000Z",
+      "species": "Rhodochrosite", "locality": "Capillitas Mine, Catamarca, Argentina",
+      "sizeClass": "small_cab", "condition": "excellent",
+      "askingPrice": "580", "soldPrice": "", "source": "iRocks.com",
+      "sourceUrl": "https://irocks.com", "notes": "Stalactitic rhodochrosite section showing banding, well-polished base",
+      "photo": null,
+      "scores": { "crystal": 74, "speciesRarity": 72, "localityRarity": 70, "provenance": 52, "aesthetics": 82, "scientific": 55 },
+      "prismScore": 74, "grade": "Collector", "gradeEmoji": "⭐", "ctx": "collector"
+    },
+    {
+      "id": "comp-018", "addedAt": "2026-02-25T09:30:00.000Z",
+      "species": "Rhodochrosite", "locality": "Capillitas Mine, Catamarca, Argentina",
+      "sizeClass": "miniature", "condition": "good",
+      "askingPrice": "195", "soldPrice": "", "source": "eBay",
+      "sourceUrl": "https://ebay.com", "notes": "Rough stalactite section, unpolished, good color but rough presentation",
+      "photo": null,
+      "scores": null, "prismScore": null, "grade": null, "gradeEmoji": null, "ctx": null
+    },
+    {
+      "id": "comp-019", "addedAt": "2026-03-08T14:00:00.000Z",
+      "species": "Rhodochrosite", "locality": "Capillitas Mine, Catamarca, Argentina",
+      "sizeClass": "cabinet", "condition": "excellent",
+      "askingPrice": "1200", "soldPrice": "", "source": "Weinrich Minerals",
+      "sourceUrl": "https://weinrichminerals.com", "notes": "Cross-section showing concentric banding, polished to museum standard",
+      "photo": null,
+      "scores": null, "prismScore": null, "grade": null, "gradeEmoji": null, "ctx": null
+    },
+    {
+      "id": "comp-020", "addedAt": "2026-03-22T10:15:00.000Z",
+      "species": "Rhodochrosite", "locality": "Capillitas Mine, Catamarca, Argentina",
+      "sizeClass": "small_cab", "condition": "pristine",
+      "askingPrice": "890", "soldPrice": "", "source": "The Arkenstone",
+      "sourceUrl": "https://arkenstone.com", "notes": "Exceptional banding clarity, vivid pink and white, no damage",
+      "photo": null,
+      "scores": { "crystal": 80, "speciesRarity": 72, "localityRarity": 70, "provenance": 58, "aesthetics": 88, "scientific": 55 },
+      "prismScore": 78, "grade": "Exhibition", "gradeEmoji": "🖼️", "ctx": "collector"
+    },
+
+    {
+      "id": "comp-021", "addedAt": "2026-02-10T13:00:00.000Z",
+      "species": "Rhodochrosite", "locality": "N'Chwaning Mine, Kuruman, South Africa",
+      "sizeClass": "miniature", "condition": "excellent",
+      "askingPrice": "340", "soldPrice": "", "source": "iRocks.com",
+      "sourceUrl": "https://irocks.com", "notes": "Sharp dodecahedral crystals, deep rose-red, excellent for size",
+      "photo": null,
+      "scores": { "crystal": 76, "speciesRarity": 72, "localityRarity": 68, "provenance": 50, "aesthetics": 78, "scientific": 45 },
+      "prismScore": 71, "grade": "Collector", "gradeEmoji": "⭐", "ctx": "collector"
+    },
+    {
+      "id": "comp-022", "addedAt": "2026-02-16T08:30:00.000Z",
+      "species": "Rhodochrosite", "locality": "N'Chwaning Mine, Kuruman, South Africa",
+      "sizeClass": "thumbnail", "condition": "good",
+      "askingPrice": "95", "soldPrice": "", "source": "eBay",
+      "sourceUrl": "https://ebay.com", "notes": "Small but bright crystals, minor matrix fracture, good color",
+      "photo": null,
+      "scores": null, "prismScore": null, "grade": null, "gradeEmoji": null, "ctx": null
+    },
+    {
+      "id": "comp-023", "addedAt": "2026-03-05T15:00:00.000Z",
+      "species": "Rhodochrosite", "locality": "N'Chwaning Mine, Kuruman, South Africa",
+      "sizeClass": "small_cab", "condition": "excellent",
+      "askingPrice": "620", "soldPrice": "", "source": "Weinrich Minerals",
+      "sourceUrl": "https://weinrichminerals.com", "notes": "Cluster of bright red rhombohedral crystals on matrix, clean piece",
+      "photo": null,
+      "scores": null, "prismScore": null, "grade": null, "gradeEmoji": null, "ctx": null
+    },
+    {
+      "id": "comp-024", "addedAt": "2026-04-10T11:00:00.000Z",
+      "species": "Rhodochrosite", "locality": "N'Chwaning Mine, Kuruman, South Africa",
+      "sizeClass": "cabinet", "condition": "pristine",
+      "askingPrice": "1450", "soldPrice": "", "source": "The Arkenstone",
+      "sourceUrl": "https://arkenstone.com", "notes": "Superb cabinet specimen, perfect crystals, strong luster, no damage whatsoever",
+      "photo": null,
+      "scores": { "crystal": 84, "speciesRarity": 72, "localityRarity": 68, "provenance": 62, "aesthetics": 86, "scientific": 50 },
+      "prismScore": 78, "grade": "Exhibition", "gradeEmoji": "🖼️", "ctx": "collector"
+    }
+
+  ]
+}
