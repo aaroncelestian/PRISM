@@ -190,24 +190,6 @@ export default function PRISM() {
           {/* Primary controls */}
           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
 
-            {/* Context switcher (expert mode, desktop only) */}
-            {mode === "expert" && !isMobile && (
-              <div style={{ display: "flex", alignItems: "center", gap: "5px", marginRight: "6px" }}>
-                <span style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase" }}>Ctx:</span>
-                <div style={{ display: "flex", gap: "3px" }}>
-                  {CONTEXTS.map(c => (
-                    <button key={c.key} onClick={() => setCtx(c.key)} title={c.desc} style={{
-                      padding: "4px 9px", borderRadius: "3px",
-                      border: ctx === c.key ? "1px solid rgba(0,212,255,0.45)" : "1px solid var(--border)",
-                      background: ctx === c.key ? "rgba(0,212,255,0.08)" : "transparent",
-                      color: ctx === c.key ? "var(--cyan)" : "var(--text-muted)",
-                      fontSize: "10px", fontWeight: ctx === c.key ? 600 : 400,
-                      letterSpacing: "0.08em", textTransform: "uppercase", transition: "all 0.15s",
-                    }}>{c.icon} {c.label}</button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Mode toggle */}
             <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "5px", overflow: "hidden" }}>
@@ -283,6 +265,27 @@ export default function PRISM() {
             </button>
           </div>
         </div>
+
+        {/* Context sub-row — Expert mode, desktop only */}
+        {mode === "expert" && !isMobile && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: "6px",
+            padding: "5px 22px", borderTop: "1px solid var(--border-dim)",
+            background: "rgba(0,212,255,0.015)",
+          }}>
+            <span style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", flexShrink: 0 }}>Context:</span>
+            {CONTEXTS.map(c => (
+              <button key={c.key} onClick={() => setCtx(c.key)} title={c.desc} style={{
+                padding: "3px 11px", borderRadius: "3px", flexShrink: 0,
+                border: ctx === c.key ? "1px solid rgba(0,212,255,0.45)" : "1px solid var(--border)",
+                background: ctx === c.key ? "rgba(0,212,255,0.08)" : "transparent",
+                color: ctx === c.key ? "var(--cyan)" : "var(--text-muted)",
+                fontSize: "10px", fontWeight: ctx === c.key ? 600 : 400,
+                letterSpacing: "0.06em", transition: "all 0.15s",
+              }}>{c.icon} {c.label}</button>
+            ))}
+          </div>
+        )}
 
         {/* Mobile action row — horizontally scrollable */}
         {isMobile && (
