@@ -31,8 +31,8 @@ function computePrimary(scores) {
 }
 
 const DEFAULT_SCORES = {
-  crystal: 50, speciesRarity: 50, localityRarity: 50,
-  provenance: 55, aesthetics: 50, scientific: 0,
+  crystal: 5, speciesRarity: 5, localityRarity: 5,
+  provenance: 5, aesthetics: 5, scientific: 5,
 };
 
 export default function PRISM() {

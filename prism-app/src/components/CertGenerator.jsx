@@ -16,6 +16,17 @@ function getGrade(score) {
   return GRADES.find(g => score >= g.min) || GRADES[GRADES.length - 1];
 }
 
+const HMAC_SECRET = "prism-cert-integrity-v1-2024-mineral-evaluation";
+async function computeHmac(message) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw", enc.encode(HMAC_SECRET),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const buf = await crypto.subtle.sign("HMAC", key, enc.encode(message));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 function safeB64Encode(str) {
   try {
     return btoa(unescape(encodeURIComponent(str)));
@@ -39,7 +50,16 @@ const SIZE_CLASSES = [
   { key: "museum",     label: "Museum",         range: "> 25 cm" },
 ];
 
-const PROV_TIERS = ["T1 — Type Locality / Institutional", "T2 — Named Collection", "T3 — Dealer Documentation", "T4 — Locality Known, Unverified", "T5 — Unknown Origin"];
+const PROV_TIERS = [
+  "T0 — Self-Collected (direct field collection with date/location)",
+  "T1 — Type Locality / Institutional (museum deaccession or institutional source)",
+  "T2 — Named Collection (documented provenance from a known named collection)",
+  "T3 — Dealer Documentation (invoice/receipt from reputable dealer)",
+  "T4 — Trade / Private Acquisition (collector-to-collector, no formal docs)",
+  "T5 — Auction / Secondary Market (Heritage, eBay, documented sale)",
+  "T6 — Locality Known, Unverified (stated but undocumented)",
+  "T7 — Unknown Origin",
+];
 
 // ── Photo capture ─────────────────────────────────────────────────────────────
 
@@ -154,26 +174,55 @@ function DocumentationStep({ scores, spec, docData, setDocData, photos, setPhoto
       <div>
         <h3 style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)", marginBottom: "4px" }}>Supporting Documentation</h3>
         <p style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.55 }}>
-          Add photos and notes for dimensions that scored significantly. All documentation is embedded in the certificate — photos do not go in the QR code.
+          Add photos and supplementary notes. Basic specimen info is already captured from your PRISM scoring — no need to re-enter it.
         </p>
       </div>
 
-      {/* Specimen photo — always shown */}
+      {/* Already captured from PRISM */}
+      <div style={{ padding: "10px 12px", background: "rgba(0,212,255,0.04)", border: "1px solid rgba(0,212,255,0.18)", borderRadius: "6px" }}>
+        <div style={{ fontSize: "9px", letterSpacing: "0.12em", color: "var(--cyan)", textTransform: "uppercase", marginBottom: "6px" }}>Captured from PRISM Scoring — already on certificate</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px" }}>
+          {spec.name && (
+            <div>
+              <div style={{ fontSize: "8px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Specimen Name</div>
+              <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text)" }}>{spec.name}</div>
+            </div>
+          )}
+          {spec.species && (
+            <div>
+              <div style={{ fontSize: "8px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Species</div>
+              <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text)" }}>{spec.species}</div>
+            </div>
+          )}
+          {spec.locality && (
+            <div style={{ gridColumn: "1 / -1" }}>
+              <div style={{ fontSize: "8px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Locality</div>
+              <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text)" }}>{spec.locality}</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Specimen photos — always shown */}
       <div style={{ padding: "12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-        <div style={{ fontSize: "10px", letterSpacing: "0.14em", color: "var(--cyan)", textTransform: "uppercase", marginBottom: "6px" }}>💠 Specimen Photo</div>
-        <PhotoCapture label="Add specimen photo (main display angle)" value={photos.specimen} onChange={v => setPhoto("specimen", v)} />
-        {(s.aesthetics ?? 50) >= 60 && (
-          <div style={{ marginTop: "6px" }}>
-            <PhotoCapture label="Add second angle (display / show face)" value={photos.display} onChange={v => setPhoto("display", v)} />
+        <div style={{ fontSize: "10px", letterSpacing: "0.14em", color: "var(--cyan)", textTransform: "uppercase", marginBottom: "8px" }}>Specimen Photos</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+          <div>
+            <div style={{ fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px" }}>Main Display Angle</div>
+            <PhotoCapture label="Add specimen photo" value={photos.specimen} onChange={v => setPhoto("specimen", v)} />
           </div>
-        )}
+          <div>
+            <div style={{ fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px" }}>Second Angle / Show Face</div>
+            <PhotoCapture label="Add second angle" value={photos.display} onChange={v => setPhoto("display", v)} />
+          </div>
+        </div>
       </div>
 
       {/* Locality */}
       {(s.localityRarity ?? 50) >= 40 && (
         <div style={{ padding: "12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-          <div style={{ fontSize: "10px", letterSpacing: "0.14em", color: "#90c0f0", textTransform: "uppercase", marginBottom: "6px" }}>📍 Locality Rarity ({s.localityRarity ?? 50}/100)</div>
-          <textarea placeholder="Precise locality: mine name, county/region, country. Include GPS if known (optional)."
+          <div style={{ fontSize: "10px", letterSpacing: "0.14em", color: "#90c0f0", textTransform: "uppercase", marginBottom: "6px" }}>Locality Notes ({s.localityRarity ?? 50}/100)</div>
+          <textarea placeholder="Additional locality context: specific mine level, GPS, collecting permit, known production history."
             value={docData.localityNote} onChange={e => update("localityNote", e.target.value)}
             rows={2} style={textareaStyle} />
         </div>
@@ -182,8 +231,8 @@ function DocumentationStep({ scores, spec, docData, setDocData, photos, setPhoto
       {/* Species */}
       {(s.speciesRarity ?? 50) >= 40 && (
         <div style={{ padding: "12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-          <div style={{ fontSize: "10px", letterSpacing: "0.14em", color: "#90c0f0", textTransform: "uppercase", marginBottom: "6px" }}>🌍 Species ({s.speciesRarity ?? 50}/100)</div>
-          <textarea placeholder="Species identification notes: IMA-approved name, identifying features, any analytical confirmation."
+          <div style={{ fontSize: "10px", letterSpacing: "0.14em", color: "#90c0f0", textTransform: "uppercase", marginBottom: "6px" }}>Species Notes ({s.speciesRarity ?? 50}/100)</div>
+          <textarea placeholder="Additional species context: IMA formula, identifying features, analytical confirmation (XRD, etc.)."
             value={docData.speciesNote} onChange={e => update("speciesNote", e.target.value)}
             rows={2} style={textareaStyle} />
         </div>
@@ -196,9 +245,19 @@ function DocumentationStep({ scores, spec, docData, setDocData, photos, setPhoto
           <option value="">— Select provenance tier —</option>
           {PROV_TIERS.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
-        <textarea placeholder="Chain of custody / collection history: original collector, approximate year acquired, any collection labels present."
+        <textarea placeholder="Describe each hand the specimen passed through: Self-collected → traded to John Smith (2005) → purchased from dealer (2018) → your acquisition. Include dates, labels, and any documentation."
           value={docData.chainOfCustody} onChange={e => update("chainOfCustody", e.target.value)}
           rows={3} style={textareaStyle} />
+        <div style={{ marginTop: "8px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+          <div>
+            <div style={{ fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px" }}>Collection Label / Tag</div>
+            <PhotoCapture label="Photograph original label" value={photos.label} onChange={v => setPhoto("label", v)} />
+          </div>
+          <div>
+            <div style={{ fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px" }}>Provenance Document</div>
+            <PhotoCapture label="Invoice, permit, or receipt" value={photos.document} onChange={v => setPhoto("document", v)} />
+          </div>
+        </div>
       </div>
 
       {/* Scientific */}
@@ -231,16 +290,31 @@ const textareaStyle = {
 // ── Step 3: Attestations ──────────────────────────────────────────────────────
 
 const ATTESTATION_ITEMS = [
-  { key: "legalCollection", label: "Legally collected or acquired with proper permit or owner permission", icon: "⚖️" },
-  { key: "localityAccurate", label: "Locality information is accurate and complete to the best of my knowledge", icon: "📍" },
-  { key: "repairsDisclosed", label: "All repairs, restoration, reconstitution, or enhancements have been fully disclosed above", icon: "🔧" },
-  { key: "noRestrictions", label: "No known CITES Appendix I/II restrictions apply, or appropriate export/import documentation exists", icon: "📋" },
-  { key: "honestEvaluation", label: "This PRISM evaluation is honest, unbiased, and represents my best objective assessment", icon: "🤝" },
+  { key: "legalCollection",  label: "Legally collected or acquired with proper permit or owner permission",                                                              short: "Legally collected / acquired" },
+  { key: "localityAccurate", label: "Locality information is accurate and complete to the best of my knowledge",                                                        short: "Locality is accurate" },
+  { key: "repairsDisclosed", label: "All repairs, restoration, reconstitution, or enhancements have been fully disclosed above",                                         short: "All repairs / enhancements disclosed" },
+  { key: "noRestrictions",   label: "No known CITES Appendix I/II restrictions apply, or appropriate export/import documentation exists",                               short: "No CITES restrictions" },
+  { key: "honestEvaluation", label: "This PRISM evaluation is honest, unbiased, and represents my best objective assessment",                                           short: "Honest, unbiased evaluation" },
+  { key: "noFabrication",    label: "Specimen is a genuine natural mineral — not synthetic, artificially grown, or a composite assembled from multiple specimens unless noted", short: "Genuine natural mineral (not synthetic/composite)" },
+  { key: "noConflict",       label: "No known conflict-zone or sanctioned-country origin, or appropriate documentation exists",                                          short: "No conflict-zone or sanctions origin" },
+  { key: "culturalPatrimony",label: "Specimen does not violate cultural heritage or national patrimony export laws of its country of origin to the best of my knowledge", short: "Cultural patrimony compliant" },
+  { key: "noStolenProperty", label: "Specimen has not been reported stolen or misappropriated from any museum, institution, or private collection to the best of my knowledge", short: "Not stolen or misappropriated" },
+  { key: "hazardsDisclosed", label: "Any known radiation, toxicity, or handling hazards (uranium minerals, asbestos-group, mercury, lead, etc.) are disclosed",         short: "Radiation / toxicity hazards disclosed" },
+  { key: "importCompliance", label: "Specimen was legally imported into current country of possession with appropriate customs documentation, if applicable",            short: "Import / customs compliant (if applicable)" },
 ];
 
-function AttestationStep({ attestations, setAttestations, evaluatorName, setEvaluatorName, evaluatorOrg, setEvaluatorOrg }) {
+function AttestationStep({ attestations, setAttestations, evaluatorName, setEvaluatorName, evaluatorOrg, setEvaluatorOrg, customAttestations, setCustomAttestations }) {
+  const [newText, setNewText] = useState("");
   const toggle = (key) => setAttestations(a => ({ ...a, [key]: !a[key] }));
   const allChecked = Object.values(attestations).every(Boolean);
+  const addCustom = () => {
+    const t = newText.trim();
+    if (!t) return;
+    setCustomAttestations(prev => [...prev, { id: Date.now(), text: t, checked: false }]);
+    setNewText("");
+  };
+  const toggleCustom = (id) => setCustomAttestations(prev => prev.map(ca => ca.id === id ? { ...ca, checked: !ca.checked } : ca));
+  const removeCustom = (id) => setCustomAttestations(prev => prev.filter(ca => ca.id !== id));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -270,16 +344,48 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
                 {checked && <span style={{ color: "white", fontSize: "11px", lineHeight: 1 }}>✓</span>}
               </div>
               <div style={{ fontSize: "11px", color: checked ? "var(--text)" : "var(--text-dim)", lineHeight: 1.5 }}>
-                <span style={{ marginRight: "6px" }}>{icon}</span>{label}
+                {label}
               </div>
             </button>
           );
         })}
       </div>
 
+      {/* Custom attestations */}
+      <div style={{ padding: "12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
+        <div style={{ fontSize: "9px", letterSpacing: "0.13em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Additional Attestations (optional)</div>
+        {customAttestations.map(ca => (
+          <div key={ca.id} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+            <button onClick={() => toggleCustom(ca.id)} style={{
+              width: "16px", height: "16px", borderRadius: "3px", flexShrink: 0,
+              border: `1px solid ${ca.checked ? "#00c880" : "var(--border)"}`,
+              background: ca.checked ? "#00c880" : "transparent",
+              display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+            }}>
+              {ca.checked && <span style={{ color: "white", fontSize: "11px", lineHeight: 1 }}>✓</span>}
+            </button>
+            <span style={{ flex: 1, fontSize: "11px", color: ca.checked ? "var(--text)" : "var(--text-dim)" }}>{ca.text}</span>
+            <button onClick={() => removeCustom(ca.id)} style={{ background: "none", border: "none", color: "rgba(255,80,80,0.5)", cursor: "pointer", fontSize: "16px", padding: "0 4px", lineHeight: 1 }}>×</button>
+          </div>
+        ))}
+        <div style={{ display: "flex", gap: "6px", marginTop: customAttestations.length ? "8px" : "0" }}>
+          <input value={newText} onChange={e => setNewText(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
+            placeholder="Type a custom attestation statement…"
+            style={{ ...textareaStyle, flex: 1, padding: "6px 10px", resize: "none" }} />
+          <button onClick={addCustom} disabled={!newText.trim()} style={{
+            padding: "6px 12px",
+            background: newText.trim() ? "rgba(0,212,255,0.08)" : "transparent",
+            border: `1px solid ${newText.trim() ? "rgba(0,212,255,0.35)" : "var(--border)"}`,
+            borderRadius: "4px", color: newText.trim() ? "var(--cyan)" : "var(--text-muted)",
+            fontSize: "11px", cursor: newText.trim() ? "pointer" : "default", whiteSpace: "nowrap",
+          }}>+ Add</button>
+        </div>
+      </div>
+
       {!allChecked && (
         <div style={{ fontSize: "10px", color: "#ffa028", padding: "7px 10px", background: "rgba(255,160,40,0.06)", border: "1px solid rgba(255,160,40,0.2)", borderRadius: "4px" }}>
-          All attestations must be confirmed to generate the certificate.
+          All standard attestations must be confirmed to generate the certificate.
         </div>
       )}
 
@@ -301,7 +407,7 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
 
 // ── Step 4: Certificate Preview ───────────────────────────────────────────────
 
-function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos, attestations, evaluatorName, evaluatorOrg, primaryCtx, compoundGrades }) {
+function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos, attestations, evaluatorName, evaluatorOrg, primaryCtx, compoundGrades, customAttestations = [] }) {
   const [qrUrl, setQrUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const grade = primaryCtx.grade;
@@ -319,18 +425,25 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
     cg: compoundGrades.map(c => c.key),
     pt: docData.provTier,
     at: {
-      lc: attestations.legalCollection, la: attestations.localityAccurate,
-      rd: attestations.repairsDisclosed, nr: attestations.noRestrictions, he: attestations.honestEvaluation,
+      lc: attestations.legalCollection,  la: attestations.localityAccurate,
+      rd: attestations.repairsDisclosed,  nr: attestations.noRestrictions,   he: attestations.honestEvaluation,
+      nf: attestations.noFabrication,     nc: attestations.noConflict,        cp: attestations.culturalPatrimony,
+      ns: attestations.noStolenProperty,  hd: attestations.hazardsDisclosed,  ic: attestations.importCompliance,
     },
     ev: evaluatorName, org: evaluatorOrg,
   };
   const PRISM_BASE = "https://aaroncelestian.github.io/PRISM/";
-  const verifyUrl = `${PRISM_BASE}?verify=${safeB64Encode(JSON.stringify(certData))}`;
 
   useEffect(() => {
-    QRCode.toDataURL(verifyUrl, { width: 160, margin: 2, color: { dark: "#0d1520", light: "#ffffff" } })
-      .then(setQrUrl).catch(console.error);
-  }, [verifyUrl]);
+    computeHmac(JSON.stringify(certData))
+      .then(sig => {
+        const signed = { ...certData, sig };
+        const url = `${PRISM_BASE}?verify=${safeB64Encode(JSON.stringify(signed))}`;
+        return QRCode.toDataURL(url, { width: 160, margin: 2, color: { dark: "#0d1520", light: "#ffffff" } });
+      })
+      .then(setQrUrl)
+      .catch(console.error);
+  }, [certId]);
 
   const handlePrint = () => {
     const certEl = document.getElementById("prism-cert-root");
@@ -398,7 +511,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
         {/* Specimen */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px", marginBottom: "12px", paddingBottom: "12px", borderBottom: "1px solid #d0dce8" }}>
           {[
-            ["Specimen", spec.name || "—"],
+            ["Specimen Name", spec.name || "—"],
             ["Species", spec.species || "—"],
             ["Locality", spec.locality || "—"],
             ["Size Class", sz ? `${sz.label} (${sz.range})` : "—"],
@@ -414,16 +527,13 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
 
         {/* Grade */}
         <div style={{ marginBottom: "12px", paddingBottom: "12px", borderBottom: "1px solid #d0dce8" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-            <div style={{ fontSize: "18px" }}>{grade.emoji}</div>
-            <div>
-              <div style={{ fontSize: "14px", fontWeight: 800, color: grade.color }}>{grade.label.toUpperCase()} GRADE</div>
-              <div style={{ fontSize: "11px", color: "#507090" }}>Overall Score: <strong>{primaryCtx.score}/100</strong></div>
-            </div>
+          <div style={{ marginBottom: "6px" }}>
+            <div style={{ fontSize: "14px", fontWeight: 800, color: grade.color }}>{grade.label.toUpperCase()} GRADE</div>
+            <div style={{ fontSize: "11px", color: "#507090" }}>Overall Score: <strong>{primaryCtx.score}/100</strong></div>
           </div>
           {compoundGrades.length > 0 && (
             <div style={{ fontSize: "10px", color: "#507090" }}>
-              Combined: {compoundGrades.map(cg => `${cg.emoji} ${cg.label}`).join(" · ")}
+              Combined: {compoundGrades.map(cg => cg.label).join(" · ")}
             </div>
           )}
         </div>
@@ -436,7 +546,6 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
               const v = scores[d.key] ?? 0;
               return (
                 <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ fontSize: "11px", width: "16px" }}>{d.icon}</span>
                   <span style={{ flex: 1, fontSize: "10px", color: "#0d1520" }}>{d.label}</span>
                   <div style={{ width: "50px", height: "4px", background: "#e0e8f0", borderRadius: "2px", overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${v}%`, background: v >= 70 ? "#1a9e60" : v >= 50 ? "#3070b0" : "#8090a0", borderRadius: "2px" }} />
@@ -449,18 +558,51 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
         </div>
 
         {/* Photos */}
-        {(photos.specimen || photos.display) && (
+        {(photos.specimen || photos.display || photos.label || photos.document) && (
           <div style={{ marginBottom: "12px", paddingBottom: "12px", borderBottom: "1px solid #d0dce8" }}>
-            <div style={{ fontSize: "8px", letterSpacing: "0.14em", color: "#507090", textTransform: "uppercase", marginBottom: "6px" }}>Specimen Documentation</div>
-            <div style={{ display: "flex", gap: "8px" }}>
-              {photos.specimen && <img src={photos.specimen} alt="Specimen" style={{ height: "100px", objectFit: "cover", borderRadius: "3px", border: "1px solid #d0dce8" }} />}
-              {photos.display && <img src={photos.display} alt="Display" style={{ height: "100px", objectFit: "cover", borderRadius: "3px", border: "1px solid #d0dce8" }} />}
-            </div>
+            {(photos.specimen || photos.display) && (
+              <>
+                <div style={{ fontSize: "8px", letterSpacing: "0.14em", color: "#507090", textTransform: "uppercase", marginBottom: "4px" }}>Specimen Photos</div>
+                <div style={{ display: "flex", gap: "6px", marginBottom: (photos.label || photos.document) ? "8px" : "0" }}>
+                  {photos.specimen && (
+                    <div style={{ textAlign: "center" }}>
+                      <img src={photos.specimen} alt="Specimen" style={{ height: "80px", objectFit: "cover", borderRadius: "3px", border: "1px solid #d0dce8", display: "block" }} />
+                      <div style={{ fontSize: "7px", color: "#8090a0", marginTop: "2px" }}>Main</div>
+                    </div>
+                  )}
+                  {photos.display && (
+                    <div style={{ textAlign: "center" }}>
+                      <img src={photos.display} alt="Display" style={{ height: "80px", objectFit: "cover", borderRadius: "3px", border: "1px solid #d0dce8", display: "block" }} />
+                      <div style={{ fontSize: "7px", color: "#8090a0", marginTop: "2px" }}>Alt. angle</div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+            {(photos.label || photos.document) && (
+              <>
+                <div style={{ fontSize: "8px", letterSpacing: "0.14em", color: "#507090", textTransform: "uppercase", marginBottom: "4px" }}>Provenance Documentation</div>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {photos.label && (
+                    <div style={{ textAlign: "center" }}>
+                      <img src={photos.label} alt="Label" style={{ height: "80px", objectFit: "cover", borderRadius: "3px", border: "1px solid #d0dce8", display: "block" }} />
+                      <div style={{ fontSize: "7px", color: "#8090a0", marginTop: "2px" }}>Collection label</div>
+                    </div>
+                  )}
+                  {photos.document && (
+                    <div style={{ textAlign: "center" }}>
+                      <img src={photos.document} alt="Document" style={{ height: "80px", objectFit: "cover", borderRadius: "3px", border: "1px solid #d0dce8", display: "block" }} />
+                      <div style={{ fontSize: "7px", color: "#8090a0", marginTop: "2px" }}>Provenance doc</div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
 
         {/* Documentation notes */}
-        {(docData.localityNote || docData.chainOfCustody || docData.conditionNote || docData.speciesNote || docData.scientificNote) && (
+        {(docData.provTier || docData.localityNote || docData.chainOfCustody || docData.conditionNote || docData.speciesNote || docData.scientificNote) && (
           <div style={{ marginBottom: "12px", paddingBottom: "12px", borderBottom: "1px solid #d0dce8" }}>
             <div style={{ fontSize: "8px", letterSpacing: "0.14em", color: "#507090", textTransform: "uppercase", marginBottom: "6px" }}>Documentation Notes</div>
             {docData.provTier && <div style={{ marginBottom: "3px" }}><strong>Provenance Tier:</strong> {docData.provTier}</div>}
@@ -477,11 +619,20 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
           <div style={{ fontSize: "8px", letterSpacing: "0.14em", color: "#507090", textTransform: "uppercase", marginBottom: "6px" }}>
             Attestations — {evaluatorName}{evaluatorOrg ? `, ${evaluatorOrg}` : ""}
           </div>
-          {ATTESTATION_ITEMS.map(({ key, label, icon }) => (
-            <div key={key} style={{ fontSize: "10px", color: attestations[key] ? "#0d1520" : "#a0b0c0", marginBottom: "2px" }}>
-              {attestations[key] ? "✓" : "✗"} {icon} {label}
-            </div>
-          ))}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 10px" }}>
+            {ATTESTATION_ITEMS.map(({ key, short }) => (
+              <div key={key} style={{ fontSize: "9px", color: attestations[key] ? "#0d1520" : "#a0b0c0", display: "flex", alignItems: "baseline", gap: "3px" }}>
+                <span style={{ flexShrink: 0 }}>{attestations[key] ? "✓" : "✗"}</span>
+                <span>{short}</span>
+              </div>
+            ))}
+            {customAttestations?.filter(ca => ca.text).map(ca => (
+              <div key={ca.id} style={{ fontSize: "9px", color: ca.checked ? "#0d1520" : "#a0b0c0", display: "flex", alignItems: "baseline", gap: "3px" }}>
+                <span style={{ flexShrink: 0 }}>{ca.checked ? "✓" : "✗"}</span>
+                <span>{ca.text}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Footer */}
@@ -508,15 +659,16 @@ export default function CertGenerator({ scores, spec, onClose }) {
   const [step, setStep] = useState(0);
   const [sizeClass, setSizeClass] = useState("");
   const [docData, setDocData] = useState({
-    localityNote: spec?.locality || "",
-    speciesNote: "", chainOfCustody: "", conditionNote: "None known.", scientificNote: "", provTier: "",
+    localityNote: "", speciesNote: "", chainOfCustody: "", conditionNote: "None known.", scientificNote: "", provTier: "",
   });
-  const [photos, setPhotos] = useState({ specimen: null, display: null });
+  const [photos, setPhotos] = useState({ specimen: null, display: null, label: null, document: null });
   const [attestations, setAttestations] = useState({
     legalCollection: false, localityAccurate: false, repairsDisclosed: false, noRestrictions: false, honestEvaluation: false,
+    noFabrication: false, noConflict: false, culturalPatrimony: false, noStolenProperty: false, hazardsDisclosed: false, importCompliance: false,
   });
   const [evaluatorName, setEvaluatorName] = useState("");
   const [evaluatorOrg, setEvaluatorOrg] = useState("");
+  const [customAttestations, setCustomAttestations] = useState([]);
   const [certId] = useState(generateCertId);
   const [issued] = useState(() => new Date().toISOString());
 
@@ -577,8 +729,8 @@ export default function CertGenerator({ scores, spec, onClose }) {
         <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
           {step === 0 && <ReviewStep scores={scores} spec={spec} sizeClass={sizeClass} setSizeClass={setSizeClass} allCtxData={allCtxData} primaryCtx={primaryCtx} compoundGrades={compoundGrades} />}
           {step === 1 && <DocumentationStep scores={scores} spec={spec} docData={docData} setDocData={setDocData} photos={photos} setPhotos={setPhotos} />}
-          {step === 2 && <AttestationStep attestations={attestations} setAttestations={setAttestations} evaluatorName={evaluatorName} setEvaluatorName={setEvaluatorName} evaluatorOrg={evaluatorOrg} setEvaluatorOrg={setEvaluatorOrg} />}
-          {step === 3 && <CertPreview certId={certId} issued={issued} scores={scores} spec={spec} sizeClass={sizeClass} docData={docData} photos={photos} attestations={attestations} evaluatorName={evaluatorName} evaluatorOrg={evaluatorOrg} primaryCtx={primaryCtx} compoundGrades={compoundGrades} />}
+          {step === 2 && <AttestationStep attestations={attestations} setAttestations={setAttestations} evaluatorName={evaluatorName} setEvaluatorName={setEvaluatorName} evaluatorOrg={evaluatorOrg} setEvaluatorOrg={setEvaluatorOrg} customAttestations={customAttestations} setCustomAttestations={setCustomAttestations} />}
+          {step === 3 && <CertPreview certId={certId} issued={issued} scores={scores} spec={spec} sizeClass={sizeClass} docData={docData} photos={photos} attestations={attestations} evaluatorName={evaluatorName} evaluatorOrg={evaluatorOrg} primaryCtx={primaryCtx} compoundGrades={compoundGrades} customAttestations={customAttestations} />}
         </div>
 
         {/* Footer nav */}

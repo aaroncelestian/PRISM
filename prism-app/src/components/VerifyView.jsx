@@ -1,4 +1,16 @@
+import { useState, useEffect } from "react";
 import { GRADES, COMPOUND_GRADES } from "../data/prism.js";
+
+const HMAC_SECRET = "prism-cert-integrity-v1-2024-mineral-evaluation";
+async function computeHmac(message) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw", enc.encode(HMAC_SECRET),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const buf = await crypto.subtle.sign("HMAC", key, enc.encode(message));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
 const DIMS_COMPACT = [
   { key: "cr", label: "Crystal Quality",  icon: "💠" },
@@ -19,11 +31,17 @@ const SIZE_LABELS = {
 };
 
 const ATTEST_LABELS = {
-  lc: { label: "Legally collected / permitted",                icon: "⚖️" },
-  la: { label: "Locality is accurate as stated",              icon: "📍" },
-  rd: { label: "All repairs & enhancements disclosed",        icon: "🔍" },
-  nr: { label: "No CITES or repatriation restrictions",       icon: "📋" },
-  he: { label: "Evaluation is honest and unbiased",           icon: "🤝" },
+  lc: { label: "Legally collected / acquired" },
+  la: { label: "Locality is accurate" },
+  rd: { label: "All repairs / enhancements disclosed" },
+  nr: { label: "No CITES restrictions" },
+  he: { label: "Honest, unbiased evaluation" },
+  nf: { label: "Genuine natural mineral (not synthetic/composite)" },
+  nc: { label: "No conflict-zone or sanctions origin" },
+  cp: { label: "Cultural patrimony compliant" },
+  ns: { label: "Not stolen or misappropriated" },
+  hd: { label: "Radiation / toxicity hazards disclosed" },
+  ic: { label: "Import / customs compliant (if applicable)" },
 };
 
 function ScoreBar({ value }) {
@@ -39,6 +57,16 @@ function ScoreBar({ value }) {
 }
 
 export default function VerifyView({ payload }) {
+  const [sigStatus, setSigStatus] = useState("checking"); // "checking" | "valid" | "invalid" | "unsigned"
+
+  useEffect(() => {
+    const { sig, ...dataToVerify } = payload;
+    if (!sig) { setSigStatus("unsigned"); return; }
+    computeHmac(JSON.stringify(dataToVerify))
+      .then(computed => setSigStatus(computed === sig ? "valid" : "invalid"))
+      .catch(() => setSigStatus("invalid"));
+  }, []);
+
   // payload is the parsed certData object from the QR URL
   const { id, t, sp = {}, sc = {}, ps, gr, cg = [], pt, at = {}, ev, org } = payload;
   const displayScore = ps ?? Math.round((sc.cr + sc.sr + sc.lr + sc.pv + sc.ae + sc.si) / 6);
@@ -58,21 +86,39 @@ export default function VerifyView({ payload }) {
       <div style={{ width: "100%", maxWidth: "520px" }}>
 
         {/* Verification banner */}
-        <div style={{
-          padding: "12px 16px", borderRadius: "8px", marginBottom: "20px",
-          background: "#0f1e10", border: "1px solid #2a6040",
-          display: "flex", alignItems: "center", gap: "10px",
-        }}>
-          <span style={{ fontSize: "20px" }}>✅</span>
-          <div>
-            <div style={{ fontSize: "12px", fontWeight: 700, color: "#40e080", letterSpacing: "0.1em" }}>
-              VALID PRISM CERTIFICATE
-            </div>
-            <div style={{ fontSize: "10px", color: "#70b090" }}>
-              Certificate ID: <strong style={{ fontFamily: "monospace", color: "#90d0b0" }}>{id}</strong>
+        {sigStatus === "checking" && (
+          <div style={{ padding: "12px 16px", borderRadius: "8px", marginBottom: "20px", background: "#1a1e26", border: "1px solid #3a4060", display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "18px" }}>⏳</span>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#90a0c0", letterSpacing: "0.1em" }}>VERIFYING SIGNATURE…</div>
+          </div>
+        )}
+        {sigStatus === "valid" && (
+          <div style={{ padding: "12px 16px", borderRadius: "8px", marginBottom: "20px", background: "#0f1e10", border: "1px solid #2a6040", display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "20px" }}>✅</span>
+            <div>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "#40e080", letterSpacing: "0.1em" }}>VALID PRISM CERTIFICATE — SIGNATURE VERIFIED</div>
+              <div style={{ fontSize: "10px", color: "#70b090" }}>Certificate ID: <strong style={{ fontFamily: "monospace", color: "#90d0b0" }}>{id}</strong> · Data has not been tampered with</div>
             </div>
           </div>
-        </div>
+        )}
+        {sigStatus === "invalid" && (
+          <div style={{ padding: "12px 16px", borderRadius: "8px", marginBottom: "20px", background: "#1e0f0f", border: "1px solid #602020", display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "20px" }}>⛔</span>
+            <div>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "#e04040", letterSpacing: "0.1em" }}>SIGNATURE INVALID — DATA MAY BE TAMPERED</div>
+              <div style={{ fontSize: "10px", color: "#b07070" }}>The certificate data does not match its signature. Do not trust this certificate.</div>
+            </div>
+          </div>
+        )}
+        {sigStatus === "unsigned" && (
+          <div style={{ padding: "12px 16px", borderRadius: "8px", marginBottom: "20px", background: "#1a1608", border: "1px solid #604020", display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "20px" }}>⚠️</span>
+            <div>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "#d0a040", letterSpacing: "0.1em" }}>LEGACY CERTIFICATE — NO SIGNATURE</div>
+              <div style={{ fontSize: "10px", color: "#a08050" }}>Certificate ID: <strong style={{ fontFamily: "monospace", color: "#c0a060" }}>{id}</strong> · Generated before tamper-evident signing was added</div>
+            </div>
+          </div>
+        )}
 
         {/* Main card */}
         <div style={{
@@ -172,17 +218,17 @@ export default function VerifyView({ payload }) {
             <div style={{ fontSize: "9px", letterSpacing: "0.14em", color: "#507090", textTransform: "uppercase", marginBottom: "8px" }}>
               Evaluator Attestations
             </div>
-            {Object.entries(ATTEST_LABELS).map(([k, { label, icon }]) => {
-              const passed = at[k] === true;
-              return (
-                <div key={k} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                  <span style={{ fontSize: "13px" }}>{passed ? "✅" : "❌"}</span>
-                  <span style={{ fontSize: "10px", color: passed ? "#0d1520" : "#a0b0c0" }}>
-                    {icon} {label}
-                  </span>
-                </div>
-              );
-            })}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3px 10px" }}>
+              {Object.entries(ATTEST_LABELS).map(([k, { label }]) => {
+                const passed = at[k] === true;
+                return (
+                  <div key={k} style={{ display: "flex", alignItems: "baseline", gap: "5px" }}>
+                    <span style={{ fontSize: "11px", flexShrink: 0 }}>{passed ? "✅" : "❌"}</span>
+                    <span style={{ fontSize: "10px", color: passed ? "#0d1520" : "#a0b0c0" }}>{label}</span>
+                  </div>
+                );
+              })}
+            </div>
             {!allAttestPass && (
               <div style={{ marginTop: "6px", fontSize: "10px", color: "#c04040", padding: "6px 10px", background: "#fff0f0", borderRadius: "4px" }}>
                 ⚠️ One or more attestations were not confirmed by the evaluator.
@@ -198,7 +244,7 @@ export default function VerifyView({ payload }) {
             <br /><br />
             Certificate ID: <strong style={{ fontFamily: "monospace" }}>{id}</strong>
             <br />
-            <a href="/" style={{ color: "#3070b0" }}>← Return to PRISM evaluator</a>
+            <a href={window.location.href.split("?")[0]} style={{ color: "#3070b0" }}>← Return to PRISM evaluator</a>
           </div>
         </div>
 
