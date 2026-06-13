@@ -221,7 +221,7 @@ export default function ResearchAnalysis({ comps }) {
         const avgPremium = premiums.length ? Math.round(mean(premiums)) : null;
         return { loc, count: items.length, avgActual, avgScore, avgPremium, species };
       })
-      .filter(x => x.avgPremium != null)
+      .filter(x => x.avgPremium != null && x.count >= 2)
       .sort((a, b) => a.avgPremium - b.avgPremium);
 
     return { priced, scored, pricedAndScored, avgPrice, medPrice, minPrice, maxPrice,
@@ -515,9 +515,11 @@ export default function ResearchAnalysis({ comps }) {
           <div>
             <SectionTitle>Locality Premium — Score-Adjusted</SectionTitle>
             <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "10px", lineHeight: 1.6 }}>
-              Average asking price vs what the regression expects for those PRISM scores.
-              Removes the quality effect so only the <em>locality premium</em> remains.
-              <span style={{ color: "#00c880" }}> Green</span> = underpriced for the quality ·
+              Each specimen's actual price is compared to what the <em>species-specific</em> regression
+              predicts for that PRISM score — so Tsumeb Wulfenite is always benchmarked against other
+              Wulfenite, never mixed with Rhodochrosite. The % shown is the average deviation across
+              all scored specimens from that locality (min. 2 required).
+              <span style={{ color: "#00c880" }}> Green</span> = priced below species expectation ·
               <span style={{ color: "#ff8060" }}> Orange</span> = locality commands a premium.
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
