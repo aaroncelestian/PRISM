@@ -93,6 +93,7 @@ const CUSTOM_TOOLTIP_STYLE = {
 
 export default function ResearchAnalysis({ comps }) {
   const [driversSpecies, setDriversSpecies] = useState("all");
+  const [colorBy, setColorBy] = useState("auto");
   const analysis = useMemo(() => {
     const priced  = comps.filter(c => Number(c.askingPrice) > 0);
     const scored  = comps.filter(c => c.prismScore != null);
@@ -175,8 +176,10 @@ export default function ResearchAnalysis({ comps }) {
   const { bubbleData, colorDimLabel, topColorValues } = useMemo(() => {
     const base = comps.filter(c => Number(c.askingPrice) > 0);
     const filtered = driversSpecies === "all" ? base : base.filter(c => c.species === driversSpecies);
-    const colorDim = driversSpecies === "all" ? "species" : "locality";
-    const colorDimLabel = driversSpecies === "all" ? "species" : "locality";
+    const colorDim = colorBy === "source" ? "source"
+      : driversSpecies === "all" ? "species" : "locality";
+    const colorDimLabel = colorBy === "source" ? "vendor"
+      : driversSpecies === "all" ? "species" : "locality";
 
     const counts = {};
     filtered.forEach(c => {
@@ -197,6 +200,7 @@ export default function ResearchAnalysis({ comps }) {
         id: c.id, x: sizeNum + jitter, y: Number(c.askingPrice),
         color, colorLabel: colorVal,
         species: c.species || "Unknown", locality: c.locality || "Unknown",
+        source: c.source || "Unknown",
         sizeLabel: SIZE_SHORT[sizeNum] || c.sizeClass,
         condition: c.condition || "unknown",
         r: 5 + condRank * 2,
@@ -205,7 +209,7 @@ export default function ResearchAnalysis({ comps }) {
     });
 
     return { bubbleData, colorDimLabel, topColorValues };
-  }, [comps, driversSpecies]);
+  }, [comps, driversSpecies, colorBy]);
 
   const { priced, scored, pricedAndScored, avgPrice, medPrice, minPrice, maxPrice,
           bySpecies, bySize, bySource, avgScore, regPoints, regLine, marketPosition } = analysis;
@@ -421,17 +425,30 @@ export default function ResearchAnalysis({ comps }) {
       {/* ── Price Drivers bubble scatter ─────────────────────────────────── */}
       {comps.filter(c => Number(c.askingPrice) > 0).length >= 3 && (
         <div>
-          <SectionTitle>Price Drivers — Size · {colorDimLabel === "locality" ? "Locality" : "Species"} · Condition</SectionTitle>
+          <SectionTitle>Price Drivers — Size · {colorDimLabel === "vendor" ? "Vendor" : colorDimLabel === "locality" ? "Locality" : "Species"} · Condition</SectionTitle>
 
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.06em" }}>Focus on:</span>
+            <span style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.06em" }}>Species:</span>
             <select value={driversSpecies} onChange={e => setDriversSpecies(e.target.value)}
               style={{ fontSize: "11px", padding: "4px 8px", background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "4px", color: driversSpecies !== "all" ? "var(--cyan)" : "var(--text-dim)", cursor: "pointer" }}>
               <option value="all">All species</option>
               {speciesList.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
+            <span style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.06em", marginLeft: "6px" }}>Color by:</span>
+            <div style={{ display: "flex", borderRadius: "4px", overflow: "hidden", border: "1px solid var(--border)" }}>
+              {[["auto", "Auto"], ["source", "Vendor"]].map(([val, label]) => (
+                <button key={val} onClick={() => setColorBy(val)} style={{
+                  padding: "3px 10px", fontSize: "10px", border: "none",
+                  background: colorBy === val ? "rgba(0,212,255,0.12)" : "transparent",
+                  color: colorBy === val ? "var(--cyan)" : "var(--text-muted)",
+                  fontWeight: colorBy === val ? 600 : 400,
+                  borderRight: val === "auto" ? "1px solid var(--border)" : "none",
+                  cursor: "pointer", transition: "all 0.15s",
+                }}>{label}</button>
+              ))}
+            </div>
             <span style={{ fontSize: "10px", color: "var(--text-muted)", opacity: 0.7 }}>
-              {bubbleData.length} listing{bubbleData.length !== 1 ? "s" : ""} plotted
+              {bubbleData.length} listing{bubbleData.length !== 1 ? "s" : ""}
             </span>
           </div>
 
@@ -458,7 +475,8 @@ export default function ResearchAnalysis({ comps }) {
                   return (
                     <div style={CUSTOM_TOOLTIP_STYLE}>
                       <div style={{ fontWeight: 600, marginBottom: "4px", color: d.color }}>{d.species}</div>
-                      <div style={{ color: "#8899aa" }}>📍 {d.locality || "—"}</div>
+                      <div style={{ color: colorBy === "source" ? d.color : "#8899aa", fontWeight: colorBy === "source" ? 600 : 400 }}>🏪 {d.source}</div>
+                      <div style={{ color: "#8899aa", fontSize: "10px" }}>📍 {d.locality || "—"}</div>
                       <div>💰 <strong>{fmt(d.y)}</strong></div>
                       <div>📏 {d.sizeLabel}</div>
                       <div>{COND_LABEL[d.condition] || d.condition}</div>
