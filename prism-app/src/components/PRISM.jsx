@@ -129,8 +129,9 @@ export default function PRISM() {
   const handleScoreComp = (comp) => {
     setScoringCompId(comp.id);
     setSpec({ name: comp.species, species: comp.species, locality: comp.locality || "" });
-    setScores(DEFAULT_SCORES);
+    setScores(comp.scores ? { ...DEFAULT_SCORES, ...comp.scores } : DEFAULT_SCORES);
     setSciCriteria([false, false, false, false, false]);
+    if (comp.ctx) setCtx(comp.ctx);
     setMode("wizard");
   };
 

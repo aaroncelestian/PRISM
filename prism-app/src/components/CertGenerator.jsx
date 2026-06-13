@@ -324,7 +324,8 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
     },
     ev: evaluatorName, org: evaluatorOrg,
   };
-  const verifyUrl = `${window.location.origin}${window.location.pathname}?verify=${safeB64Encode(JSON.stringify(certData))}`;
+  const PRISM_BASE = "https://aaroncelestian.github.io/PRISM/";
+  const verifyUrl = `${PRISM_BASE}?verify=${safeB64Encode(JSON.stringify(certData))}`;
 
   useEffect(() => {
     QRCode.toDataURL(verifyUrl, { width: 160, margin: 2, color: { dark: "#0d1520", light: "#ffffff" } })
@@ -485,8 +486,8 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
 
         {/* Footer */}
         <div style={{ fontSize: "8px", color: "#8090a0", lineHeight: 1.5 }}>
-          QR code encodes verifiable data: all six PRISM scores, grade, compound grades, provenance tier, and attestation flags.
-          Photos and extended notes are embedded in this document only. Certificate ID: {certId}. Scan QR with PRISM to verify integrity.
+          Scan QR to verify at <strong>aaroncelestian.github.io/PRISM</strong> — encodes all six PRISM scores, grade, compound grades, provenance tier, and attestation flags.
+          Photos and extended notes are embedded in this document only. Certificate ID: {certId}.
         </div>
       </div>
     </div>
