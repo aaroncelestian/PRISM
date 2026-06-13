@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from "react";
-import { Plus, X, Search, Edit2, Trash2, Award, Camera, Download, FolderOpen } from "lucide-react";
+import { Plus, X, Search, Edit2, Trash2, Award, Camera, Download, FolderOpen, ExternalLink, Upload } from "lucide-react";
 import { GRADES, WEIGHTS, CONTEXTS } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import { COMPS_SCHEMA } from "../version.js";
@@ -29,6 +29,18 @@ const CONDITIONS = [
 
 const COMMON_SOURCES = ["iRocks", "eBay", "Mindat Market", "Tucson Show", "Denver Show", "Dealer", "Heritage Auctions", "Catawiki", "Show Table"];
 
+const DOMAIN_TO_SOURCE = {
+  "irocks.com": "iRocks", "weinrichminerals.com": "Weinrich Minerals",
+  "arkenstone.com": "The Arkenstone", "dakotamatrix.com": "Dakota Matrix",
+  "mindat.org": "Mindat Market", "minfind.com": "Minfind",
+  "ebay.com": "eBay", "ebay.com.au": "eBay",
+  "heritage-auctions.com": "Heritage Auctions", "ha.com": "Heritage Auctions",
+  "catawiki.com": "Catawiki", "invaluable.com": "Invaluable",
+  "liveauctioneers.com": "LiveAuctioneers", "mineralauctions.com": "Mineral Auctions",
+  "collector.com": "Collector.com", "rubylane.com": "Ruby Lane",
+  "bidspirit.com": "BidSpirit", "crystalauctions.com": "Crystal Auctions",
+};
+
 const DIM_DISPLAY = [
   { key: "localityRarity", label: "Locality",   icon: "📍" },
   { key: "speciesRarity",  label: "Species",    icon: "🌍" },
@@ -38,7 +50,7 @@ const DIM_DISPLAY = [
   { key: "scientific",     label: "Scientific", icon: "🔬" },
 ];
 
-const EMPTY_FORM = { species: "", locality: "", sizeClass: "miniature", condition: "excellent", askingPrice: "", source: "", notes: "", photo: null };
+const EMPTY_FORM = { species: "", locality: "", sourceUrl: "", sizeClass: "miniature", condition: "excellent", askingPrice: "", source: "", notes: "", photo: null };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -75,6 +87,81 @@ function fmtPrice(n) {
 
 function fmtDate(iso) {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function detectSourceFromUrl(url) {
+  if (!url) return "";
+  try {
+    const host = new URL(url.includes("://") ? url : "https://" + url).hostname.replace(/^www\./, "");
+    for (const [domain, name] of Object.entries(DOMAIN_TO_SOURCE)) {
+      if (host === domain || host.endsWith("." + domain)) return name;
+    }
+  } catch {}
+  return "";
+}
+
+function splitCSVLine(line) {
+  const result = []; let cur = "", inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQ = !inQ; continue; }
+    if (ch === "," && !inQ) { result.push(cur.trim()); cur = ""; continue; }
+    cur += ch;
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const headers = splitCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[\s_-]+/g, "").replace(/[^a-z]/g, ""));
+  const col = (...aliases) => { for (const a of aliases) { const i = headers.indexOf(a); if (i >= 0) return i; } return -1; };
+  const idx = {
+    species:     col("species", "mineral", "name"),
+    locality:    col("locality", "location", "mine"),
+    sizeClass:   col("sizeclass", "size", "sizecat"),
+    condition:   col("condition", "cond", "quality"),
+    askingPrice: col("askingprice", "price", "asking", "cost", "listprice"),
+    soldPrice:   col("soldprice", "sold", "saleprice"),
+    source:      col("source", "vendor", "seller", "from", "site", "dealer"),
+    sourceUrl:   col("sourceurl", "url", "link", "href", "listingurl"),
+    notes:       col("notes", "note", "description", "desc", "comment"),
+  };
+  const SIZE_MAP = {
+    thumbnail: ["thumbnail","thumb","thb","thmb"],
+    miniature: ["miniature","mini","min","minis"],
+    small_cab: ["smallcabinet","smallcab","smcab","scab"],
+    cabinet:   ["cabinet","cab"],
+    large_cab: ["largecabinet","largecab","lgcab","lcab"],
+    museum:    ["museum","mus"],
+  };
+  const COND_MAP = {
+    pristine:  ["pristine","gem","perfect","flawless","mint"],
+    excellent: ["excellent","veryfine","vf","displayquality","display"],
+    good:      ["good","minorchip","chip","minordamage"],
+    repaired:  ["repaired","restored","repair","glued"],
+    damaged:   ["damaged","damage","broken","cracked"],
+  };
+  const normSize = v => { const lv=(v||"").toLowerCase().replace(/[\s_-]+/g,""); for(const[k,a]of Object.entries(SIZE_MAP)){if(a.some(x=>lv===x||lv.startsWith(x)))return k;} return"miniature"; };
+  const normCond = v => { const lv=(v||"").toLowerCase().replace(/[\s_-]+/g,""); for(const[k,a]of Object.entries(COND_MAP)){if(a.some(x=>lv===x||lv.startsWith(x)))return k;} return"excellent"; };
+  const get = (cells, i) => i >= 0 && i < cells.length ? cells[i] : "";
+  const results = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = splitCSVLine(lines[i]);
+    const species = get(cells, idx.species);
+    if (!species) continue;
+    const priceRaw = get(cells, idx.askingPrice).replace(/[$,\s]/g, "");
+    results.push({
+      species, locality: get(cells, idx.locality),
+      sizeClass: normSize(get(cells, idx.sizeClass)),
+      condition: normCond(get(cells, idx.condition)),
+      askingPrice: parseFloat(priceRaw) || 0, soldPrice: "",
+      source: get(cells, idx.source), sourceUrl: get(cells, idx.sourceUrl),
+      notes: get(cells, idx.notes), photo: null,
+    });
+  }
+  return results;
 }
 
 // ── PhotoCapture ─────────────────────────────────────────────────────────────
@@ -139,6 +226,15 @@ function CompForm({ initial = EMPTY_FORM, onSave, onCancel }) {
   const [form, setForm] = useState({ ...EMPTY_FORM, ...initial });
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const canSave = form.species.trim().length > 0 && form.askingPrice !== "" && form.sizeClass;
+  const detectedSource = detectSourceFromUrl(form.sourceUrl || "");
+  const handleUrlChange = (e) => {
+    const url = e.target.value;
+    set("sourceUrl", url);
+    if (!form.source) {
+      const detected = detectSourceFromUrl(url);
+      if (detected) set("source", detected);
+    }
+  };
 
   return (
     <div style={{
@@ -162,6 +258,20 @@ function CompForm({ initial = EMPTY_FORM, onSave, onCancel }) {
           <label style={{ display: "block", fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "5px" }}>Locality</label>
           <input type="text" value={form.locality} onChange={e => set("locality", e.target.value)}
             placeholder='e.g. "Red Cloud Mine, Arizona"' />
+        </div>
+      </div>
+
+      {/* Row 1b: Listing URL */}
+      <div style={{ marginBottom: "12px" }}>
+        <label style={{ display: "block", fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "5px" }}>Listing URL (optional)</label>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <input type="text" value={form.sourceUrl || ""} onChange={handleUrlChange}
+            placeholder="https://irocks.com/minerals/specimen/…" style={{ flex: 1 }} />
+          {detectedSource && (
+            <span style={{ fontSize: "10px", color: "var(--cyan)", padding: "3px 9px", borderRadius: "3px", background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.3)", whiteSpace: "nowrap", flexShrink: 0 }}>
+              ✓ {detectedSource}
+            </span>
+          )}
         </div>
       </div>
 
@@ -277,7 +387,14 @@ function CompCard({ comp, onScore, onEdit, onDelete }) {
       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
         {sz && <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-muted)", letterSpacing: "0.08em" }}>{sz.label} · {sz.range}</span>}
         {cond && <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>{cond.icon} {cond.label}</span>}
-        {comp.source && <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>{comp.source}</span>}
+        {comp.source && (
+          comp.sourceUrl
+            ? <a href={comp.sourceUrl} target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "var(--bg-card)", border: "1px solid rgba(0,212,255,0.2)", color: "var(--cyan)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "3px", cursor: "pointer" }}>
+                {comp.source} <ExternalLink size={7} />
+              </a>
+            : <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>{comp.source}</span>
+        )}
       </div>
 
       {/* PRISM score section */}
@@ -382,6 +499,7 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
   };
 
   const openInputRef = useRef();
+  const csvImportRef = useRef();
 
   const handleEdit = (comp) => { setEditing(comp); setShowForm(false); };
   const handleCancel = () => { setShowForm(false); setEditing(null); };
@@ -411,6 +529,33 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
         if (warning && !window.confirm(warning + "\n\nOpen anyway?")) return;
         onImport(data.map(migrateComp).filter(Boolean));
       } catch { alert("Could not read file — make sure it is a valid PRISM Research JSON."); }
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  };
+
+  const handleCSVImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = parseCSV(ev.target.result);
+        if (!parsed.length) {
+          alert("No valid rows found.\n\nMake sure your CSV has a header row. Supported columns:\nspecies, locality, size, condition, price, source, url, notes");
+          return;
+        }
+        if (!window.confirm(`Import ${parsed.length} listing${parsed.length !== 1 ? "s" : ""} from CSV?`)) return;
+        const withIds = parsed.map(c => ({
+          ...c,
+          id: `comp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          addedAt: new Date().toISOString(),
+          scores: null, grade: null, gradeEmoji: null, prismScore: null, ctx: null,
+        }));
+        onImport(withIds);
+      } catch {
+        alert("Could not parse CSV.\n\nMake sure it has a valid header row with columns like:\nspecies, locality, price, size, condition, source, url, notes");
+      }
       e.target.value = "";
     };
     reader.readAsText(file);
@@ -482,6 +627,11 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
           <FolderOpen size={13} /> Open
         </button>
         <input ref={openInputRef} type="file" accept=".json,application/json" onChange={handleOpen} style={{ display: "none" }} />
+        <button onClick={() => csvImportRef.current?.click()} title="Import listings from a CSV spreadsheet"
+          style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
+          <Upload size={13} /> CSV
+        </button>
+        <input ref={csvImportRef} type="file" accept=".csv,text/csv" onChange={handleCSVImport} style={{ display: "none" }} />
       </div>
       <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "8px", opacity: 0.7 }}>
         💡 Saves to this device only — store the file in iCloud Drive, Google Drive, or Dropbox to access on any device
@@ -505,7 +655,7 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
       {/* Edit form */}
       {editingComp && (
         <CompForm
-          initial={{ species: editingComp.species, locality: editingComp.locality, sizeClass: editingComp.sizeClass, condition: editingComp.condition, askingPrice: editingComp.askingPrice, source: editingComp.source, notes: editingComp.notes, photo: editingComp.photo }}
+          initial={{ species: editingComp.species, locality: editingComp.locality, sourceUrl: editingComp.sourceUrl || "", sizeClass: editingComp.sizeClass, condition: editingComp.condition, askingPrice: editingComp.askingPrice, source: editingComp.source, notes: editingComp.notes, photo: editingComp.photo }}
           onSave={handleFormSave}
           onCancel={handleCancel}
         />
