@@ -69,19 +69,22 @@ function PhotoCapture({ label, value, onChange }) {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => onChange(reader.result);
+    reader.onload = () => {
+      onChange(reader.result);
+      if (ref.current) ref.current.value = "";
+    };
     reader.readAsDataURL(file);
   };
   return (
     <div>
-      <input ref={ref} type="file" accept="image/*" capture="environment" onChange={handleFile} style={{ display: "none" }} />
+      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" onChange={handleFile} style={{ display: "none" }} />
       {value ? (
-        <div style={{ position: "relative", display: "inline-block" }}>
-          <img src={value} alt={label} style={{ width: "100%", maxHeight: "110px", objectFit: "cover", borderRadius: "4px", display: "block" }} />
-          <button onClick={() => { onChange(null); }} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.7)", border: "none", borderRadius: "3px", color: "#fff", fontSize: "10px", padding: "2px 6px", cursor: "pointer" }}>✕ Remove</button>
+        <div style={{ position: "relative", display: "inline-block", width: "100%" }}>
+          <img key={value.slice(0, 32)} src={value} alt={label} style={{ width: "100%", maxHeight: "110px", objectFit: "cover", borderRadius: "4px", display: "block" }} />
+          <button onClick={() => { onChange(null); if (ref.current) ref.current.value = ""; }} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.7)", border: "none", borderRadius: "3px", color: "#fff", fontSize: "10px", padding: "2px 6px", cursor: "pointer" }}>✕ Remove</button>
         </div>
       ) : (
-        <button onClick={() => ref.current.click()} style={{
+        <button onClick={() => ref.current?.click()} style={{
           width: "100%", padding: "10px", border: "1px dashed var(--border)", borderRadius: "5px",
           background: "var(--bg)", color: "var(--text-muted)", cursor: "pointer", fontSize: "11px",
           display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
@@ -164,8 +167,15 @@ function ReviewStep({ scores, spec, sizeClass, setSizeClass, allCtxData, primary
 
 // ── Step 2: Documentation ─────────────────────────────────────────────────────
 
-function DocumentationStep({ scores, spec, docData, setDocData, photos, setPhotos }) {
-  const update = (field, val) => setDocData(d => ({ ...d, [field]: val }));
+function DocumentationStep({ scores, spec, docData: initDocData, setDocData, photos, setPhotos }) {
+  const [localDoc, setLocalDoc] = useState(initDocData);
+  const localDocRef = useRef(localDoc);
+  const update = (field, val) => {
+    const next = { ...localDocRef.current, [field]: val };
+    localDocRef.current = next;
+    setLocalDoc(next);
+  };
+  useEffect(() => () => setDocData(localDocRef.current), []);
   const setPhoto = (key, val) => setPhotos(p => ({ ...p, [key]: val }));
   const s = scores;
 
@@ -223,7 +233,7 @@ function DocumentationStep({ scores, spec, docData, setDocData, photos, setPhoto
         <div style={{ padding: "12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
           <div style={{ fontSize: "10px", letterSpacing: "0.14em", color: "#90c0f0", textTransform: "uppercase", marginBottom: "6px" }}>Locality Notes ({s.localityRarity ?? 50}/100)</div>
           <textarea placeholder="Additional locality context: specific mine level, GPS, collecting permit, known production history."
-            value={docData.localityNote} onChange={e => update("localityNote", e.target.value)}
+            value={localDoc.localityNote} onChange={e => update("localityNote", e.target.value)}
             rows={2} style={textareaStyle} />
         </div>
       )}
@@ -233,7 +243,7 @@ function DocumentationStep({ scores, spec, docData, setDocData, photos, setPhoto
         <div style={{ padding: "12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
           <div style={{ fontSize: "10px", letterSpacing: "0.14em", color: "#90c0f0", textTransform: "uppercase", marginBottom: "6px" }}>Species Notes ({s.speciesRarity ?? 50}/100)</div>
           <textarea placeholder="Additional species context: IMA formula, identifying features, analytical confirmation (XRD, etc.)."
-            value={docData.speciesNote} onChange={e => update("speciesNote", e.target.value)}
+            value={localDoc.speciesNote} onChange={e => update("speciesNote", e.target.value)}
             rows={2} style={textareaStyle} />
         </div>
       )}
@@ -241,12 +251,12 @@ function DocumentationStep({ scores, spec, docData, setDocData, photos, setPhoto
       {/* Provenance */}
       <div style={{ padding: "12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
         <div style={{ fontSize: "10px", letterSpacing: "0.14em", color: "#e8b840", textTransform: "uppercase", marginBottom: "6px" }}>📜 Provenance ({s.provenance ?? 50}/100)</div>
-        <select value={docData.provTier} onChange={e => update("provTier", e.target.value)} style={{ ...textareaStyle, height: "auto", padding: "7px 10px", marginBottom: "6px" }}>
+        <select value={localDoc.provTier} onChange={e => update("provTier", e.target.value)} style={{ ...textareaStyle, height: "auto", padding: "7px 10px", marginBottom: "6px" }}>
           <option value="">— Select provenance tier —</option>
           {PROV_TIERS.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
         <textarea placeholder="Describe each hand the specimen passed through: Self-collected → traded to John Smith (2005) → purchased from dealer (2018) → your acquisition. Include dates, labels, and any documentation."
-          value={docData.chainOfCustody} onChange={e => update("chainOfCustody", e.target.value)}
+          value={localDoc.chainOfCustody} onChange={e => update("chainOfCustody", e.target.value)}
           rows={3} style={textareaStyle} />
         <div style={{ marginTop: "8px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
           <div>
@@ -265,7 +275,7 @@ function DocumentationStep({ scores, spec, docData, setDocData, photos, setPhoto
         <div style={{ padding: "12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
           <div style={{ fontSize: "10px", letterSpacing: "0.14em", color: "#a0c0a0", textTransform: "uppercase", marginBottom: "6px" }}>🔬 Scientific Value ({s.scientific ?? 0}/100)</div>
           <textarea placeholder="Literature citations, analytical data (XRD, SEM, EDS), type locality notes, paragenetic significance."
-            value={docData.scientificNote} onChange={e => update("scientificNote", e.target.value)}
+            value={localDoc.scientificNote} onChange={e => update("scientificNote", e.target.value)}
             rows={2} style={textareaStyle} />
         </div>
       )}
@@ -274,7 +284,7 @@ function DocumentationStep({ scores, spec, docData, setDocData, photos, setPhoto
       <div style={{ padding: "12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
         <div style={{ fontSize: "10px", letterSpacing: "0.14em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>🔍 Condition / Repairs</div>
         <textarea placeholder="Describe any chips, repairs, restoration, or reconstitution. Write 'None known' if specimen is unaltered."
-          value={docData.conditionNote} onChange={e => update("conditionNote", e.target.value)}
+          value={localDoc.conditionNote} onChange={e => update("conditionNote", e.target.value)}
           rows={2} style={textareaStyle} />
       </div>
     </div>
@@ -305,6 +315,7 @@ const ATTESTATION_ITEMS = [
 
 function AttestationStep({ attestations, setAttestations, evaluatorName, setEvaluatorName, evaluatorOrg, setEvaluatorOrg, customAttestations, setCustomAttestations }) {
   const [newText, setNewText] = useState("");
+  const [showWhy, setShowWhy] = useState(false);
   const toggle = (key) => setAttestations(a => ({ ...a, [key]: !a[key] }));
   const allChecked = Object.values(attestations).every(Boolean);
   const addCustom = () => {
@@ -319,11 +330,56 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
       <div>
-        <h3 style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)", marginBottom: "4px" }}>Attestations</h3>
-        <p style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.55 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+          <h3 style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)", margin: 0 }}>Attestations</h3>
+          <button
+            onClick={() => setShowWhy(w => !w)}
+            title="Why do I have to attest to these?"
+            style={{
+              width: "18px", height: "18px", borderRadius: "50%",
+              background: showWhy ? "rgba(0,212,255,0.15)" : "rgba(0,212,255,0.06)",
+              border: "1px solid rgba(0,212,255,0.35)",
+              color: "var(--cyan)", fontSize: "11px", fontWeight: 700,
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0, lineHeight: 1,
+            }}
+          >?</button>
+          <span style={{ fontSize: "10px", color: "var(--text-muted)", fontStyle: "italic" }}>Why do I have to attest to these?</span>
+        </div>
+        <p style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.55, margin: 0 }}>
           These attestations are embedded in the certificate and QR code. They are your formal statement of accuracy. False attestation devalues the certificate and is unethical.
         </p>
       </div>
+
+      {showWhy && (
+        <div style={{
+          padding: "14px 16px", background: "rgba(0,212,255,0.04)",
+          border: "1px solid rgba(0,212,255,0.2)", borderRadius: "6px",
+          fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.7,
+          display: "flex", flexDirection: "column", gap: "8px",
+        }}>
+          <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)" }}>Why attestations matter</div>
+          <p style={{ margin: 0 }}>
+            A PRISM certificate is a public document tied to a verifiable QR code. Anyone who scans it — a buyer, a museum, an auction house, or a future owner — is relying on the statements you make here to be true. The attestations are not bureaucratic formality; they are the backbone of what makes the certificate meaningful.
+          </p>
+          <p style={{ margin: 0 }}>
+            <strong style={{ color: "var(--text)" }}>Legal collection</strong> protects you and the buyer from unknowingly handling stolen or illegally collected material. <strong style={{ color: "var(--text)" }}>Locality accuracy</strong> and <strong style={{ color: "var(--text)" }}>species authenticity</strong> are core to scientific and collector value — misrepresenting these is fraud. <strong style={{ color: "var(--text)" }}>Repair disclosure</strong> is an industry standard; undisclosed repairs are grounds for reversal of sale in most jurisdictions.
+          </p>
+          <p style={{ margin: 0 }}>
+            <strong style={{ color: "var(--text)" }}>Cultural patrimony, conflict origin, and import compliance</strong> are legal obligations in many countries, not just ethical preferences. Specimens removed from countries like Morocco, China, or Peru without proper export documentation can be seized and repatriated — this affects every subsequent owner. <strong style={{ color: "var(--text)" }}>Hazard disclosure</strong> protects the health of anyone who handles the specimen.
+          </p>
+          <p style={{ margin: 0 }}>
+            The <strong style={{ color: "var(--text)" }}>honest evaluation</strong> attestation means you are not inflating scores for insurance, sale, or donation tax purposes — doing so carries civil and criminal liability.
+          </p>
+          <div style={{
+            marginTop: "4px", padding: "10px 12px",
+            background: "rgba(255,100,60,0.06)", border: "1px solid rgba(255,100,60,0.25)",
+            borderRadius: "5px", fontSize: "11px", color: "#e08060", fontWeight: 500,
+          }}>
+            If you cannot honestly confirm these statements, do not generate this certificate. A certificate you cannot stand behind does more harm than no certificate at all.
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         {ATTESTATION_ITEMS.map(({ key, label, icon }) => {
@@ -526,16 +582,14 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
         </div>
 
         {/* Grade */}
-        <div style={{ marginBottom: "12px", paddingBottom: "12px", borderBottom: "1px solid #d0dce8" }}>
-          <div style={{ marginBottom: "6px" }}>
+        <div style={{ marginBottom: "10px", paddingBottom: "10px", borderBottom: "1px solid #d0dce8" }}>
+          <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "8px" }}>
             <div style={{ fontSize: "14px", fontWeight: 800, color: grade.color }}>{grade.label.toUpperCase()} GRADE</div>
-            <div style={{ fontSize: "11px", color: "#507090" }}>Overall Score: <strong>{primaryCtx.score}/100</strong></div>
+            <div style={{ fontSize: "11px", color: "#507090" }}>Score: <strong style={{ color: grade.color }}>{primaryCtx.score}/100</strong></div>
+            {compoundGrades.length > 0 && (
+              <div style={{ fontSize: "9px", color: "#8090a0", letterSpacing: "0.04em" }}>{compoundGrades.map(cg => cg.label).join(" · ")}</div>
+            )}
           </div>
-          {compoundGrades.length > 0 && (
-            <div style={{ fontSize: "10px", color: "#507090" }}>
-              Combined: {compoundGrades.map(cg => cg.label).join(" · ")}
-            </div>
-          )}
         </div>
 
         {/* Scores */}
@@ -559,45 +613,34 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
 
         {/* Photos */}
         {(photos.specimen || photos.display || photos.label || photos.document) && (
-          <div style={{ marginBottom: "12px", paddingBottom: "12px", borderBottom: "1px solid #d0dce8" }}>
-            {(photos.specimen || photos.display) && (
-              <>
-                <div style={{ fontSize: "8px", letterSpacing: "0.14em", color: "#507090", textTransform: "uppercase", marginBottom: "4px" }}>Specimen Photos</div>
-                <div style={{ display: "flex", gap: "6px", marginBottom: (photos.label || photos.document) ? "8px" : "0" }}>
-                  {photos.specimen && (
-                    <div style={{ textAlign: "center" }}>
-                      <img src={photos.specimen} alt="Specimen" style={{ height: "80px", objectFit: "cover", borderRadius: "3px", border: "1px solid #d0dce8", display: "block" }} />
-                      <div style={{ fontSize: "7px", color: "#8090a0", marginTop: "2px" }}>Main</div>
-                    </div>
-                  )}
-                  {photos.display && (
-                    <div style={{ textAlign: "center" }}>
-                      <img src={photos.display} alt="Display" style={{ height: "80px", objectFit: "cover", borderRadius: "3px", border: "1px solid #d0dce8", display: "block" }} />
-                      <div style={{ fontSize: "7px", color: "#8090a0", marginTop: "2px" }}>Alt. angle</div>
-                    </div>
-                  )}
+          <div style={{ marginBottom: "10px", paddingBottom: "10px", borderBottom: "1px solid #d0dce8" }}>
+            <div style={{ fontSize: "8px", letterSpacing: "0.14em", color: "#507090", textTransform: "uppercase", marginBottom: "4px" }}>Documentation Photos</div>
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+              {photos.specimen && (
+                <div style={{ textAlign: "center" }}>
+                  <img src={photos.specimen} alt="Specimen" style={{ height: "70px", objectFit: "cover", borderRadius: "3px", border: "1px solid #d0dce8", display: "block" }} />
+                  <div style={{ fontSize: "7px", color: "#8090a0", marginTop: "2px" }}>Specimen</div>
                 </div>
-              </>
-            )}
-            {(photos.label || photos.document) && (
-              <>
-                <div style={{ fontSize: "8px", letterSpacing: "0.14em", color: "#507090", textTransform: "uppercase", marginBottom: "4px" }}>Provenance Documentation</div>
-                <div style={{ display: "flex", gap: "6px" }}>
-                  {photos.label && (
-                    <div style={{ textAlign: "center" }}>
-                      <img src={photos.label} alt="Label" style={{ height: "80px", objectFit: "cover", borderRadius: "3px", border: "1px solid #d0dce8", display: "block" }} />
-                      <div style={{ fontSize: "7px", color: "#8090a0", marginTop: "2px" }}>Collection label</div>
-                    </div>
-                  )}
-                  {photos.document && (
-                    <div style={{ textAlign: "center" }}>
-                      <img src={photos.document} alt="Document" style={{ height: "80px", objectFit: "cover", borderRadius: "3px", border: "1px solid #d0dce8", display: "block" }} />
-                      <div style={{ fontSize: "7px", color: "#8090a0", marginTop: "2px" }}>Provenance doc</div>
-                    </div>
-                  )}
+              )}
+              {photos.display && (
+                <div style={{ textAlign: "center" }}>
+                  <img src={photos.display} alt="Display" style={{ height: "70px", objectFit: "cover", borderRadius: "3px", border: "1px solid #d0dce8", display: "block" }} />
+                  <div style={{ fontSize: "7px", color: "#8090a0", marginTop: "2px" }}>Alt. angle</div>
                 </div>
-              </>
-            )}
+              )}
+              {photos.label && (
+                <div style={{ textAlign: "center" }}>
+                  <img src={photos.label} alt="Label" style={{ height: "70px", objectFit: "cover", borderRadius: "3px", border: "1px solid #d0dce8", display: "block" }} />
+                  <div style={{ fontSize: "7px", color: "#8090a0", marginTop: "2px" }}>Collection label</div>
+                </div>
+              )}
+              {photos.document && (
+                <div style={{ textAlign: "center" }}>
+                  <img src={photos.document} alt="Document" style={{ height: "70px", objectFit: "cover", borderRadius: "3px", border: "1px solid #d0dce8", display: "block" }} />
+                  <div style={{ fontSize: "7px", color: "#8090a0", marginTop: "2px" }}>Provenance doc</div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
