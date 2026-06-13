@@ -31,8 +31,8 @@ function computePrimary(scores) {
 }
 
 const DEFAULT_SCORES = {
-  crystal: 5, speciesRarity: 5, localityRarity: 5,
-  provenance: 5, aesthetics: 5, scientific: 5,
+  crystal: 0, speciesRarity: 0, localityRarity: 0,
+  provenance: 0, aesthetics: 0, scientific: 0,
 };
 
 export default function PRISM() {
@@ -52,6 +52,7 @@ export default function PRISM() {
   const [lastSavedKey,   setLastSavedKey]   = useState(null);
   const [spSource,       setSpSource]       = useState(null); // SpecimenPro integration
   const [scoringCompId,  setScoringCompId]  = useState(null); // Research mode comp being scored
+  const [wizardKey,      setWizardKey]      = useState(0);     // increment to reset WizardMode step
   const { records, saveRecord, deleteRecord, clearAll, importRecords } = useLocalCollection();
   const { comps, addComp, updateComp, deleteComp, clearAll: clearComps, importComps } = useComparables();
   const [verifyPayload, setVerifyPayload] = useState(null);
@@ -374,6 +375,8 @@ export default function PRISM() {
             setSpec(rec.spec);
             setCtx(rec.ctx);
             setLastSavedKey(JSON.stringify({ scores: rec.scores, spec: rec.spec, ctx: rec.ctx }));
+            setMode("wizard");
+            setWizardKey(k => k + 1);
           }}
           onDelete={deleteRecord}
           onClearAll={clearAll}
@@ -383,6 +386,7 @@ export default function PRISM() {
       )}
         {mode === "wizard" ? (
           <WizardMode
+            key={wizardKey}
             scores={scores}
             setScores={setScores}
             ctx={ctx}
