@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { X, Trash2, Upload, Search } from "lucide-react";
+import { useState, useRef } from "react";
+import { X, Trash2, Upload, Search, Download, FolderOpen } from "lucide-react";
 import { GRADES } from "../data/prism.js";
 
 const GRADE_COLOR = Object.fromEntries(GRADES.map(g => [g.label, g.color]));
@@ -21,10 +21,36 @@ function ScoreBar({ value, color }) {
   );
 }
 
-export default function CollectionHistory({ records, onLoad, onDelete, onClearAll, onClose }) {
+function saveToFile(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+export default function CollectionHistory({ records, onLoad, onDelete, onClearAll, onClose, onImport }) {
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  const openInputRef = useRef();
+
+  const handleSave = () => saveToFile(records, "prism-collection.json");
+
+  const handleOpen = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        if (Array.isArray(parsed)) { onImport(parsed); }
+        else { alert("Invalid file — expected a PRISM Collection JSON."); }
+      } catch { alert("Could not read file."); }
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  };
 
   const filtered = records.filter(r => {
     if (!query.trim()) return true;
@@ -66,9 +92,22 @@ export default function CollectionHistory({ records, onLoad, onDelete, onClearAl
               {records.length} specimen{records.length !== 1 ? "s" : ""} saved
             </span>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
-            <X size={16} />
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            {records.length > 0 && (
+              <button onClick={handleSave} title="Save collection to device"
+                style={{ display: "flex", alignItems: "center", gap: "4px", padding: "4px 10px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "10px", cursor: "pointer" }}>
+                <Download size={11} /> Save
+              </button>
+            )}
+            <button onClick={() => openInputRef.current?.click()} title="Open a saved collection file"
+              style={{ display: "flex", alignItems: "center", gap: "4px", padding: "4px 10px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "10px", cursor: "pointer" }}>
+              <FolderOpen size={11} /> Open
+            </button>
+            <input ref={openInputRef} type="file" accept=".json,application/json" onChange={handleOpen} style={{ display: "none" }} />
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", marginLeft: "4px" }}>
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Summary stats */}
@@ -234,9 +273,14 @@ export default function CollectionHistory({ records, onLoad, onDelete, onClearAl
                 <button onClick={() => setConfirmClear(false)} style={{ padding: "4px 10px", background: "transparent", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer" }}>Cancel</button>
               </div>
             ) : (
-              <button onClick={() => setConfirmClear(true)} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "transparent", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer" }}>
-                <Trash2 size={11} /> Clear all
-              </button>
+              <>
+                <div style={{ fontSize: "10px", color: "var(--text-muted)", opacity: 0.7, marginRight: "auto" }}>
+                  💡 Save to iCloud, Google Drive, or Dropbox to access anywhere
+                </div>
+                <button onClick={() => setConfirmClear(true)} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "transparent", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer" }}>
+                  <Trash2 size={11} /> Clear all
+                </button>
+              </>
             )}
           </div>
         )}

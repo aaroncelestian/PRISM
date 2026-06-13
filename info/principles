@@ -1,0 +1,64 @@
+The consumer protection framing is the right anchor — PRISM's functional 
+value is making implicit expert heuristics explicit, auditable, and comparable 
+across transactions in a market where asymmetric information is the primary 
+mechanism of exploitation. A new collector being quoted $800 for a wulfenite 
+specimen doesn't know what they don't know; PRISM makes the scoring criteria 
+legible and the price deviation from comparable specimens visible.
+
+The most important algorithmic challenge to design around early is species-specific 
+scoring benchmarks. "Crystal quality" has fundamentally different parameter 
+definitions for a wulfenite tabletop, an elbaite indicolite, and a rhodochrosite 
+rhombohedron — a universal rubric applied naively produces scores that are 
+meaningless as within-species comparisons. The architecture that avoids this 
+becoming technical debt: universal feature parameters at the scoring engine 
+(crystal symmetry expression, surface condition index, matrix relationship 
+quality, chromophore saturation, termination completeness), with species-specific 
+benchmark distributions derived from Mindat occurrence data that convert raw 
+feature values into within-species percentile ranks. The Mindat REST API at 
+api.mindat.org has the structured species and locality data, but a locally-cached 
+species table is advisable for convention floor environments with unreliable 
+connectivity.
+
+For the legal compliance GIS layer, PADUS (Protected Areas Database of the 
+United States, USGS National Geospatial Program) is the primary domestic dataset; 
+WDPA (World Database on Protected Areas, UNEP-WCMC) handles international coverage. 
+The legal complexity extends considerably beyond national park status: BLM casual 
+use doctrine under FLPMA permits personal amounts but prohibits commercial 
+collection without a permit; ARPA (16 U.S.C. §470aa) applies wherever cultural 
+material older than 100 years is associated with the site; and country-specific 
+export control regimes — Afghanistan's 2002 Cultural Property Export Law, Brazil's 
+CFEM royalty framework, DRC mineral moratoria — affect international provenance 
+evaluation. The date-of-first-collection field is well conceived and should 
+cross-reference regulatory enactment dates, since a specimen collected from what 
+is now a protected area in 1945 was collected legally.
+
+The NHMLAC donation module maps directly onto IRS Form 8283 requirements: non-cash 
+charitable contributions exceeding $5,000 require a qualified appraisal under 
+Treasury Regulation §1.170A-13. The PRISM documentation sub-score could be 
+structured to produce a report explicitly addressing those appraisal 
+requirements — appraiser qualification, property description, fair market 
+value methodology, and basis documentation. This use case extends 
+well beyond NHMLAC; any museum receiving mineral donations needs a standardized 
+pre-screening protocol, and that's a meaningful institutional licensing pathway.
+
+For market data: raw scraped listing prices are informationally noisy since 
+listed price doesn't equal realized price and condition is rarely standardized. 
+The signal that protects buyers is price per PRISM-score-unit, segmented by 
+species and locality tier, calibrated against realized sale prices from Heritage 
+Auctions, Bonhams, and accessible dealer invoiced sales. This enables precise 
+anomaly flagging at point-of-sale: "comparable specimens at this PRISM score 
+range have realized X–X–X–Y; this listing is at 3.4× median." For the certificate 
+system, the QR code should encode a verification URL pointing to a server-side record 
+rather than the score locally — store a SHA-256 hash of the assessment image set 
+at the time of scoring to prevent post-hoc specimen substitution.
+The architecture flows as shown below — click any node for a focused 
+discussion on that component.
+
+The most consequential design decision visible in that architecture 
+is that the weights feeding into the PRISM score need to be context-specific, 
+not universal. Museum grade should heavily weight provenance and scientific 
+value (the documentation sub-score carries the institutional compliance 
+function); Exhibition grade should weight aesthetics and crystal quality; 
+Commercial grade should weight market price benchmarking most heavily. A single 
+specimen gets a different contextualized score depending on the evaluation 
+purpose, which is actually more analytically honest than a single number.

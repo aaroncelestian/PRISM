@@ -47,5 +47,15 @@ export function useLocalCollection() {
     localStorage.removeItem(KEY);
   }, []);
 
-  return { records, saveRecord, deleteRecord, clearAll };
+  const importRecords = useCallback((entries) => {
+    setRecords(prev => {
+      const existingIds = new Set(prev.map(r => r.id));
+      const newEntries = entries.filter(e => e.id && !existingIds.has(e.id));
+      const next = [...newEntries, ...prev];
+      persist(next);
+      return next;
+    });
+  }, []);
+
+  return { records, saveRecord, deleteRecord, clearAll, importRecords };
 }

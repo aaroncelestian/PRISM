@@ -103,8 +103,8 @@ function ContextCard({ ctx, selected, onClick }) {
   );
 }
 
-export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSpec, sciCriteria, onSciCriteriaChange, onReset, onExport }) {
-  const [step, setStep] = useState(0);
+export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSpec, sciCriteria, onSciCriteriaChange, onReset, onExport, initialStep = 0, scoringComp = null, onSaveToComp = null }) {
+  const [step, setStep] = useState(initialStep);
   const [showTip, setShowTip] = useState(null);
 
   // step 0 = choose context
@@ -162,6 +162,22 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
             borderRadius: "0 2px 2px 0",
           }} />
         </div>
+
+        {/* Scoring comp banner */}
+        {scoringComp && (
+          <div style={{
+            padding: "8px 22px", flexShrink: 0,
+            background: "rgba(0,212,255,0.05)",
+            borderBottom: "1px solid rgba(0,212,255,0.15)",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px",
+          }}>
+            <div style={{ fontSize: "11px", color: "rgba(0,212,255,0.8)" }}>
+              🔬 Scoring comp: <strong>{scoringComp.species}</strong>
+              {scoringComp.locality && <span style={{ color: "var(--text-muted)" }}> — {scoringComp.locality}</span>}
+            </div>
+            <div style={{ fontSize: "9px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>Save when done ↓</div>
+          </div>
+        )}
 
         {/* Step counter + Start Over */}
         <div style={{
@@ -388,6 +404,22 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                 Switch to Expert Mode anytime to fine-tune individual values.
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "center" }}>
+                {scoringComp && onSaveToComp ? (
+                <button
+                  onClick={onSaveToComp}
+                  style={{
+                    width: "220px", padding: "11px 20px",
+                    background: "rgba(0,212,255,0.12)",
+                    border: "1px solid rgba(0,212,255,0.5)",
+                    borderRadius: "6px", color: "var(--cyan)",
+                    fontSize: "12px", fontWeight: 700,
+                    letterSpacing: "0.08em", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                  }}
+                >
+                  💾 Save Score to Research
+                </button>
+              ) : (
                 <button
                   onClick={() => onExport?.()}
                   style={{
@@ -402,6 +434,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                 >
                   📤 Export Record
                 </button>
+              )}
                 <button
                   onClick={() => { setStep(0); onReset?.(); }}
                   style={{

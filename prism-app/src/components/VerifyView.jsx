@@ -40,7 +40,9 @@ function ScoreBar({ value }) {
 
 export default function VerifyView({ payload }) {
   // payload is the parsed certData object from the QR URL
-  const { id, t, sp = {}, sc = {}, gr, cg = [], pt, at = {}, ev, org } = payload;
+  const { id, t, sp = {}, sc = {}, ps, gr, cg = [], pt, at = {}, ev, org } = payload;
+  const displayScore = ps ?? Math.round((sc.cr + sc.sr + sc.lr + sc.pv + sc.ae + sc.si) / 6);
+  const isEstimate = ps == null;
 
   const grade = GRADES.find(g => g.label === gr) || GRADES[GRADES.length - 1];
   const compounds = COMPOUND_GRADES.filter(c => cg.includes(c.key));
@@ -97,10 +99,9 @@ export default function VerifyView({ payload }) {
               </div>
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: "36px", fontWeight: 800, color: grade.color, fontFamily: "monospace", lineHeight: 1 }}>
-                  {/* Compute approximate score from sc fields */}
-                  {Math.round((sc.cr + sc.sr + sc.lr + sc.pv + sc.ae + sc.si) / 6)}
+                  {displayScore}
                 </div>
-                <div style={{ fontSize: "9px", color: "#507090" }}>est. avg</div>
+                <div style={{ fontSize: "9px", color: "#507090" }}>{isEstimate ? "est. avg" : "/ 100"}</div>
               </div>
             </div>
           </div>

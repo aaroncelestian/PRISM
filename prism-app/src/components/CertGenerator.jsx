@@ -6,7 +6,6 @@ import { GRADES, DIMS, WEIGHTS, CONTEXTS, detectCompoundGrades } from "../data/p
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const THRESHOLD = 70;
-const GRADE_FOR = Object.fromEntries(CONTEXTS.map((c, i) => [c.key, GRADES[i]]));
 
 function computeContextScore(ctxKey, scores) {
   const W = WEIGHTS[ctxKey];
@@ -27,8 +26,9 @@ const SIZE_CLASSES = [
   { key: "thumbnail",  label: "Thumbnail",      range: "< 2.5 cm" },
   { key: "miniature",  label: "Miniature",      range: "2.5–4.5 cm" },
   { key: "small_cab",  label: "Small Cabinet",  range: "4.5–7.5 cm" },
-  { key: "cabinet",    label: "Cabinet",         range: "7.5–12 cm" },
-  { key: "large_cab",  label: "Large Cabinet",  range: "> 12 cm" },
+  { key: "cabinet",    label: "Cabinet",        range: "7.5–12 cm" },
+  { key: "large_cab",  label: "Large Cabinet",  range: "12–25 cm" },
+  { key: "museum",     label: "Museum",         range: "> 25 cm" },
 ];
 
 const PROV_TIERS = ["T1 — Type Locality / Institutional", "T2 — Named Collection", "T3 — Dealer Documentation", "T4 — Locality Known, Unverified", "T5 — Unknown Origin"];
@@ -306,6 +306,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
       lr: scores.localityRarity ?? 50, pv: scores.provenance ?? 50,
       ae: scores.aesthetics ?? 50, si: scores.scientific ?? 0,
     },
+    ps: primaryCtx.score,
     gr: grade.label,
     cg: compoundGrades.map(c => c.key),
     pt: docData.provTier,
@@ -508,9 +509,10 @@ export default function CertGenerator({ scores, spec, onClose }) {
   const [issued] = useState(() => new Date().toISOString());
 
   // Compute context data
-  const allCtxData = CONTEXTS.map(c => ({
-    ...c, grade: GRADE_FOR[c.key], score: computeContextScore(c.key, scores),
-  }));
+  const allCtxData = CONTEXTS.map(c => {
+    const score = computeContextScore(c.key, scores);
+    return { ...c, score, grade: getGrade(score) };
+  });
   const primaryCtx = allCtxData.find(c => c.score >= THRESHOLD) || allCtxData[0];
   const allCtxScores = Object.fromEntries(allCtxData.map(c => [c.key, c.score]));
   const rawCompounds = detectCompoundGrades(allCtxScores);

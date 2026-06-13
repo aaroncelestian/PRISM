@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Wand2, SlidersHorizontal, RotateCcw } from "lucide-react";
+import { Wand2, SlidersHorizontal, RotateCcw, Search } from "lucide-react";
 import { CONTEXTS, WEIGHTS, GRADES, detectCompoundGrades } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import WizardMode from "./WizardMode.jsx";
@@ -12,6 +12,8 @@ import QuickExport from "./QuickExport.jsx";
 import CollectionHistory from "./CollectionHistory.jsx";
 import VerifyView from "./VerifyView.jsx";
 import { useLocalCollection } from "../hooks/useLocalCollection.js";
+import { useComparables } from "../hooks/useComparables.js";
+import ResearchMode from "./ResearchMode.jsx";
 
 const THRESHOLD = 70;
 function computePrimary(scores) {
@@ -32,7 +34,7 @@ const DEFAULT_SCORES = {
 };
 
 export default function PRISM() {
-  const [mode, setMode] = useState("wizard"); // "wizard" | "expert"
+  const [mode, setMode] = useState("wizard"); // "wizard" | "expert" | "research"
   const [ctx, setCtx] = useState("collector");
   const [scores, setScores] = useState(DEFAULT_SCORES);
   const [spec, setSpec] = useState({ name: "", species: "", locality: "" });
@@ -45,7 +47,9 @@ export default function PRISM() {
   const [showHistory,    setShowHistory]    = useState(false);
   const [savedFlash,     setSavedFlash]     = useState(false);
   const [spSource,       setSpSource]       = useState(null); // SpecimenPro integration
-  const { records, saveRecord, deleteRecord, clearAll } = useLocalCollection();
+  const [scoringCompId,  setScoringCompId]  = useState(null); // Research mode comp being scored
+  const { records, saveRecord, deleteRecord, clearAll, importRecords } = useLocalCollection();
+  const { comps, addComp, updateComp, deleteComp, importComps } = useComparables();
   const [verifyPayload, setVerifyPayload] = useState(null);
   const [showTools, setShowTools] = useState(false);
   const { isMobile } = useBreakpoint();
@@ -86,8 +90,6 @@ export default function PRISM() {
       if (provenance > 0) setScores(s => ({ ...s, provenance: Math.min(provenance, 100) }));
       setSpSource({ objectId, name });
       setMode("wizard");
-      // Jump to step 2 (first dimension) since specimen info is pre-filled
-      // This is handled via a ref in WizardMode; for now start at wizard beginning
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -102,6 +104,29 @@ export default function PRISM() {
     setCtx("collector");
     setMode("wizard");
     setSciCriteria([false, false, false, false, false]);
+    setScoringCompId(null);
+  };
+
+  const handleScoreComp = (comp) => {
+    setScoringCompId(comp.id);
+    setSpec({ name: comp.species, species: comp.species, locality: comp.locality || "" });
+    setScores(DEFAULT_SCORES);
+    setSciCriteria([false, false, false, false, false]);
+    setMode("wizard");
+  };
+
+  const handleSaveToComp = () => {
+    if (!scoringCompId) return;
+    const { score, grade } = computePrimary(scores);
+    updateComp(scoringCompId, {
+      scores: { ...scores },
+      grade: grade.label,
+      gradeEmoji: grade.emoji,
+      prismScore: score,
+      ctx,
+    });
+    setScoringCompId(null);
+    setMode("research");
   };
 
   // QR verification mode — render standalone page instead of app
@@ -169,18 +194,23 @@ export default function PRISM() {
             {/* Mode toggle */}
             <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "5px", overflow: "hidden" }}>
               {[
-                { key: "wizard", label: "Guided", Icon: Wand2 },
-                { key: "expert", label: "Expert", Icon: SlidersHorizontal },
-              ].map(({ key, label, Icon }) => (
-                <button key={key} onClick={() => setMode(key)} style={{
+                { key: "wizard",   label: "Guided",   Icon: Wand2 },
+                { key: "expert",   label: "Expert",   Icon: SlidersHorizontal },
+                { key: "research", label: "Research", Icon: Search },
+              ].map(({ key, label, Icon }, i, arr) => (
+                <button key={key} onClick={() => { if (key !== "wizard") setScoringCompId(null); setMode(key); }} style={{
                   display: "flex", alignItems: "center", gap: "4px",
                   padding: isMobile ? "5px 10px" : "5px 12px",
                   background: mode === key ? "rgba(0,212,255,0.1)" : "transparent", border: "none",
-                  borderRight: key === "wizard" ? "1px solid var(--border)" : "none",
+                  borderRight: i < arr.length - 1 ? "1px solid var(--border)" : "none",
                   color: mode === key ? "var(--cyan)" : "var(--text-muted)",
                   fontSize: "11px", fontWeight: mode === key ? 600 : 400, letterSpacing: "0.06em", transition: "all 0.15s",
                 }}>
-                  <Icon size={12} />{!isMobile && label}
+                  <Icon size={12} />
+                  {!isMobile && <span style={{ marginLeft: "3px" }}>{label}</span>}
+                  {key === "research" && comps.length > 0 && (
+                    <span style={{ marginLeft: "3px", fontSize: "9px", fontFamily: "var(--mono)", opacity: 0.75 }}>{comps.length}</span>
+                  )}
                 </button>
               ))}
             </div>
@@ -310,6 +340,7 @@ export default function PRISM() {
           onDelete={deleteRecord}
           onClearAll={clearAll}
           onClose={() => setShowHistory(false)}
+          onImport={importRecords}
         />
       )}
         {mode === "wizard" ? (
@@ -324,8 +355,11 @@ export default function PRISM() {
             onSciCriteriaChange={handleSciCriteria}
             onReset={reset}
             onExport={() => setShowExport(true)}
+            initialStep={spSource || scoringCompId ? 2 : 0}
+            scoringComp={scoringCompId ? comps.find(c => c.id === scoringCompId) : null}
+            onSaveToComp={scoringCompId ? handleSaveToComp : null}
           />
-        ) : (
+        ) : mode === "expert" ? (
           <ExpertMode
             scores={scores}
             setScores={setScores}
@@ -334,6 +368,15 @@ export default function PRISM() {
             setSpec={setSpec}
             sciCriteria={sciCriteria}
             onSciCriteriaChange={handleSciCriteria}
+          />
+        ) : (
+          <ResearchMode
+            comps={comps}
+            onAdd={addComp}
+            onUpdate={updateComp}
+            onDelete={deleteComp}
+            onScoreComp={handleScoreComp}
+            onImport={importComps}
           />
         )}
       </div>

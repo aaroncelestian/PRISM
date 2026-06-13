@@ -3,7 +3,6 @@ import { X, Camera, Printer, Download } from "lucide-react";
 import { GRADES, DIMS, WEIGHTS, CONTEXTS } from "../data/prism.js";
 
 const THRESHOLD = 70;
-const GRADE_FOR = Object.fromEntries(CONTEXTS.map((c, i) => [c.key, GRADES[i]]));
 
 function computeContextScore(ctxKey, scores) {
   const W = WEIGHTS[ctxKey];
@@ -11,7 +10,10 @@ function computeContextScore(ctxKey, scores) {
 }
 
 function getPrimaryGrade(scores) {
-  const ctxScores = CONTEXTS.map(c => ({ ...c, score: computeContextScore(c.key, scores), grade: GRADE_FOR[c.key] }));
+  const ctxScores = CONTEXTS.map(c => {
+    const score = computeContextScore(c.key, scores);
+    return { ...c, score, grade: GRADES.find(g => score >= g.min) || GRADES[GRADES.length - 1] };
+  });
   return ctxScores.find(c => c.score >= THRESHOLD) || ctxScores[0];
 }
 
