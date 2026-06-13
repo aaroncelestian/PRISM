@@ -300,17 +300,21 @@ const textareaStyle = {
 // ── Step 3: Attestations ──────────────────────────────────────────────────────
 
 const ATTESTATION_ITEMS = [
-  { key: "legalCollection",  label: "Legally collected or acquired with proper permit or owner permission",                                                              short: "Legally collected / acquired" },
-  { key: "localityAccurate", label: "Locality information is accurate and complete to the best of my knowledge",                                                        short: "Locality is accurate" },
-  { key: "repairsDisclosed", label: "All repairs, restoration, reconstitution, or enhancements have been fully disclosed above",                                         short: "All repairs / enhancements disclosed" },
-  { key: "noRestrictions",   label: "No known CITES Appendix I/II restrictions apply, or appropriate export/import documentation exists",                               short: "No CITES restrictions" },
-  { key: "honestEvaluation", label: "This PRISM evaluation is honest, unbiased, and represents my best objective assessment",                                           short: "Honest, unbiased evaluation" },
-  { key: "noFabrication",    label: "Specimen is a genuine natural mineral — not synthetic, artificially grown, or a composite assembled from multiple specimens unless noted", short: "Genuine natural mineral (not synthetic/composite)" },
-  { key: "noConflict",       label: "No known conflict-zone or sanctioned-country origin, or appropriate documentation exists",                                          short: "No conflict-zone or sanctions origin" },
-  { key: "culturalPatrimony",label: "Specimen does not violate cultural heritage or national patrimony export laws of its country of origin to the best of my knowledge", short: "Cultural patrimony compliant" },
-  { key: "noStolenProperty", label: "Specimen has not been reported stolen or misappropriated from any museum, institution, or private collection to the best of my knowledge", short: "Not stolen or misappropriated" },
-  { key: "hazardsDisclosed", label: "Any known radiation, toxicity, or handling hazards (uranium minerals, asbestos-group, mercury, lead, etc.) are disclosed",         short: "Radiation / toxicity hazards disclosed" },
-  { key: "importCompliance", label: "Specimen was legally imported into current country of possession with appropriate customs documentation, if applicable",            short: "Import / customs compliant (if applicable)" },
+  {
+    key: "integrity",
+    label: "This PRISM evaluation is honest and unbiased. Species identification and locality are accurate to the best of my knowledge. The specimen is a genuine natural mineral — not synthetic, artificially grown, or an undisclosed composite.",
+    short: "Honest evaluation · accurate identification · genuine specimen",
+  },
+  {
+    key: "disclosure",
+    label: "All repairs, restoration, reconstitution, or enhancements are fully disclosed. Any known radiation, toxicity, or handling hazards (uranium minerals, asbestos-group, mercury, lead, etc.) are disclosed.",
+    short: "All repairs and physical hazards disclosed",
+  },
+  {
+    key: "legal",
+    label: "To the best of my knowledge, this specimen was legally collected or acquired, legally exported from its country of origin, and legally imported into its current country of possession. It has no known conflict-zone or sanctioned-country origin, does not violate cultural heritage or patrimony laws, has not been reported stolen or misappropriated, and carries no CITES Appendix I/II restrictions without documentation.",
+    short: "Legally collected, exported, and imported · no conflict origin · no patrimony violations",
+  },
 ];
 
 function AttestationStep({ attestations, setAttestations, evaluatorName, setEvaluatorName, evaluatorOrg, setEvaluatorOrg, customAttestations, setCustomAttestations }) {
@@ -481,10 +485,9 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
     cg: compoundGrades.map(c => c.key),
     pt: docData.provTier,
     at: {
-      lc: attestations.legalCollection,  la: attestations.localityAccurate,
-      rd: attestations.repairsDisclosed,  nr: attestations.noRestrictions,   he: attestations.honestEvaluation,
-      nf: attestations.noFabrication,     nc: attestations.noConflict,        cp: attestations.culturalPatrimony,
-      ns: attestations.noStolenProperty,  hd: attestations.hazardsDisclosed,  ic: attestations.importCompliance,
+      in: attestations.integrity,
+      di: attestations.disclosure,
+      le: attestations.legal,
     },
     ev: evaluatorName, org: evaluatorOrg,
   };
@@ -706,8 +709,7 @@ export default function CertGenerator({ scores, spec, onClose }) {
   });
   const [photos, setPhotos] = useState({ specimen: null, display: null, label: null, document: null });
   const [attestations, setAttestations] = useState({
-    legalCollection: false, localityAccurate: false, repairsDisclosed: false, noRestrictions: false, honestEvaluation: false,
-    noFabrication: false, noConflict: false, culturalPatrimony: false, noStolenProperty: false, hazardsDisclosed: false, importCompliance: false,
+    integrity: false, disclosure: false, legal: false,
   });
   const [evaluatorName, setEvaluatorName] = useState("");
   const [evaluatorOrg, setEvaluatorOrg] = useState("");

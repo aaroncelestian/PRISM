@@ -396,12 +396,16 @@ export default function PRISM() {
         <CollectionHistory
           records={records}
           onLoad={rec => {
-            setScores(rec.scores);
-            setSpec(rec.spec);
-            setCtx(rec.ctx);
-            setLastSavedKey(JSON.stringify({ scores: rec.scores, spec: rec.spec, ctx: rec.ctx }));
-            setMode("wizard");
-            setWizardKey(k => k + 1);
+            const loadedScores = { ...DEFAULT_SCORES, ...(rec.scores || {}) };
+            setScores(loadedScores);
+            setSpec(rec.spec || {});
+            setCtx(rec.ctx || "collector");
+            setLastSavedKey(JSON.stringify({ scores: loadedScores, spec: rec.spec, ctx: rec.ctx }));
+            const sciCount = Math.round((loadedScores.scientific ?? 0) / 20);
+            setSciCriteria(Array(5).fill(false).map((_, i) => i < sciCount));
+            setScoringCompId(null);
+            setSpSource(null);
+            setMode("expert");
           }}
           onDelete={deleteRecord}
           onClearAll={clearAll}

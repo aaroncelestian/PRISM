@@ -31,17 +31,9 @@ const SIZE_LABELS = {
 };
 
 const ATTEST_LABELS = {
-  lc: { label: "Legally collected / acquired" },
-  la: { label: "Locality is accurate" },
-  rd: { label: "All repairs / enhancements disclosed" },
-  nr: { label: "No CITES restrictions" },
-  he: { label: "Honest, unbiased evaluation" },
-  nf: { label: "Genuine natural mineral (not synthetic/composite)" },
-  nc: { label: "No conflict-zone or sanctions origin" },
-  cp: { label: "Cultural patrimony compliant" },
-  ns: { label: "Not stolen or misappropriated" },
-  hd: { label: "Radiation / toxicity hazards disclosed" },
-  ic: { label: "Import / customs compliant (if applicable)" },
+  in: { label: "Honest evaluation · accurate identification · genuine specimen" },
+  di: { label: "All repairs and physical hazards disclosed" },
+  le: { label: "Legally collected, exported, and imported · no conflict origin · no patrimony violations" },
 };
 
 function ScoreBar({ value }) {
