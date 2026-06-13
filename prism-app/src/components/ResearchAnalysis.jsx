@@ -80,6 +80,7 @@ const SIZE_SHORT = { 1: "Thumb", 2: "Mini", 3: "S.Cab", 4: "Cabinet", 5: "L.Cab"
 const COND_RANK  = { pristine: 5, excellent: 4, good: 3, repaired: 2, damaged: 1 };
 const COND_LABEL = { pristine: "Pristine 💎", excellent: "Display ✨", good: "Minor chips 🔶", repaired: "Repaired 🔧", damaged: "Damaged ⚠️" };
 const BUBBLE_PALETTE = ["#00d4ff", "#7c5cfc", "#00c880", "#ffb347", "#ff8060", "#a0c4ff", "#f472b6"];
+const SPECIES_CURVE_COLORS = ["#00d4ff", "#ff6b9d", "#a78bfa", "#fbbf24", "#22d3ee", "#e879f9", "#f97316"];
 
 function BubbleDot({ cx, cy, r, color }) {
   if (cx == null || cy == null) return null;
@@ -166,15 +167,40 @@ export default function ResearchAnalysis({ comps }) {
       });
     })() : null;
 
+    // Per-species regressions
+    const speciesGroups = {};
+    pricedAndScored.forEach(c => {
+      const sp = (c.species || "Unknown").trim();
+      if (!speciesGroups[sp]) speciesGroups[sp] = [];
+      speciesGroups[sp].push({ x: c.prismScore, y: Number(c.askingPrice) });
+    });
+    let colorIdx = 0;
+    const speciesRegs = {};
+    Object.entries(speciesGroups).forEach(([sp, pts]) => {
+      if (pts.length < 3) return;
+      const r = logLinearRegression(pts);
+      if (!r) return;
+      const xs = pts.map(p => p.x);
+      const x0 = Math.min(...xs), x1 = Math.max(...xs);
+      const curve = Array.from({ length: 40 }, (_, i) => {
+        const x = x0 + (i / 39) * (x1 - x0);
+        return { x: Math.round(x * 10) / 10, y: Math.round(Math.exp(r.slope * x + r.intercept)), _curve: true };
+      });
+      speciesRegs[sp] = { reg: r, color: SPECIES_CURVE_COLORS[colorIdx++ % SPECIES_CURVE_COLORS.length], curve };
+    });
+    const hasSpeciesCurves = Object.keys(speciesRegs).length >= 2;
+
     const marketPosition = pricedAndScored.map(c => {
-      const expectedPrice = reg ? Math.max(0, Math.round(Math.exp(reg.slope * c.prismScore + reg.intercept))) : null;
+      const sp = (c.species || "Unknown").trim();
+      const activeReg = speciesRegs[sp]?.reg || reg;
+      const expectedPrice = activeReg ? Math.max(0, Math.round(Math.exp(activeReg.slope * c.prismScore + activeReg.intercept))) : null;
       const delta = expectedPrice != null ? Number(c.askingPrice) - expectedPrice : null;
       const pct   = expectedPrice ? Math.round((delta / expectedPrice) * 100) : null;
       return { ...c, expectedPrice, delta, pct };
     }).sort((a, b) => (a.pct ?? 999) - (b.pct ?? 999));
 
     return { priced, scored, pricedAndScored, avgPrice, medPrice, minPrice, maxPrice,
-             bySpecies, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg };
+             bySpecies, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg, speciesRegs, hasSpeciesCurves };
   }, [comps]);
 
   const speciesList = useMemo(() =>
@@ -219,7 +245,8 @@ export default function ResearchAnalysis({ comps }) {
   }, [comps, driversSpecies, colorBy]);
 
   const { priced, scored, pricedAndScored, avgPrice, medPrice, minPrice, maxPrice,
-          bySpecies, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg } = analysis;
+          bySpecies, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg,
+          speciesRegs, hasSpeciesCurves } = analysis;
 
   if (!comps.length) {
     return (
@@ -332,12 +359,22 @@ export default function ResearchAnalysis({ comps }) {
               ))}
             </div>
           </div>
-          <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "8px" }}>
+          <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "6px" }}>
             {priceScale === "log"
-              ? <><em>Log scale</em>: a straight regression line confirms price grows exponentially with score. <span style={{ color: "#00c880" }}>Below</span> = underpriced · <span style={{ color: "#ff8060" }}>Above</span> = premium.</>
-              : <><em>Linear scale</em>: the curve shows exponential price growth with score. <span style={{ color: "#00c880" }}>Below</span> the curve = underpriced · <span style={{ color: "#ff8060" }}>Above</span> = premium.</>
+              ? <><em>Log scale</em>: straight lines per species confirm exponential growth. <span style={{ color: "#00c880" }}>Below</span> = underpriced · <span style={{ color: "#ff8060" }}>Above</span> = premium.</>
+              : <><em>Linear scale</em>: each curve shows exponential price growth for that species. <span style={{ color: "#00c880" }}>Below</span> = underpriced · <span style={{ color: "#ff8060" }}>Above</span> = premium.</>
             }
           </div>
+          {hasSpeciesCurves && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
+              {Object.entries(speciesRegs).map(([sp, { color }]) => (
+                <div key={sp} style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "var(--text-muted)" }}>
+                  <svg width="18" height="4"><line x1="0" y1="2" x2="18" y2="2" stroke={color} strokeWidth="1.5" strokeDasharray="4 2" /></svg>
+                  {sp}
+                </div>
+              ))}
+            </div>
+          )}
           <ResponsiveContainer width="100%" height={220}>
             <ScatterChart margin={{ left: 0, right: 20, top: 8, bottom: 0 }}>
               <CartesianGrid stroke="#1e2d3d" />
@@ -354,7 +391,9 @@ export default function ResearchAnalysis({ comps }) {
                   if (!active || !payload?.length) return null;
                   const d = payload[0].payload;
                   if (d._curve) return null;
-                  const expected = reg ? Math.round(Math.exp(reg.slope * d.x + reg.intercept)) : null;
+                  const sp = (d.label || "").trim();
+                  const activeReg = speciesRegs[sp]?.reg || reg;
+                  const expected = activeReg ? Math.round(Math.exp(activeReg.slope * d.x + activeReg.intercept)) : null;
                   return (
                     <div style={CUSTOM_TOOLTIP_STYLE}>
                       <div style={{ fontWeight: 600, marginBottom: "4px" }}>{d.label}</div>
@@ -365,19 +404,28 @@ export default function ResearchAnalysis({ comps }) {
                   );
                 }}
               />
-              {regCurve && (
-                <Scatter
-                  data={regCurve}
-                  fill="transparent"
-                  line={{ stroke: "rgba(0,212,255,0.4)", strokeWidth: 1.5, strokeDasharray: "5 3" }}
-                  shape={() => <g />}
-                  isAnimationActive={false}
-                />
-              )}
+              {hasSpeciesCurves
+                ? Object.entries(speciesRegs).map(([sp, { curve, color }]) => (
+                    <Scatter key={sp} data={curve} fill="transparent"
+                      line={{ stroke: color, strokeWidth: 1.5, strokeDasharray: "5 3" }}
+                      shape={() => <g />} isAnimationActive={false}
+                    />
+                  ))
+                : regCurve && (
+                    <Scatter data={regCurve} fill="transparent"
+                      line={{ stroke: "rgba(0,212,255,0.4)", strokeWidth: 1.5, strokeDasharray: "5 3" }}
+                      shape={() => <g />} isAnimationActive={false}
+                    />
+                  )
+              }
               <Scatter data={regPoints} fill="#00d4ff">
                 {regPoints.map((p, i) => {
-                  const expected = reg ? Math.exp(reg.slope * p.x + reg.intercept) : p.y;
-                  const color = p.y < expected * 0.9 ? "#00c880" : p.y > expected * 1.1 ? "#ff8060" : "#00d4ff";
+                  const sp = (p.label || "").trim();
+                  const spEntry = speciesRegs[sp];
+                  const activeReg = spEntry?.reg || reg;
+                  const neutralColor = spEntry?.color || "#00d4ff";
+                  const expected = activeReg ? Math.exp(activeReg.slope * p.x + activeReg.intercept) : p.y;
+                  const color = p.y < expected * 0.9 ? "#00c880" : p.y > expected * 1.1 ? "#ff8060" : neutralColor;
                   return <Cell key={i} fill={color} />;
                 })}
               </Scatter>
@@ -435,26 +483,32 @@ export default function ResearchAnalysis({ comps }) {
       )}
 
       {/* ── By source ──────────────────────────────────────────────────── */}
-      {bySource.length >= 2 && (
-        <div>
-          <SectionTitle>By Source</SectionTitle>
-          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-            {bySource.map(s => {
-              const pct = Math.round((s.count / priced.length) * 100);
-              return (
-                <div key={s.source} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "11px" }}>
-                  <div style={{ width: "110px", flexShrink: 0, color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.source}</div>
-                  <div style={{ flex: 1, height: "6px", background: "var(--border-dim)", borderRadius: "3px", overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${pct}%`, background: "rgba(0,212,255,0.5)", borderRadius: "3px" }} />
+      {bySource.length >= 2 && (() => {
+        const maxAvg = Math.max(...bySource.map(x => x.avg));
+        const sorted = [...bySource].sort((a, b) => b.avg - a.avg);
+        return (
+          <div>
+            <SectionTitle>By Source</SectionTitle>
+            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+              {sorted.map(s => {
+                const avgPct = Math.round((s.avg / maxAvg) * 100);
+                const countPct = Math.round((s.count / priced.length) * 100);
+                return (
+                  <div key={s.source} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "11px" }}>
+                    <div style={{ width: "110px", flexShrink: 0, color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.source}</div>
+                    <div style={{ flex: 1, height: "8px", background: "var(--border-dim)", borderRadius: "4px", overflow: "hidden", position: "relative" }}>
+                      <div style={{ height: "100%", width: `${avgPct}%`, background: "rgba(0,212,255,0.5)", borderRadius: "4px" }} />
+                      <div style={{ position: "absolute", top: "2px", left: 0, height: "4px", width: `${countPct}%`, background: "rgba(0,212,255,0.2)", borderRadius: "2px" }} />
+                    </div>
+                    <div style={{ width: "28px", textAlign: "right", color: "var(--text-muted)", fontSize: "10px", fontFamily: "var(--mono)" }}>{s.count}</div>
+                    <div style={{ width: "56px", textAlign: "right", color: "var(--text-muted)", fontSize: "10px", fontFamily: "var(--mono)" }}>{fmtK(s.avg)} avg</div>
                   </div>
-                  <div style={{ width: "28px", textAlign: "right", color: "var(--text-muted)", fontSize: "10px", fontFamily: "var(--mono)" }}>{s.count}</div>
-                  <div style={{ width: "56px", textAlign: "right", color: "var(--text-muted)", fontSize: "10px", fontFamily: "var(--mono)" }}>{fmtK(s.avg)} avg</div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Price Drivers bubble scatter ─────────────────────────────────── */}
       {comps.filter(c => Number(c.askingPrice) > 0).length >= 3 && (
