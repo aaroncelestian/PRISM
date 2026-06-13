@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
-  ScatterChart, Scatter, ReferenceLine, CartesianGrid,
+  ScatterChart, Scatter, CartesianGrid,
 } from "recharts";
 
 // ── Maths helpers ─────────────────────────────────────────────────────────────
@@ -29,6 +29,12 @@ function linearRegression(points) {
   const slope = (n * sxy - sx * sy) / denom;
   const intercept = (sy - slope * sx) / n;
   return { slope, intercept };
+}
+
+function logLinearRegression(points) {
+  const valid = points.filter(p => p.y > 0);
+  if (valid.length < 2) return null;
+  return linearRegression(valid.map(p => ({ x: p.x, y: Math.log(p.y) })));
 }
 
 // ── Formatting ─────────────────────────────────────────────────────────────────
@@ -94,6 +100,7 @@ const CUSTOM_TOOLTIP_STYLE = {
 export default function ResearchAnalysis({ comps }) {
   const [driversSpecies, setDriversSpecies] = useState("all");
   const [colorBy, setColorBy] = useState("auto");
+  const [priceScale, setPriceScale] = useState("log");
   const analysis = useMemo(() => {
     const priced  = comps.filter(c => Number(c.askingPrice) > 0);
     const scored  = comps.filter(c => c.prismScore != null);
@@ -149,25 +156,25 @@ export default function ResearchAnalysis({ comps }) {
 
     // ── Regression + market position ─────────────────────────────────────────
     const regPoints = pricedAndScored.map(c => ({ x: c.prismScore, y: Number(c.askingPrice), label: c.species || "?" }));
-    const reg = linearRegression(regPoints);
-    const regLine = reg && regPoints.length >= 2 ? (() => {
+    const reg = logLinearRegression(regPoints);
+    const regCurve = reg && regPoints.length >= 2 ? (() => {
       const xs = regPoints.map(p => p.x);
       const x0 = Math.min(...xs), x1 = Math.max(...xs);
-      return [
-        { x: x0, y: Math.max(0, Math.round(reg.slope * x0 + reg.intercept)) },
-        { x: x1, y: Math.max(0, Math.round(reg.slope * x1 + reg.intercept)) },
-      ];
+      return Array.from({ length: 40 }, (_, i) => {
+        const x = x0 + (i / 39) * (x1 - x0);
+        return { x: Math.round(x * 10) / 10, y: Math.round(Math.exp(reg.slope * x + reg.intercept)), _curve: true };
+      });
     })() : null;
 
     const marketPosition = pricedAndScored.map(c => {
-      const expectedPrice = reg ? Math.max(0, Math.round(reg.slope * c.prismScore + reg.intercept)) : null;
+      const expectedPrice = reg ? Math.max(0, Math.round(Math.exp(reg.slope * c.prismScore + reg.intercept))) : null;
       const delta = expectedPrice != null ? Number(c.askingPrice) - expectedPrice : null;
       const pct   = expectedPrice ? Math.round((delta / expectedPrice) * 100) : null;
       return { ...c, expectedPrice, delta, pct };
     }).sort((a, b) => (a.pct ?? 999) - (b.pct ?? 999));
 
     return { priced, scored, pricedAndScored, avgPrice, medPrice, minPrice, maxPrice,
-             bySpecies, bySize, bySource, avgScore, regPoints, regLine, marketPosition, reg };
+             bySpecies, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg };
   }, [comps]);
 
   const speciesList = useMemo(() =>
@@ -212,7 +219,7 @@ export default function ResearchAnalysis({ comps }) {
   }, [comps, driversSpecies, colorBy]);
 
   const { priced, scored, pricedAndScored, avgPrice, medPrice, minPrice, maxPrice,
-          bySpecies, bySize, bySource, avgScore, regPoints, regLine, marketPosition } = analysis;
+          bySpecies, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg } = analysis;
 
   if (!comps.length) {
     return (
@@ -308,41 +315,68 @@ export default function ResearchAnalysis({ comps }) {
       {/* ── Price vs PRISM score scatter ───────────────────────────────── */}
       {regPoints.length >= 3 && (
         <div>
-          <SectionTitle>Price vs PRISM Score — {regPoints.length} scored listings</SectionTitle>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px", marginTop: "8px" }}>
+            <div style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+              Price vs PRISM Score — {regPoints.length} scored listings
+            </div>
+            <div style={{ display: "flex", borderRadius: "4px", overflow: "hidden", border: "1px solid var(--border)" }}>
+              {[["log", "Log"], ["linear", "Linear"]].map(([val, label]) => (
+                <button key={val} onClick={() => setPriceScale(val)} style={{
+                  padding: "2px 9px", fontSize: "10px", border: "none",
+                  background: priceScale === val ? "rgba(0,212,255,0.12)" : "transparent",
+                  color: priceScale === val ? "var(--cyan)" : "var(--text-muted)",
+                  fontWeight: priceScale === val ? 600 : 400,
+                  borderRight: val === "log" ? "1px solid var(--border)" : "none",
+                  cursor: "pointer", transition: "all 0.15s",
+                }}>{label}</button>
+              ))}
+            </div>
+          </div>
           <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "8px" }}>
-            The line shows expected market price at each score level. Points <span style={{ color: "#00c880" }}>below the line</span> may be underpriced; points <span style={{ color: "#ff8060" }}>above</span> are priced at a premium.
+            {priceScale === "log"
+              ? <><em>Log scale</em>: a straight regression line confirms price grows exponentially with score. <span style={{ color: "#00c880" }}>Below</span> = underpriced · <span style={{ color: "#ff8060" }}>Above</span> = premium.</>
+              : <><em>Linear scale</em>: the curve shows exponential price growth with score. <span style={{ color: "#00c880" }}>Below</span> the curve = underpriced · <span style={{ color: "#ff8060" }}>Above</span> = premium.</>
+            }
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <ScatterChart margin={{ left: 0, right: 20, top: 8, bottom: 0 }}>
               <CartesianGrid stroke="#1e2d3d" />
               <XAxis type="number" dataKey="x" name="PRISM Score" domain={["auto", "auto"]}
-                tick={{ fill: "#8899aa", fontSize: 10 }} axisLine={false} tickLine={false} label={{ value: "PRISM Score", position: "insideBottom", offset: -2, fill: "#6a7f94", fontSize: 9 }} />
+                tick={{ fill: "#8899aa", fontSize: 10 }} axisLine={false} tickLine={false}
+                label={{ value: "PRISM Score", position: "insideBottom", offset: -2, fill: "#6a7f94", fontSize: 9 }} />
               <YAxis type="number" dataKey="y" name="Price" tickFormatter={fmtK}
+                scale={priceScale === "log" ? "log" : "auto"}
+                domain={priceScale === "log" ? ["auto", "auto"] : [0, "auto"]}
                 tick={{ fill: "#6a7f94", fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip
                 cursor={{ strokeDasharray: "3 3", stroke: "#2a3a50" }}
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const d = payload[0].payload;
+                  if (d._curve) return null;
+                  const expected = reg ? Math.round(Math.exp(reg.slope * d.x + reg.intercept)) : null;
                   return (
                     <div style={CUSTOM_TOOLTIP_STYLE}>
                       <div style={{ fontWeight: 600, marginBottom: "4px" }}>{d.label}</div>
                       <div>Score: <strong>{d.x}</strong></div>
                       <div>Price: <strong>{fmt(d.y)}</strong></div>
+                      {expected && <div style={{ color: "var(--text-muted)", fontSize: "10px" }}>Expected: {fmt(expected)}</div>}
                     </div>
                   );
                 }}
               />
-              {regLine && (
-                <ReferenceLine
-                  segment={regLine}
-                  stroke="rgba(0,212,255,0.4)" strokeWidth={1.5} strokeDasharray="5 3"
-                  label={{ value: "Expected", fill: "rgba(0,212,255,0.5)", fontSize: 9 }}
+              {regCurve && (
+                <Scatter
+                  data={regCurve}
+                  fill="transparent"
+                  line={{ stroke: "rgba(0,212,255,0.4)", strokeWidth: 1.5, strokeDasharray: "5 3" }}
+                  shape={() => <g />}
+                  isAnimationActive={false}
                 />
               )}
               <Scatter data={regPoints} fill="#00d4ff">
                 {regPoints.map((p, i) => {
-                  const expected = analysis.reg ? analysis.reg.slope * p.x + analysis.reg.intercept : p.y;
+                  const expected = reg ? Math.exp(reg.slope * p.x + reg.intercept) : p.y;
                   const color = p.y < expected * 0.9 ? "#00c880" : p.y > expected * 1.1 ? "#ff8060" : "#00d4ff";
                   return <Cell key={i} fill={color} />;
                 })}
@@ -360,7 +394,7 @@ export default function ResearchAnalysis({ comps }) {
         <div>
           <SectionTitle>Market Position — scored listings vs expected price</SectionTitle>
           <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "8px" }}>
-            Expected price is estimated from a linear regression of all your scored comps.
+            Expected price is estimated from a log-linear regression — price grows exponentially with score.
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {marketPosition.map(c => (

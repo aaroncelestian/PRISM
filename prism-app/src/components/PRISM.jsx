@@ -10,6 +10,7 @@ import BuyerGuide from "./BuyerGuide.jsx";
 import CertGenerator from "./CertGenerator.jsx";
 import QuickExport from "./QuickExport.jsx";
 import CollectionHistory from "./CollectionHistory.jsx";
+import HelpGuide from "./HelpGuide.jsx";
 import VerifyView from "./VerifyView.jsx";
 import { useLocalCollection } from "../hooks/useLocalCollection.js";
 import { APP_VERSION } from "../version.js";
@@ -46,6 +47,7 @@ export default function PRISM() {
   const [showCert,       setShowCert]       = useState(false);
   const [showExport,     setShowExport]     = useState(false);
   const [showHistory,    setShowHistory]    = useState(false);
+  const [showHelp,       setShowHelp]       = useState(false);
   const [savedFlash,     setSavedFlash]     = useState(null);  // null | "saved" | "already"
   const [lastSavedKey,   setLastSavedKey]   = useState(null);
   const [spSource,       setSpSource]       = useState(null); // SpecimenPro integration
@@ -71,7 +73,7 @@ export default function PRISM() {
     const verifyParam = p.get("verify");
     if (verifyParam) {
       try {
-        const data = JSON.parse(atob(verifyParam));
+        const data = JSON.parse(decodeURIComponent(escape(atob(verifyParam))));
         setVerifyPayload(data);
         return; // Don't parse other params when verifying
       } catch {
@@ -241,6 +243,7 @@ export default function PRISM() {
                   {showTools && (
                     <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 200, minWidth: "180px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", boxShadow: "0 8px 24px rgba(0,0,0,0.45)", overflow: "hidden" }}>
                       {[
+                        { label: "❓ Help / Guide",        action: () => { setShowHelp(true);       setShowTools(false); } },
                         { label: "📤 Export Record",      action: () => { setShowExport(true);     setShowTools(false); } },
                         { label: "🎖️ Certificate",        action: () => { setShowCert(true);       setShowTools(false); } },
                         { label: "🎓 Buyer Guide",        action: () => { setShowBuyerGuide(true); setShowTools(false); } },
@@ -325,6 +328,7 @@ export default function PRISM() {
             <div onClick={() => setShowTools(false)} style={{ position: "fixed", inset: 0, zIndex: 199 }} />
             <div style={{ position: "fixed", top: "96px", right: "14px", zIndex: 200, minWidth: "200px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", boxShadow: "0 8px 24px rgba(0,0,0,0.5)", overflow: "hidden" }}>
               {[
+                { label: "❓ Help / Guide",       action: () => { setShowHelp(true);       setShowTools(false); } },
                 { label: "📤 Export Record",     action: () => { setShowExport(true);     setShowTools(false); } },
                 { label: "🎖️ Certificate",       action: () => { setShowCert(true);       setShowTools(false); } },
                 { label: "🎓 Buyer Guide",       action: () => { setShowBuyerGuide(true); setShowTools(false); } },
@@ -343,6 +347,9 @@ export default function PRISM() {
       {/* ── Body ── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: isMobile ? "auto" : "hidden" }}>
 
+      {showHelp && (
+        <HelpGuide onClose={() => setShowHelp(false)} />
+      )}
       {showDonation && (
         <DonationEval scores={scores} spec={spec} onClose={() => setShowDonation(false)} />
       )}

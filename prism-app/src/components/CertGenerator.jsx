@@ -16,6 +16,14 @@ function getGrade(score) {
   return GRADES.find(g => score >= g.min) || GRADES[GRADES.length - 1];
 }
 
+function safeB64Encode(str) {
+  try {
+    return btoa(unescape(encodeURIComponent(str)));
+  } catch {
+    return btoa(encodeURIComponent(str));
+  }
+}
+
 function generateCertId() {
   const d = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const r = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -316,7 +324,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
     },
     ev: evaluatorName, org: evaluatorOrg,
   };
-  const verifyUrl = `${window.location.origin}${window.location.pathname}?verify=${btoa(JSON.stringify(certData))}`;
+  const verifyUrl = `${window.location.origin}${window.location.pathname}?verify=${safeB64Encode(JSON.stringify(certData))}`;
 
   useEffect(() => {
     QRCode.toDataURL(verifyUrl, { width: 160, margin: 2, color: { dark: "#0d1520", light: "#ffffff" } })
@@ -324,18 +332,21 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
   }, [verifyUrl]);
 
   const handlePrint = () => {
-    const style = document.createElement("style");
-    style.id = "prism-print-style";
-    style.textContent = `
-      @media print {
-        body > * { display: none !important; }
-        #prism-cert-root { display: block !important; }
-      }
-    `;
-    document.head.appendChild(style);
-    document.getElementById("prism-cert-root").style.display = "block";
-    window.print();
-    setTimeout(() => { document.getElementById("prism-print-style")?.remove(); }, 500);
+    const certEl = document.getElementById("prism-cert-root");
+    if (!certEl) return;
+    const pw = window.open("", "_blank", "width=800,height=900");
+    if (!pw) { alert("Please allow pop-ups for this site to print."); return; }
+    pw.document.write(`<!DOCTYPE html><html><head><title>PRISM Certificate</title>
+      <style>
+        body { font-family: 'Exo 2', system-ui, sans-serif; margin: 0; padding: 24px; }
+        @page { size: A4; margin: 15mm; }
+        @media print { body { padding: 0; } }
+      </style>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800&display=swap" rel="stylesheet">
+    </head><body>${certEl.innerHTML}</body></html>`);
+    pw.document.close();
+    pw.onload = () => { pw.print(); };
   };
 
   const handleCopyId = () => {
