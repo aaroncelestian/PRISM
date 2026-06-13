@@ -51,7 +51,8 @@ const SIZE_CLASSES = [
 ];
 
 const PROV_TIERS = [
-  "T0 — Self-Collected (direct field collection with date/location)",
+  "T0a — Self-Collected with Permit (personally extracted; valid collecting permit or claim held)",
+  "T0b — Self-Collected, Owner/Claim Permission (personally extracted; verbal or written landowner/claim permission, no formal permit)",
   "T1 — Type Locality / Institutional (museum deaccession or institutional source)",
   "T2 — Named Collection (documented provenance from a known named collection)",
   "T3 — Dealer Documentation (invoice/receipt from reputable dealer)",
@@ -255,7 +256,15 @@ function DocumentationStep({ scores, spec, docData: initDocData, setDocData, pho
           <option value="">— Select provenance tier —</option>
           {PROV_TIERS.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
-        <textarea placeholder="Describe each hand the specimen passed through: Self-collected → traded to John Smith (2005) → purchased from dealer (2018) → your acquisition. Include dates, labels, and any documentation."
+        {localDoc.provTier?.startsWith("T0") && (
+          <div style={{ marginBottom: "6px", padding: "8px 10px", background: "rgba(232,184,64,0.07)", border: "1px solid rgba(232,184,64,0.25)", borderRadius: "4px", fontSize: "11px", color: "#c8a030", lineHeight: 1.5 }}>
+            ✋ Self-collected — include: mine/pit name, collecting date, GPS or section/township/range, permit or claim number (if held), and landowner/claim contact if applicable.
+          </div>
+        )}
+        <textarea
+          placeholder={localDoc.provTier?.startsWith("T0")
+            ? "Mine: [name & location]. Date collected: [date]. GPS / coordinates: [coords]. Permit or claim #: [number]. Landowner / claim holder: [name]. Notes: [any additional context]."
+            : "Describe each hand the specimen passed through: Self-collected → traded to John Smith (2005) → purchased from dealer (2018) → your acquisition. Include dates, labels, and any documentation."}
           value={localDoc.chainOfCustody} onChange={e => update("chainOfCustody", e.target.value)}
           rows={3} style={textareaStyle} />
         <div style={{ marginTop: "8px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
@@ -264,8 +273,12 @@ function DocumentationStep({ scores, spec, docData: initDocData, setDocData, pho
             <PhotoCapture label="Photograph original label" value={photos.label} onChange={v => setPhoto("label", v)} />
           </div>
           <div>
-            <div style={{ fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px" }}>Provenance Document</div>
-            <PhotoCapture label="Invoice, permit, or receipt" value={photos.document} onChange={v => setPhoto("document", v)} />
+            <div style={{ fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px" }}>
+              {localDoc.provTier?.startsWith("T0") ? "Collecting Permit / Field Photo" : "Provenance Document"}
+            </div>
+            <PhotoCapture
+              label={localDoc.provTier?.startsWith("T0") ? "Permit, claim doc, or field photo" : "Invoice, permit, or receipt"}
+              value={photos.document} onChange={v => setPhoto("document", v)} />
           </div>
         </div>
       </div>
