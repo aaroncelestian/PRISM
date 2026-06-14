@@ -164,8 +164,7 @@ function TabHowTo() {
 
       <Section title="Tips">
         <Callout icon="💡">
-          The <strong>Guided mode</strong> shows calibration examples for each dimension — click "Show
-          examples" on any step to see what a score of 25, 50, 75, or 100 looks like in practice.
+          Each scoring step in <strong>Guided mode</strong> has a <strong>"Learn more about scoring this"</strong> helper — click it to expand detailed guidance, anchor descriptions, and calibration tips for that dimension.
         </Callout>
         <Callout icon="🔁">
           Use <strong>Reset</strong> (↺ button top-right) to clear all scores and start fresh for a new
