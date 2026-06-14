@@ -395,7 +395,7 @@ export default function PRISM() {
         <BuyerGuide onClose={() => setShowBuyerGuide(false)} />
       )}
       {showCert && (
-        <CertGenerator scores={scores} spec={spec} onClose={() => setShowCert(false)} />
+        <CertGenerator scores={scores} spec={spec} records={records} onClose={() => setShowCert(false)} />
       )}
       {showExport && (
         <QuickExport scores={scores} spec={spec} spSource={spSource} onClose={() => setShowExport(false)} />

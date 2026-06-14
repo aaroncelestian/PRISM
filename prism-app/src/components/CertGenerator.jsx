@@ -39,6 +39,15 @@ function generateCertId() {
   return `PRISM-${d}-${r}`;
 }
 
+function computeDisplayScore(scores) {
+  const all = CONTEXTS.map(c => {
+    const score = computeContextScore(c.key, scores);
+    return { key: c.key, score };
+  });
+  const best = all.find(c => c.score >= THRESHOLD) || all[0];
+  return { score: best.score, grade: getGrade(best.score) };
+}
+
 const SIZE_CLASSES = [
   { key: "thumbnail",  label: "Thumbnail",      range: "< 2.5 cm" },
   { key: "miniature",  label: "Miniature",      range: "2.5–4.5 cm" },
@@ -728,12 +737,120 @@ const btnStyle = {
   color: "var(--text-muted)", fontSize: "11px", cursor: "pointer",
 };
 
+// ── Specimen Picker ───────────────────────────────────────────────────────────
+
+function SpecimenPickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
+  const { score: curScore, grade: curGrade } = computeDisplayScore(initScores);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 1200, background: "rgba(4,8,18,0.90)", backdropFilter: "blur(5px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+      <div style={{ width: "100%", maxWidth: "600px", maxHeight: "92vh", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "10px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+        {/* Header */}
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-dim)", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Award size={16} style={{ color: "var(--cyan)" }} />
+            <div>
+              <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>PRISM Certificate</div>
+              <div style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "1px" }}>Select the specimen to certify</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={16} /></button>
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+
+          {/* Current evaluation */}
+          <div>
+            <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Current Evaluation</div>
+            <button
+              onClick={() => onSelect(initScores, initSpec)}
+              style={{ width: "100%", textAlign: "left", padding: "12px 14px", background: "rgba(0,212,255,0.04)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: "7px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.5)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.25)"}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>
+                  {initSpec.name || initSpec.species || "Unnamed Specimen"}
+                </div>
+                {(initSpec.species || initSpec.locality) && (
+                  <div style={{ fontSize: "10px", color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {[initSpec.species, initSpec.locality].filter(Boolean).join(" \u00b7 ")}
+                  </div>
+                )}
+                <div style={{ marginTop: "4px", fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.08em" }}>Active session — not yet saved to history</div>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ fontSize: "20px", fontWeight: 700, fontFamily: "var(--mono)", color: curGrade.color, lineHeight: 1 }}>{curScore}</div>
+                <div style={{ marginTop: "3px", fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: `${curGrade.color}15`, color: curGrade.color, border: `1px solid ${curGrade.color}30`, fontWeight: 600, letterSpacing: "0.06em", display: "inline-block" }}>{curGrade.emoji} {curGrade.label}</div>
+              </div>
+            </button>
+          </div>
+
+          {/* Saved collection */}
+          <div>
+            <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>
+              Saved Collection {records.length > 0 ? `(${records.length})` : ""}
+            </div>
+            {records.length === 0 ? (
+              <div style={{ padding: "16px", textAlign: "center", fontSize: "11px", color: "var(--text-muted)", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)", lineHeight: 1.6 }}>
+                No specimens saved to history yet.<br />Save a PRISM evaluation first using the Save button.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {records.map(rec => {
+                  const gradeObj = GRADES.find(g => g.label === rec.grade) || GRADES[GRADES.length - 1];
+                  const dateStr = new Date(rec.savedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                  return (
+                    <button
+                      key={rec.id}
+                      onClick={() => onSelect(rec.scores, rec.spec)}
+                      style={{ width: "100%", textAlign: "left", padding: "10px 14px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.3)"}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>
+                          {rec.spec?.name || rec.spec?.species || "Unnamed Specimen"}
+                        </div>
+                        <div style={{ fontSize: "10px", color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {[rec.spec?.species, rec.spec?.locality].filter(Boolean).join(" \u00b7 ")}
+                        </div>
+                        <div style={{ marginTop: "3px", fontSize: "9px", color: "var(--text-muted)" }}>Saved {dateStr}</div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ fontSize: "18px", fontWeight: 700, fontFamily: "var(--mono)", color: gradeObj.color, lineHeight: 1 }}>{rec.prismScore}</div>
+                        <div style={{ marginTop: "3px", fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: `${gradeObj.color}15`, color: gradeObj.color, border: `1px solid ${gradeObj.color}30`, fontWeight: 600, letterSpacing: "0.06em", display: "inline-block" }}>{rec.gradeEmoji} {rec.grade}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: "12px 20px", borderTop: "1px solid var(--border-dim)", flexShrink: 0 }}>
+          <button onClick={onClose} style={btnStyle}>
+            <X size={13} /> Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 const STEPS = ["Review", "Documentation", "Attestations", "Certificate"];
 
-export default function CertGenerator({ scores, spec, onClose }) {
+export default function CertGenerator({ scores: initScores, spec: initSpec, records = [], onClose }) {
   const [step, setStep] = useState(0);
+  const [showPicker, setShowPicker] = useState(true);
+  const [workingScores, setWorkingScores] = useState(initScores);
+  const [workingSpec, setWorkingSpec] = useState(initSpec);
   const [sizeClass, setSizeClass] = useState("");
   const [docData, setDocData] = useState({
     localityNote: "", speciesNote: "", chainOfCustody: "", conditionNote: "None known.", scientificNote: "", provTier: "",
@@ -752,7 +869,7 @@ export default function CertGenerator({ scores, spec, onClose }) {
 
   // Compute context data
   const allCtxData = CONTEXTS.map(c => {
-    const score = computeContextScore(c.key, scores);
+    const score = computeContextScore(c.key, workingScores);
     return { ...c, score, grade: getGrade(score) };
   });
   const primaryCtx = allCtxData.find(c => c.score >= THRESHOLD) || allCtxData[0];
@@ -763,11 +880,29 @@ export default function CertGenerator({ scores, spec, onClose }) {
     return !rawCompounds.some(other => other.key !== cg.key && [...cgKeys].every(k => new Set(Object.keys(other.contexts)).has(k)));
   });
 
+  const handleSelectSource = (scores, spec) => {
+    setWorkingScores(scores);
+    setWorkingSpec(spec);
+    setShowPicker(false);
+  };
+
   const canAdvance = () => {
     if (step === 0) return !!sizeClass;
     if (step === 2) return Object.values(attestations).every(Boolean) && evaluatorName.trim().length > 0;
     return true;
   };
+
+  if (showPicker) {
+    return (
+      <SpecimenPickerScreen
+        initScores={initScores}
+        initSpec={initSpec}
+        records={records}
+        onSelect={handleSelectSource}
+        onClose={onClose}
+      />
+    );
+  }
 
   return (
     <div style={{
@@ -783,12 +918,18 @@ export default function CertGenerator({ scores, spec, onClose }) {
 
         {/* Header */}
         <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-dim)", flexShrink: 0 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Award size={16} style={{ color: "var(--cyan)" }} />
-              <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>PRISM Certificate</span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+              <Award size={16} style={{ color: "var(--cyan)", flexShrink: 0 }} />
+              <div style={{ minWidth: 0 }}>
+                <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>PRISM Certificate</span>
+                <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {workingSpec.name || workingSpec.species || "Unnamed Specimen"}
+                  {workingSpec.locality ? ` · ${workingSpec.locality}` : ""}
+                </div>
+              </div>
             </div>
-            <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={16} /></button>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", flexShrink: 0 }}><X size={16} /></button>
           </div>
           {/* Step bar */}
           <div style={{ display: "flex", gap: "4px" }}>
@@ -805,16 +946,16 @@ export default function CertGenerator({ scores, spec, onClose }) {
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
-          {step === 0 && <ReviewStep scores={scores} spec={spec} sizeClass={sizeClass} setSizeClass={setSizeClass} allCtxData={allCtxData} primaryCtx={primaryCtx} compoundGrades={compoundGrades} />}
-          {step === 1 && <DocumentationStep scores={scores} spec={spec} docData={docData} setDocData={setDocData} photos={photos} setPhotos={setPhotos} />}
+          {step === 0 && <ReviewStep scores={workingScores} spec={workingSpec} sizeClass={sizeClass} setSizeClass={setSizeClass} allCtxData={allCtxData} primaryCtx={primaryCtx} compoundGrades={compoundGrades} />}
+          {step === 1 && <DocumentationStep scores={workingScores} spec={workingSpec} docData={docData} setDocData={setDocData} photos={photos} setPhotos={setPhotos} />}
           {step === 2 && <AttestationStep attestations={attestations} setAttestations={setAttestations} evaluatorName={evaluatorName} setEvaluatorName={setEvaluatorName} evaluatorOrg={evaluatorOrg} setEvaluatorOrg={setEvaluatorOrg} customAttestations={customAttestations} setCustomAttestations={setCustomAttestations} />}
-          {step === 3 && <CertPreview certId={certId} issued={issued} scores={scores} spec={spec} sizeClass={sizeClass} docData={docData} photos={photos} attestations={attestations} evaluatorName={evaluatorName} evaluatorOrg={evaluatorOrg} primaryCtx={primaryCtx} compoundGrades={compoundGrades} customAttestations={customAttestations} onSaved={() => setCertSaved(true)} />}
+          {step === 3 && <CertPreview certId={certId} issued={issued} scores={workingScores} spec={workingSpec} sizeClass={sizeClass} docData={docData} photos={photos} attestations={attestations} evaluatorName={evaluatorName} evaluatorOrg={evaluatorOrg} primaryCtx={primaryCtx} compoundGrades={compoundGrades} customAttestations={customAttestations} onSaved={() => setCertSaved(true)} />}
         </div>
 
         {/* Footer nav */}
         <div style={{ padding: "12px 20px", borderTop: "1px solid var(--border-dim)", display: "flex", justifyContent: "space-between", flexShrink: 0 }}>
-          <button onClick={() => step > 0 ? setStep(s => s - 1) : onClose()} style={btnStyle}>
-            <ChevronLeft size={13} /> {step === 0 ? "Cancel" : "Back"}
+          <button onClick={() => step > 0 ? setStep(s => s - 1) : setShowPicker(true)} style={btnStyle}>
+            <ChevronLeft size={13} /> {step === 0 ? "Change Specimen" : "Back"}
           </button>
           {step < STEPS.length - 1 ? (
             <button onClick={() => setStep(s => s + 1)} disabled={!canAdvance()} style={{
