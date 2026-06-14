@@ -103,9 +103,10 @@ function ContextCard({ ctx, selected, onClick }) {
   );
 }
 
-export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSpec, sciCriteria, onSciCriteriaChange, onReset, onExport, initialStep = 0, scoringComp = null, onSaveToComp = null }) {
+export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSpec, sciCriteria, onSciCriteriaChange, onReset, onExport, initialStep = 0, scoringComp = null, onSaveToComp = null, onSaveToCollection = null }) {
   const [step, setStep] = useState(initialStep);
   const [showTip, setShowTip] = useState(null);
+  const [saveFlash, setSaveFlash] = useState(false);
 
   // step 0 = choose context
   // step 1 = specimen info
@@ -411,22 +412,22 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                 Switch to Expert Mode anytime to fine-tune individual values.
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "center" }}>
-                {scoringComp && onSaveToComp ? (
-                <button
-                  onClick={onSaveToComp}
-                  style={{
-                    width: "220px", padding: "11px 20px",
-                    background: "rgba(0,212,255,0.12)",
-                    border: "1px solid rgba(0,212,255,0.5)",
-                    borderRadius: "6px", color: "var(--cyan)",
-                    fontSize: "12px", fontWeight: 700,
-                    letterSpacing: "0.08em", cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-                  }}
-                >
-                  💾 Save Score to Research
-                </button>
-              ) : (
+                {scoringComp && onSaveToComp && (
+                  <button
+                    onClick={onSaveToComp}
+                    style={{
+                      width: "220px", padding: "11px 20px",
+                      background: "rgba(0,212,255,0.12)",
+                      border: "1px solid rgba(0,212,255,0.5)",
+                      borderRadius: "6px", color: "var(--cyan)",
+                      fontSize: "12px", fontWeight: 700,
+                      letterSpacing: "0.08em", cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                    }}
+                  >
+                    💾 Save Score to Research
+                  </button>
+                )}
                 <button
                   onClick={() => onExport?.()}
                   style={{
@@ -441,7 +442,26 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                 >
                   📤 Export Record
                 </button>
-              )}
+                <button
+                  onClick={() => {
+                    onSaveToCollection?.();
+                    setSaveFlash(true);
+                    setTimeout(() => setSaveFlash(false), 1800);
+                  }}
+                  style={{
+                    width: "220px", padding: "11px 20px",
+                    background: saveFlash ? "rgba(0,200,128,0.12)" : "rgba(0,212,255,0.04)",
+                    border: `1px solid ${saveFlash ? "rgba(0,200,128,0.5)" : "var(--border)"}`,
+                    borderRadius: "6px",
+                    color: saveFlash ? "#00c880" : "var(--text-muted)",
+                    fontSize: "12px", fontWeight: 600,
+                    letterSpacing: "0.08em", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {saveFlash ? "✓ Saved to History" : "💾 Save to History"}
+                </button>
                 <button
                   onClick={() => { setStep(0); onReset?.(); }}
                   style={{

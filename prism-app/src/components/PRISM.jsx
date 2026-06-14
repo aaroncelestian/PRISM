@@ -50,7 +50,6 @@ export default function PRISM() {
   const [showHistory,    setShowHistory]    = useState(false);
   const [showHelp,       setShowHelp]       = useState(false);
   const [showMeteoriteID, setShowMeteoriteID] = useState(false);
-  const [savedFlash,     setSavedFlash]     = useState(null);  // null | "saved" | "already"
   const [lastSavedKey,   setLastSavedKey]   = useState(null);
   const [spSource,       setSpSource]       = useState(null); // SpecimenPro integration
   const [scoringCompId,  setScoringCompId]  = useState(null); // Research mode comp being scored
@@ -119,16 +118,10 @@ export default function PRISM() {
 
   const handleSaveToCollection = () => {
     const key = JSON.stringify({ scores, spec, ctx });
-    if (key === lastSavedKey) {
-      setSavedFlash("already");
-      setTimeout(() => setSavedFlash(null), 1800);
-      return;
-    }
+    if (key === lastSavedKey) return;
     const { score, grade, compoundGrades } = computePrimary(scores);
     saveRecord(spec, scores, ctx, grade.label, grade.emoji, score, compoundGrades);
     setLastSavedKey(key);
-    setSavedFlash("saved");
-    setTimeout(() => setSavedFlash(null), 1800);
   };
 
   const handleScoreComp = (comp) => {
@@ -226,19 +219,9 @@ export default function PRISM() {
             {/* Action buttons — desktop only in primary row */}
             {!isMobile && (
               <>
-                <button onClick={handleSaveToCollection}
-                  title={savedFlash === "already" ? "No changes since last save" : "Save current score to collection"}
-                  style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px",
-                    background: savedFlash === "saved" ? "rgba(0,200,128,0.15)" : savedFlash === "already" ? "rgba(170,170,170,0.07)" : "transparent",
-                    border: `1px solid ${savedFlash === "saved" ? "rgba(0,200,128,0.5)" : savedFlash === "already" ? "rgba(170,170,170,0.3)" : "var(--border)"}`,
-                    borderRadius: "5px",
-                    color: savedFlash === "saved" ? "#00c880" : savedFlash === "already" ? "var(--text-muted)" : "var(--text-muted)",
-                    fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.2s" }}>
-                  {savedFlash === "saved" ? "✓ Saved" : savedFlash === "already" ? "✓ Already saved" : "💾 Save"}
-                </button>
-                <button onClick={() => setShowHistory(true)} title="Collection history"
-                  style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: records.length > 0 ? "rgba(0,212,255,0.06)" : "transparent", border: `1px solid ${records.length > 0 ? "rgba(0,212,255,0.25)" : "var(--border)"}`, borderRadius: "5px", color: records.length > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.2s" }}>
-                  📚{records.length > 0 ? ` ${records.length}` : ""} History
+<button onClick={() => setShowHistory(true)} title="Collection history"
+                  style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: (records.length + comps.length) > 0 ? "rgba(0,212,255,0.06)" : "transparent", border: `1px solid ${(records.length + comps.length) > 0 ? "rgba(0,212,255,0.25)" : "var(--border)"}`, borderRadius: "5px", color: (records.length + comps.length) > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.2s" }}>
+                  📚{(records.length + comps.length) > 0 ? ` ${records.length + comps.length}` : ""} History
                 </button>
                 {/* Tools dropdown */}
                 <div data-tools-menu style={{ position: "relative" }}>
@@ -349,9 +332,9 @@ export default function PRISM() {
                 color: savedFlash === "saved" ? "#00c880" : "var(--text-muted)" }}>
               {savedFlash === "saved" ? "✓" : savedFlash === "already" ? "↩" : "💾"} Save
             </button>
-            <button onClick={() => setShowHistory(true)}
-              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: records.length > 0 ? "rgba(0,212,255,0.06)" : "transparent", border: `1px solid ${records.length > 0 ? "rgba(0,212,255,0.25)" : "var(--border)"}`, color: records.length > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
-              📚{records.length > 0 ? ` ${records.length}` : ""} History
+<button onClick={() => setShowHistory(true)}
+              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: (records.length + comps.length) > 0 ? "rgba(0,212,255,0.06)" : "transparent", border: `1px solid ${(records.length + comps.length) > 0 ? "rgba(0,212,255,0.25)" : "var(--border)"}`, color: (records.length + comps.length) > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
+              📚{(records.length + comps.length) > 0 ? ` ${records.length + comps.length}` : ""} History
             </button>
             <button onClick={() => setShowTools(t => !t)}
               style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: showTools ? "rgba(0,212,255,0.08)" : "transparent", border: `1px solid ${showTools ? "rgba(0,212,255,0.35)" : "var(--border)"}`, color: showTools ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
@@ -436,6 +419,9 @@ export default function PRISM() {
           onClearAll={clearAll}
           onClose={() => setShowHistory(false)}
           onImport={importRecords}
+          comps={comps}
+          onDeleteComp={deleteComp}
+          onClearComps={clearComps}
         />
       )}
         {mode === "wizard" ? (
@@ -454,6 +440,7 @@ export default function PRISM() {
             initialStep={spSource || scoringCompId ? 2 : 0}
             scoringComp={scoringCompId ? comps.find(c => c.id === scoringCompId) : null}
             onSaveToComp={scoringCompId ? handleSaveToComp : null}
+            onSaveToCollection={handleSaveToCollection}
           />
         ) : mode === "expert" ? (
           <ExpertMode
@@ -464,6 +451,8 @@ export default function PRISM() {
             setSpec={setSpec}
             sciCriteria={sciCriteria}
             onSciCriteriaChange={handleSciCriteria}
+            onExport={() => setShowExport(true)}
+            onSaveToCollection={handleSaveToCollection}
           />
         ) : (
           <ResearchMode

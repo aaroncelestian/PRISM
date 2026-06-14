@@ -106,10 +106,11 @@ function DimRow({ dim, score, weight, onChange, sciCriteria, onSciCriteriaChange
   );
 }
 
-export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciCriteria, onSciCriteriaChange }) {
+export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciCriteria, onSciCriteriaChange, onExport = null, onSaveToCollection = null }) {
   const W = WEIGHTS[ctx];
   const { isMobile } = useBreakpoint();
   const [showScorePanel, setShowScorePanel] = useState(false);
+  const [saveFlash, setSaveFlash] = useState(false);
   const quickScore = useMemo(() =>
     Math.round(Object.entries(W).reduce((a, [k, w]) => a + (scores[k] ?? 50) * w, 0)),
   [scores, ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -219,6 +220,63 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
             onSciCriteriaChange={d.key === "scientific" ? onSciCriteriaChange : undefined}
           />
         ))}
+        </div>
+
+        {/* ── Action buttons ── */}
+        <div style={{
+          padding: "12px 20px",
+          borderTop: "1px solid var(--border-dim)",
+          display: "flex",
+          gap: "8px",
+          flexShrink: 0,
+        }}>
+          <button
+            onClick={() => onExport?.()}
+            style={{
+              flex: 1,
+              padding: "8px 14px",
+              background: "rgba(0,212,255,0.07)",
+              border: "1px solid rgba(0,212,255,0.35)",
+              borderRadius: "5px",
+              color: "var(--cyan)",
+              fontSize: "11px",
+              fontWeight: 600,
+              letterSpacing: "0.07em",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+            }}
+          >
+            📤 Export Record
+          </button>
+          <button
+            onClick={() => {
+              onSaveToCollection?.();
+              setSaveFlash(true);
+              setTimeout(() => setSaveFlash(false), 1800);
+            }}
+            style={{
+              flex: 1,
+              padding: "8px 14px",
+              background: saveFlash ? "rgba(0,200,128,0.12)" : "rgba(0,212,255,0.04)",
+              border: `1px solid ${saveFlash ? "rgba(0,200,128,0.5)" : "var(--border)"}`,
+              borderRadius: "5px",
+              color: saveFlash ? "#00c880" : "var(--text-muted)",
+              fontSize: "11px",
+              fontWeight: 600,
+              letterSpacing: "0.07em",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              transition: "all 0.2s",
+            }}
+          >
+            {saveFlash ? "✓ Saved to History" : "💾 Save to History"}
+          </button>
         </div>
       </div>
 

@@ -460,11 +460,11 @@ function CompForm({ initial = EMPTY_FORM, onSave, onCancel }) {
         if (data.photo    && !f.photo)                     { next.photo       = data.photo;      filled.push("photo"); }
         return next;
       });
-      setFillSummary(filled.length ? `Filled: ${filled.join(", ")}` : "No new fields detected — fill manually.");
+      setFillSummary(filled.length ? `Filled: ${filled.join(", ")}` : "No data detected — fill manually (most sites block auto-extraction).");
       setAutoFill(filled.length ? "done" : "none");
     } catch {
       setAutoFill("error");
-      setFillSummary("Could not reach the listing — fill manually.");
+      setFillSummary("Blocked by site anti-bot protection — use the Find Prices tab to open the market directly, then log the price manually.");
     }
   };
 
