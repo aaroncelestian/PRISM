@@ -57,7 +57,7 @@ export default function PRISM() {
   const [confirmReset,   setConfirmReset]   = useState(false);
   const resetTimerRef = useRef(null);
   const { records, saveRecord, deleteRecord, clearAll, importRecords } = useLocalCollection();
-  const { comps, addComp, updateComp, deleteComp, clearAll: clearComps, importComps, history: researchHistory, deleteFromHistory, clearHistory } = useComparables();
+  const { comps, addComp, updateComp, deleteComp, clearAll: clearComps, importComps } = useComparables();
   const [verifyPayload, setVerifyPayload] = useState(null);
   const [showTools, setShowTools] = useState(false);
   const { isMobile } = useBreakpoint();
@@ -219,10 +219,12 @@ export default function PRISM() {
             {/* Action buttons — desktop only in primary row */}
             {!isMobile && (
               <>
-<button onClick={() => setShowHistory(true)} title="Collection history"
-                  style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: (records.length + comps.length) > 0 ? "rgba(0,212,255,0.06)" : "transparent", border: `1px solid ${(records.length + comps.length) > 0 ? "rgba(0,212,255,0.25)" : "var(--border)"}`, borderRadius: "5px", color: (records.length + comps.length) > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.2s" }}>
-                  📚{(records.length + comps.length) > 0 ? ` ${records.length + comps.length}` : ""} History
+{mode !== "research" && (
+                <button onClick={() => setShowHistory(true)} title="Collection history"
+                  style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: records.length > 0 ? "rgba(0,212,255,0.06)" : "transparent", border: `1px solid ${records.length > 0 ? "rgba(0,212,255,0.25)" : "var(--border)"}`, borderRadius: "5px", color: records.length > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.2s" }}>
+                  📚{records.length > 0 ? ` ${records.length}` : ""} History
                 </button>
+              )}
                 {/* Tools dropdown */}
                 <div data-tools-menu style={{ position: "relative" }}>
                   <button onClick={() => setShowTools(t => !t)}
@@ -332,10 +334,12 @@ export default function PRISM() {
                 color: savedFlash === "saved" ? "#00c880" : "var(--text-muted)" }}>
               {savedFlash === "saved" ? "✓" : savedFlash === "already" ? "↩" : "💾"} Save
             </button>
-<button onClick={() => setShowHistory(true)}
-              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: (records.length + comps.length) > 0 ? "rgba(0,212,255,0.06)" : "transparent", border: `1px solid ${(records.length + comps.length) > 0 ? "rgba(0,212,255,0.25)" : "var(--border)"}`, color: (records.length + comps.length) > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
-              📚{(records.length + comps.length) > 0 ? ` ${records.length + comps.length}` : ""} History
+{mode !== "research" && (
+            <button onClick={() => setShowHistory(true)}
+              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: records.length > 0 ? "rgba(0,212,255,0.06)" : "transparent", border: `1px solid ${records.length > 0 ? "rgba(0,212,255,0.25)" : "var(--border)"}`, color: records.length > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
+              📚{records.length > 0 ? ` ${records.length}` : ""} History
             </button>
+            )}
             <button onClick={() => setShowTools(t => !t)}
               style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: showTools ? "rgba(0,212,255,0.08)" : "transparent", border: `1px solid ${showTools ? "rgba(0,212,255,0.35)" : "var(--border)"}`, color: showTools ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
               🛠️ Tools ▾
@@ -419,10 +423,6 @@ export default function PRISM() {
           onClearAll={clearAll}
           onClose={() => setShowHistory(false)}
           onImport={importRecords}
-          comps={researchHistory}
-          onDeleteComp={deleteFromHistory}
-          onClearComps={clearHistory}
-          onOpenResearch={() => { setShowHistory(false); setMode("research"); }}
         />
       )}
         {mode === "wizard" ? (

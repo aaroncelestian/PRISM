@@ -6,8 +6,6 @@ import { migrateCollectionRecord, wrapForSave, unwrapFromFile } from "../utils/d
 
 const GRADE_COLOR = Object.fromEntries(GRADES.map(g => [g.label, g.color]));
 
-const SIZE_LABEL = { thumbnail: "Thumb", miniature: "Mini", small_cab: "Sm. Cab", cabinet: "Cabinet", large_cab: "Lg. Cab", museum: "Museum" };
-const COND_LABEL = { pristine: "Pristine", excellent: "Display", good: "Minor Chips", repaired: "Repaired", damaged: "Damaged" };
 const DIM_DISPLAY = [
   { key: "crystal",        label: "Crystal",    icon: "💠" },
   { key: "speciesRarity",  label: "Species",    icon: "🌍" },
@@ -42,12 +40,10 @@ function saveToFile(data, filename) {
   URL.revokeObjectURL(url);
 }
 
-export default function CollectionHistory({ records, onLoad, onDelete, onClearAll, onClose, onImport, comps = [], onDeleteComp, onClearComps, onOpenResearch }) {
-  const [tab, setTab]               = useState("collection");
-  const [query, setQuery]           = useState("");
-  const [expanded, setExpanded]     = useState(null);
-  const [confirmClear, setConfirmClear]           = useState(false);
-  const [confirmClearComps, setConfirmClearComps] = useState(false);
+export default function CollectionHistory({ records, onLoad, onDelete, onClearAll, onClose, onImport }) {
+  const [query, setQuery]       = useState("");
+  const [expanded, setExpanded] = useState(null);
+  const [confirmClear, setConfirmClear] = useState(false);
   const openInputRef = useRef();
 
   const handleSave = () => {
@@ -86,17 +82,6 @@ export default function CollectionHistory({ records, onLoad, onDelete, onClearAl
     );
   });
 
-  const filteredComps = comps.filter(c => {
-    if (!query.trim()) return true;
-    const q = query.toLowerCase();
-    return (
-      (c.species || "").toLowerCase().includes(q) ||
-      (c.locality || "").toLowerCase().includes(q) ||
-      (c.source   || "").toLowerCase().includes(q) ||
-      (c.notes    || "").toLowerCase().includes(q)
-    );
-  });
-
   // Grade distribution for summary
   const gradeCounts = GRADES.map(g => ({
     label: g.label, color: g.color, emoji: g.emoji,
@@ -124,18 +109,16 @@ export default function CollectionHistory({ records, onLoad, onDelete, onClearAl
             <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)" }}>📚 History</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            {tab === "collection" && records.length > 0 && (
+            {records.length > 0 && (
               <button onClick={handleSave} title="Save collection to device"
                 style={{ display: "flex", alignItems: "center", gap: "4px", padding: "4px 10px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "10px", cursor: "pointer" }}>
                 <Download size={11} /> Save
               </button>
             )}
-            {tab === "collection" && (
-              <button onClick={() => openInputRef.current?.click()} title="Open a saved collection file"
-                style={{ display: "flex", alignItems: "center", gap: "4px", padding: "4px 10px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "10px", cursor: "pointer" }}>
-                <FolderOpen size={11} /> Open
-              </button>
-            )}
+            <button onClick={() => openInputRef.current?.click()} title="Open a saved collection file"
+              style={{ display: "flex", alignItems: "center", gap: "4px", padding: "4px 10px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "10px", cursor: "pointer" }}>
+              <FolderOpen size={11} /> Open
+            </button>
             <input ref={openInputRef} type="file" accept=".json,application/json" onChange={handleOpen} style={{ display: "none" }} />
             <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", marginLeft: "4px" }}>
               <X size={16} />
@@ -143,29 +126,8 @@ export default function CollectionHistory({ records, onLoad, onDelete, onClearAl
           </div>
         </div>
 
-        {/* Tab toggle */}
-        <div style={{ display: "flex", borderBottom: "1px solid var(--border-dim)", flexShrink: 0 }}>
-          {[
-            { key: "collection", label: "Specimens", count: records.length },
-            { key: "research",   label: "Research",  count: comps.length },
-          ].map(({ key, label, count }) => (
-            <button key={key} onClick={() => { setTab(key); setExpanded(null); setQuery(""); }}
-              style={{
-                flex: 1, padding: "9px 12px", background: "none", border: "none",
-                borderBottom: `2px solid ${tab === key ? "var(--cyan)" : "transparent"}`,
-                color: tab === key ? "var(--cyan)" : "var(--text-muted)",
-                fontSize: "11px", fontWeight: tab === key ? 600 : 400,
-                cursor: "pointer", transition: "color 0.15s, border-color 0.15s",
-              }}
-            >
-              {label}
-              {count > 0 && <span style={{ marginLeft: "5px", fontSize: "9px", fontFamily: "var(--mono)", opacity: 0.8 }}>{count}</span>}
-            </button>
-          ))}
-        </div>
-
-        {/* Summary stats — collection only */}
-        {tab === "collection" && gradeCounts.length > 0 && (
+        {/* Summary stats */}
+        {gradeCounts.length > 0 && (
           <div style={{
             padding: "10px 18px", borderBottom: "1px solid var(--border-dim)",
             display: "flex", gap: "8px", flexWrap: "wrap", flexShrink: 0,
@@ -189,7 +151,7 @@ export default function CollectionHistory({ records, onLoad, onDelete, onClearAl
             <Search size={13} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
             <input
               type="text"
-              placeholder={tab === "collection" ? "Search by name, species, locality, grade…" : "Search species, locality, source…"}
+              placeholder="Search by name, species, locality, grade…"
               value={query}
               onChange={e => setQuery(e.target.value)}
               style={{
@@ -203,9 +165,7 @@ export default function CollectionHistory({ records, onLoad, onDelete, onClearAl
 
         {/* Records list */}
         <div style={{ flex: 1, overflowY: "auto" }}>
-
-          {/* ── Collection tab ── */}
-          {tab === "collection" && (filtered.length === 0 ? (
+          {filtered.length === 0 ? (
             <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>
               {records.length === 0 ? (
                 <>
@@ -273,108 +233,11 @@ export default function CollectionHistory({ records, onLoad, onDelete, onClearAl
                 </div>
               );
             })
-          ))}
-
-          {/* ── Research tab ── */}
-          {tab === "research" && (filteredComps.length === 0 ? (
-            <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>
-              {comps.length === 0 ? (
-                <>
-                  <div style={{ fontSize: "36px", marginBottom: "12px" }}>🔍</div>
-                  No research listings yet. Use the <strong>Research</strong> mode to add comparable listings.
-                </>
-              ) : (
-                "No matches for that search."
-              )}
-            </div>
-          ) : (
-            filteredComps.map(comp => {
-              const isOpen = expanded === comp.id;
-              const isScored = comp.prismScore != null;
-              const gradeColor = isScored ? (GRADE_COLOR[comp.grade] || "var(--cyan)") : "rgba(0,212,255,0.5)";
-              const price = comp.askingPrice;
-              const priceStr = price
-                ? (price >= 10000 ? `$${(price / 1000).toFixed(0)}k` : price >= 1000 ? `$${(price / 1000).toFixed(1)}k` : `$${price}`)
-                : "—";
-              return (
-                <div key={comp.id} style={{ borderBottom: "1px solid var(--border-dim)" }}>
-                  <div
-                    onClick={() => setExpanded(isOpen ? null : comp.id)}
-                    style={{ padding: "11px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", background: isOpen ? "var(--bg-panel)" : "transparent", transition: "background 0.15s" }}
-                  >
-                    {/* Price badge */}
-                    <div style={{ width: "42px", height: "38px", borderRadius: "5px", flexShrink: 0, background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.2)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ fontSize: "7px", color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>ask</span>
-                      <span style={{ fontSize: priceStr.length > 5 ? "8px" : "10px", color: "var(--cyan)", fontFamily: "var(--mono)", fontWeight: 700, lineHeight: 1.1 }}>{priceStr}</span>
-                    </div>
-                    {/* Info */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {comp.species || <span style={{ color: "var(--text-muted)" }}>Unknown species</span>}
-                      </div>
-                      <div style={{ fontSize: "10px", color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {[comp.locality, comp.source].filter(Boolean).join(" · ") || "—"}
-                      </div>
-                    </div>
-                    {/* Score + date */}
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      {isScored
-                        ? <div style={{ fontSize: "10px", color: gradeColor, fontWeight: 600 }}>{comp.grade} Grade</div>
-                        : <div style={{ fontSize: "9px", color: "var(--text-muted)" }}>Not scored</div>
-                      }
-                      <div style={{ fontSize: "9px", color: "var(--text-muted)" }}>{formatDate(comp.addedAt)}</div>
-                    </div>
-                    {/* Actions */}
-                    <div style={{ display: "flex", gap: "4px", flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                      <button onClick={() => onDeleteComp?.(comp.id)} title="Delete"
-                        style={{ padding: "5px 7px", background: "transparent", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", cursor: "pointer" }}>
-                        <Trash2 size={11} />
-                      </button>
-                    </div>
-                  </div>
-                  {isOpen && (
-                    <div style={{ padding: "0 18px 14px 18px", background: "var(--bg-panel)" }}>
-                      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "6px" }}>
-                        {comp.sizeClass && SIZE_LABEL[comp.sizeClass] && (
-                          <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-                            {SIZE_LABEL[comp.sizeClass]}
-                          </span>
-                        )}
-                        {comp.condition && COND_LABEL[comp.condition] && (
-                          <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-                            {COND_LABEL[comp.condition]}
-                          </span>
-                        )}
-                        {comp.soldPrice && (
-                          <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "rgba(0,200,128,0.08)", border: "1px solid rgba(0,200,128,0.25)", color: "#00c880" }}>
-                            Sold: ${comp.soldPrice}
-                          </span>
-                        )}
-                      </div>
-                      {comp.notes && (
-                        <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "6px", lineHeight: 1.5 }}>{comp.notes}</div>
-                      )}
-                      {isScored && comp.scores && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "5px", marginTop: "4px" }}>
-                          {DIM_DISPLAY.map(d => (
-                            <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                              <span style={{ fontSize: "10px", color: "var(--text-dim)", width: "90px", flexShrink: 0 }}>{d.icon} {d.label}</span>
-                              <ScoreBar value={comp.scores[d.key] ?? 0} color={gradeColor} />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          ))}
-
+          )}
         </div>
 
-        {/* Footer — collection */}
-        {tab === "collection" && records.length > 0 && (
+        {/* Footer */}
+        {records.length > 0 && (
           <div style={{ padding: "10px 18px", borderTop: "1px solid var(--border-dim)", display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
             {confirmClear ? (
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -395,29 +258,6 @@ export default function CollectionHistory({ records, onLoad, onDelete, onClearAl
           </div>
         )}
 
-        {/* Footer — research */}
-        {tab === "research" && comps.length > 0 && (
-          <div style={{ padding: "10px 18px", borderTop: "1px solid var(--border-dim)", display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
-            {confirmClearComps ? (
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Delete all {comps.length} listings?</span>
-                <button onClick={() => { onClearComps?.(); setConfirmClearComps(false); }} style={{ padding: "4px 12px", background: "rgba(255,60,60,0.1)", border: "1px solid rgba(255,60,60,0.4)", borderRadius: "4px", color: "#ff6060", fontSize: "11px", cursor: "pointer" }}>Yes, clear all</button>
-                <button onClick={() => setConfirmClearComps(false)} style={{ padding: "4px 10px", background: "transparent", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer" }}>Cancel</button>
-              </div>
-            ) : (
-              <>
-                <button onClick={() => setConfirmClearComps(true)} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "transparent", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer", marginRight: "auto" }}>
-                  <Trash2 size={11} /> Clear all
-                </button>
-                {onOpenResearch && (
-                  <button onClick={onOpenResearch} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 16px", background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.35)", borderRadius: "4px", color: "var(--cyan)", fontSize: "11px", fontWeight: 600, cursor: "pointer" }}>
-                    Open in Research
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
