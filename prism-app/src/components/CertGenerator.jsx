@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, ChevronLeft, ChevronRight, Award, Camera, Printer, Copy } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Award, Camera, Printer, Copy, FileDown, AlertTriangle } from "lucide-react";
 import QRCode from "qrcode";
 import { GRADES, DIMS, WEIGHTS, CONTEXTS, detectCompoundGrades } from "../data/prism.js";
 
@@ -501,7 +501,7 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
 
 // ── Step 4: Certificate Preview ───────────────────────────────────────────────
 
-function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos, attestations, evaluatorName, evaluatorOrg, primaryCtx, compoundGrades, customAttestations = [] }) {
+function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos, attestations, evaluatorName, evaluatorOrg, primaryCtx, compoundGrades, customAttestations = [], onSaved }) {
   const [qrUrl, setQrUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const grade = primaryCtx.grade;
@@ -543,7 +543,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
     if (!certEl) return;
     const pw = window.open("", "_blank", "width=800,height=900");
     if (!pw) { alert("Please allow pop-ups for this site to print."); return; }
-    pw.document.write(`<!DOCTYPE html><html><head><title>PRISM Certificate</title>
+    pw.document.write(`<!DOCTYPE html><html><head><title>PRISM Certificate — ${certId}</title>
       <style>
         body { font-family: 'Exo 2', system-ui, sans-serif; margin: 0; padding: 24px; }
         @page { size: A4; margin: 15mm; }
@@ -553,7 +553,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
       <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800&display=swap" rel="stylesheet">
     </head><body>${certEl.innerHTML}</body></html>`);
     pw.document.close();
-    pw.onload = () => { pw.print(); };
+    pw.onload = () => { pw.focus(); pw.print(); onSaved?.(); };
   };
 
   const handleCopyId = () => {
@@ -574,8 +574,8 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
           <button onClick={handleCopyId} style={btnStyle}>
             <Copy size={12} /> {copied ? "Copied!" : "Copy ID"}
           </button>
-          <button onClick={handlePrint} style={{ ...btnStyle, background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.35)", color: "var(--cyan)" }}>
-            <Printer size={12} /> Print
+          <button onClick={handlePrint} style={{ ...btnStyle, background: "rgba(0,200,128,0.1)", border: "1px solid rgba(0,200,128,0.4)", color: "#00c880" }}>
+            <FileDown size={12} /> Save as PDF
           </button>
         </div>
       </div>
@@ -749,6 +749,8 @@ export default function CertGenerator({ scores, spec, onClose }) {
   const [customAttestations, setCustomAttestations] = useState([]);
   const [certId] = useState(generateCertId);
   const [issued] = useState(() => new Date().toISOString());
+  const [certSaved, setCertSaved] = useState(false);
+  const [showDoneWarn, setShowDoneWarn] = useState(false);
 
   // Compute context data
   const allCtxData = CONTEXTS.map(c => {
@@ -808,7 +810,7 @@ export default function CertGenerator({ scores, spec, onClose }) {
           {step === 0 && <ReviewStep scores={scores} spec={spec} sizeClass={sizeClass} setSizeClass={setSizeClass} allCtxData={allCtxData} primaryCtx={primaryCtx} compoundGrades={compoundGrades} />}
           {step === 1 && <DocumentationStep scores={scores} spec={spec} docData={docData} setDocData={setDocData} photos={photos} setPhotos={setPhotos} />}
           {step === 2 && <AttestationStep attestations={attestations} setAttestations={setAttestations} evaluatorName={evaluatorName} setEvaluatorName={setEvaluatorName} evaluatorOrg={evaluatorOrg} setEvaluatorOrg={setEvaluatorOrg} customAttestations={customAttestations} setCustomAttestations={setCustomAttestations} />}
-          {step === 3 && <CertPreview certId={certId} issued={issued} scores={scores} spec={spec} sizeClass={sizeClass} docData={docData} photos={photos} attestations={attestations} evaluatorName={evaluatorName} evaluatorOrg={evaluatorOrg} primaryCtx={primaryCtx} compoundGrades={compoundGrades} customAttestations={customAttestations} />}
+          {step === 3 && <CertPreview certId={certId} issued={issued} scores={scores} spec={spec} sizeClass={sizeClass} docData={docData} photos={photos} attestations={attestations} evaluatorName={evaluatorName} evaluatorOrg={evaluatorOrg} primaryCtx={primaryCtx} compoundGrades={compoundGrades} customAttestations={customAttestations} onSaved={() => setCertSaved(true)} />}
         </div>
 
         {/* Footer nav */}
@@ -827,9 +829,20 @@ export default function CertGenerator({ scores, spec, onClose }) {
               Next <ChevronRight size={13} />
             </button>
           ) : (
-            <button onClick={onClose} style={{ ...btnStyle, background: "rgba(0,200,128,0.08)", border: "1px solid rgba(0,200,128,0.35)", color: "#00c880" }}>
-              Done
-            </button>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
+              {showDoneWarn && !certSaved && (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", color: "#ffa028", background: "rgba(255,160,40,0.07)", border: "1px solid rgba(255,160,40,0.28)", borderRadius: "5px", padding: "6px 10px" }}>
+                  <AlertTriangle size={12} style={{ flexShrink: 0 }} />
+                  <span>Save as PDF before closing — this certificate cannot be recovered.</span>
+                  <button onClick={onClose} style={{ background: "none", border: "none", color: "#ffa028", textDecoration: "underline", cursor: "pointer", fontSize: "11px", whiteSpace: "nowrap", padding: 0 }}>Close anyway</button>
+                </div>
+              )}
+              <button
+                onClick={() => { if (!certSaved) { setShowDoneWarn(true); } else { onClose(); } }}
+                style={{ ...btnStyle, background: certSaved ? "rgba(0,200,128,0.08)" : "var(--bg-panel)", border: `1px solid ${certSaved ? "rgba(0,200,128,0.35)" : "var(--border)"}`, color: certSaved ? "#00c880" : "var(--text-muted)" }}>
+                Done
+              </button>
+            </div>
           )}
         </div>
       </div>
