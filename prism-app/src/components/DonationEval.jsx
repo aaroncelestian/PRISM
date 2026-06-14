@@ -46,6 +46,53 @@ const LAND_TYPES = [
   { key: "unknown", label: "Unknown / Undocumented",  color: "#607090", desc: "Insufficient locality data — provenance severely limited for institutional acquisition." },
 ];
 
+const LAND_LEGAL = {
+  blm: {
+    status: "allowed",
+    color: "#00c880",
+    heading: "Generally Permitted",
+    detail: "Casual recreational collecting allowed under 43 CFR 8365 for personal use. Commercial collection, use of power tools, and collection from ACECs, Wilderness Areas, or other special management areas require a permit or are prohibited.",
+  },
+  usfs: {
+    status: "conditional",
+    color: "#ffa028",
+    heading: "Conditionally Permitted",
+    detail: "Limited casual collecting typically permitted on most National Forests for personal use (~25 lbs/day, ~250 lbs/yr guideline). Some forests restrict or prohibit collecting — always verify the local forest management plan before collecting.",
+  },
+  nps: {
+    status: "prohibited",
+    color: "#ff5050",
+    heading: "Collecting Prohibited",
+    detail: "Collection of rocks, minerals, and fossils is prohibited in virtually all National Parks and Monuments under 36 CFR 2.1. Exceptions require a valid NPS scientific collection permit. Violations carry civil and criminal penalties.",
+    action: "A specimen collected here is not eligible for institutional donation without documented NPS scientific collection permit authorization.",
+  },
+  state: {
+    status: "conditional",
+    color: "#ffa028",
+    heading: "Varies by State / Jurisdiction",
+    detail: "Rules differ significantly by state or country — some allow casual collecting; others require permits or prohibit it entirely. Verify with the relevant land management agency that collecting was legal at this site.",
+  },
+  private: {
+    status: "conditional",
+    color: "#f0c040",
+    heading: "Landowner Permission Required",
+    detail: "Collecting on private land without the landowner's explicit permission is trespass. Written permission is strongly preferred. Many institutions require documented landowner consent as part of the donation review.",
+  },
+  tribal: {
+    status: "prohibited",
+    color: "#ff5050",
+    heading: "Restricted — Permit / Tribal Authority Required",
+    detail: "Collecting on Tribal or Indigenous lands without explicit permission from the governing tribal authority is a federal offense under ARPA. NHPA Section 106 consultation may also apply. Institutional acquisition is heavily scrutinized.",
+    action: "Do not proceed without documented tribal authority permission and all applicable federal permits on file.",
+  },
+  unknown: {
+    status: "unknown",
+    color: "#607090",
+    heading: "Land Status Undocumented",
+    detail: "Without knowing the land management type, legal collecting cannot be confirmed. This significantly limits provenance credibility for institutional acquisition.",
+  },
+};
+
 const LAND_QUESTIONS = {
   blm: [
     { id: "casual",          label: "Casual / recreational purpose",     desc: "Collection was for personal use — not for commercial resale at time of collection.",       required: true },
@@ -345,6 +392,7 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
 
   const flag = lookupCountryFlag(originCountry);
   const isSelf = acquisitionType === "self";
+  const legalInfo = landType ? LAND_LEGAL[landType] : null;
 
   useEffect(() => {
     if (!location) return;
@@ -497,9 +545,18 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
               </button>
             ))}
           </div>
-          {landType && (
-            <div style={{ marginTop: "7px", fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5, padding: "7px 10px", background: "var(--bg-card)", borderRadius: "4px", border: "1px solid var(--border-dim)" }}>
-              💡 {LAND_TYPES.find(lt => lt.key === landType)?.desc}
+          {legalInfo && (
+            <div style={{
+              marginTop: "8px", padding: "10px 12px", borderRadius: "5px",
+              background: `${legalInfo.color}0e`, border: `1px solid ${legalInfo.color}45`,
+            }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: legalInfo.color, marginBottom: "5px", letterSpacing: "0.04em" }}>
+                {legalInfo.status === "allowed" ? "✓" : legalInfo.status === "prohibited" ? "✗" : legalInfo.status === "unknown" ? "?" : "⚠"} {legalInfo.heading}
+              </div>
+              <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6 }}>{legalInfo.detail}</div>
+              {legalInfo.action && (
+                <div style={{ marginTop: "6px", fontSize: "10px", color: legalInfo.color, lineHeight: 1.5 }}>➜ {legalInfo.action}</div>
+              )}
             </div>
           )}
         </div>

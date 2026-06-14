@@ -11,6 +11,7 @@ import CertGenerator from "./CertGenerator.jsx";
 import QuickExport from "./QuickExport.jsx";
 import CollectionHistory from "./CollectionHistory.jsx";
 import HelpGuide from "./HelpGuide.jsx";
+import MeteoriteID from "./MeteoriteID.jsx";
 import VerifyView from "./VerifyView.jsx";
 import { useLocalCollection } from "../hooks/useLocalCollection.js";
 import { APP_VERSION } from "../version.js";
@@ -48,6 +49,7 @@ export default function PRISM() {
   const [showExport,     setShowExport]     = useState(false);
   const [showHistory,    setShowHistory]    = useState(false);
   const [showHelp,       setShowHelp]       = useState(false);
+  const [showMeteoriteID, setShowMeteoriteID] = useState(false);
   const [savedFlash,     setSavedFlash]     = useState(null);  // null | "saved" | "already"
   const [lastSavedKey,   setLastSavedKey]   = useState(null);
   const [spSource,       setSpSource]       = useState(null); // SpecimenPro integration
@@ -196,6 +198,18 @@ export default function PRISM() {
           {/* Primary controls */}
           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
 
+
+            {/* Meteorite ID button */}
+            <button onClick={() => setShowMeteoriteID(true)} title="Meteorite identification guide"
+              style={{ display: "flex", alignItems: "center", gap: "4px", padding: "5px 11px",
+                background: "transparent", border: "1px solid var(--border)", borderRadius: "5px",
+                color: "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em",
+                cursor: "pointer", transition: "all 0.15s", flexShrink: 0 }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(0,212,255,0.35)"; e.currentTarget.style.color = "var(--cyan)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-muted)"; }}
+            >
+              Meteor ID
+            </button>
 
             {/* Mode toggle */}
             <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "5px", overflow: "hidden" }}>
@@ -376,6 +390,9 @@ export default function PRISM() {
 
       {showHelp && (
         <HelpGuide onClose={() => setShowHelp(false)} />
+      )}
+      {showMeteoriteID && (
+        <MeteoriteID onClose={() => setShowMeteoriteID(false)} />
       )}
       {showDonation && (
         <DonationEval scores={scores} spec={spec} onClose={() => setShowDonation(false)} />
