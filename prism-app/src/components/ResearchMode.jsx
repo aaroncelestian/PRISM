@@ -1,14 +1,12 @@
 import { useState, useMemo, useRef } from "react";
 import { Plus, X, Search, Edit2, Trash2, Award, Camera, Download, FolderOpen, ExternalLink, Upload } from "lucide-react";
-import { GRADES, WEIGHTS, CONTEXTS } from "../data/prism.js";
+import { GRADES, WEIGHTS, CONTEXTS, THRESHOLD } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import { COMPS_SCHEMA } from "../version.js";
 import { migrateComp, wrapForSave, unwrapFromFile } from "../utils/dbMigrations.js";
 import ResearchAnalysis from "./ResearchAnalysis.jsx";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-const THRESHOLD = 70;
 
 const SIZE_CLASSES = [
   { key: "thumbnail",  label: "Thumbnail",     range: "< 2.5 cm" },

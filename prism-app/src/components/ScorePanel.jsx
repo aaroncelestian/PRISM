@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
 } from "recharts";
-import { GRADES, DIMS, WEIGHTS, CONTEXTS, detectCompoundGrades, detectInconsistencies } from "../data/prism.js";
+import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades, detectInconsistencies } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 
 function useAnimatedScore(target) {
@@ -35,8 +35,6 @@ const GRADE_FOR = Object.fromEntries(CONTEXTS.map((c, i) => [c.key, GRADES[i]]))
 function gradeFromScore(score) {
   return GRADES.find(g => score >= g.min) ?? GRADES[GRADES.length - 1];
 }
-const THRESHOLD = 70;
-
 function computeContextData(ctxKey, scores) {
   const W = WEIGHTS[ctxKey];
   const score = Math.round(
@@ -107,30 +105,25 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
     grade: GRADE_FOR[c.key],
     ...computeContextData(c.key, scores),
   }));
-  // Highest-prestige context that passes THRESHOLD
-  const passingCtx = allCtxData.find(c => c.passes);
-  // When nothing passes, use the best-scoring context but override grade from actual score
-  const bestCtx = allCtxData.reduce((best, c) => c.score > best.score ? c : best, allCtxData[0]);
-  const primaryCtx = passingCtx ?? { ...bestCtx, grade: gradeFromScore(bestCtx.score) };
-  // The context the user has selected in the header (may differ from primaryCtx)
-  const selectedCtxData = allCtxData.find(c => c.key === ctx) || primaryCtx;
-  const selectedDiffers = selectedCtxData.key !== primaryCtx.key;
+  // Primary context is always the user-selected context
+  const selectedCtxData = allCtxData.find(c => c.key === ctx) || allCtxData[0];
+  const ctxGrade = GRADE_FOR[selectedCtxData.key];
+  const primaryCtx = {
+    ...selectedCtxData,
+    grade: selectedCtxData.passes
+      ? ctxGrade
+      : { ...ctxGrade, color: "var(--text-muted)" },
+  };
+  // Best passing context across all (for reference in callout when selected doesn't pass)
+  const bestPassingCtx = allCtxData.find(c => c.passes);
   const inconsistencies = detectInconsistencies(scores, spec, sciCriteria);
   const displayScore = useAnimatedScore(primaryCtx.score);
   const radarData = DIMS.map(d => ({ dim: d.short, v: scores[d.key] }));
   const narrative = generateNarrative(scores, primaryCtx, allCtxData);
 
-  // Compound grade detection — filter out grades subsumed by higher-tier matches
+  // Compound grade detection — returns single best match
   const allCtxScores = Object.fromEntries(allCtxData.map(c => [c.key, c.score]));
-  const rawCompounds = detectCompoundGrades(allCtxScores);
-  const compoundGrades = rawCompounds.filter(cg => {
-    const cgKeys = new Set(Object.keys(cg.contexts));
-    return !rawCompounds.some(other => {
-      if (other.key === cg.key) return false;
-      const otherKeys = new Set(Object.keys(other.contexts));
-      return [...cgKeys].every(k => otherKeys.has(k));
-    });
-  });
+  const compoundGrades = detectCompoundGrades(allCtxScores);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: isMobile ? "auto" : "100%", background: "var(--bg)", overflow: "hidden" }}>
@@ -172,38 +165,24 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
           </div>
         </div>
 
-        {/* Context callout */}
-        {selectedDiffers && (
+        {/* Context status callout — shown when selected context is below threshold */}
+        {!primaryCtx.passes && (
           <div style={{
             margin: "0 14px 10px", padding: "10px 13px", borderRadius: "5px",
-            border: `1px solid ${selectedCtxData.passes ? selectedCtxData.grade.color + "40" : "rgba(255,160,40,0.35)"}`,
-            background: selectedCtxData.passes ? `${selectedCtxData.grade.color}08` : "rgba(255,160,40,0.05)",
+            border: "1px solid rgba(255,160,40,0.35)",
+            background: "rgba(255,160,40,0.05)",
           }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "5px" }}>
-              <div style={{ fontSize: "9px", letterSpacing: "0.14em", color: "var(--text-muted)", textTransform: "uppercase" }}>
-                {selectedCtxData.icon} Evaluating as: {selectedCtxData.label}
-              </div>
-              <div style={{ fontSize: "12px", fontWeight: 700, fontFamily: "var(--mono)", color: selectedCtxData.passes ? selectedCtxData.grade.color : "#ffa028" }}>
-                {selectedCtxData.score}<span style={{ fontSize: "9px", opacity: 0.6 }}>/100</span>
-              </div>
+            <div style={{ fontSize: "11px", color: "#ffa028", lineHeight: 1.5, marginBottom: "4px" }}>
+              <strong>+{THRESHOLD - primaryCtx.score} pts needed</strong> to reach {GRADE_FOR[primaryCtx.key].label} grade.
             </div>
-            {!selectedCtxData.passes ? (
-              <>
-                <div style={{ fontSize: "11px", color: "#ffa028", lineHeight: 1.5, marginBottom: "4px" }}>
-                  <strong>+{THRESHOLD - selectedCtxData.score} pts needed</strong> to reach {selectedCtxData.grade.label} grade.
-                </div>
-                {selectedCtxData.bottleneck && (
-                  <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.5 }}>
-                    Bottleneck: <strong style={{ color: "var(--text)" }}>{selectedCtxData.bottleneck.icon} {selectedCtxData.bottleneck.label}</strong> is the largest gap.
-                  </div>
-                )}
-                <div style={{ marginTop: "4px", fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.5, fontStyle: "italic" }}>
-                  PRISM awarded <strong style={{ color: primaryCtx.grade.color }}>{primaryCtx.grade.emoji} {primaryCtx.grade.label}</strong> — highest grade achieved.
-                </div>
-              </>
-            ) : (
-              <div style={{ fontSize: "10px", color: selectedCtxData.grade.color, lineHeight: 1.5 }}>
-                ✓ Passes {selectedCtxData.label} threshold — {primaryCtx.grade.label} grade awarded.
+            {primaryCtx.bottleneck && (
+              <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.5 }}>
+                Bottleneck: <strong style={{ color: "var(--text)" }}>{primaryCtx.bottleneck.icon} {primaryCtx.bottleneck.label}</strong> is the largest gap.
+              </div>
+            )}
+            {bestPassingCtx && (
+              <div style={{ marginTop: "4px", fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.5, fontStyle: "italic" }}>
+                Highest grade achieved: <strong style={{ color: bestPassingCtx.grade.color }}>{bestPassingCtx.grade.emoji} {bestPassingCtx.grade.label}</strong> — {bestPassingCtx.label}.
               </div>
             )}
           </div>
@@ -280,27 +259,41 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
                 <span>All Contexts</span>
                 <span style={{ letterSpacing: 0, textTransform: "none", fontStyle: "italic" }}>threshold: {THRESHOLD}</span>
               </div>
-              {allCtxData.map(c => (
+              {allCtxData.map(c => {
+                const isSelected = c.key === ctx;
+                return (
                 <div key={c.key} style={{
                   display: "flex", alignItems: "flex-start", gap: "9px",
                   padding: "9px 12px", marginBottom: "5px", borderRadius: "5px",
-                  background: c.passes ? `${c.grade.color}08` : "transparent",
-                  border: `1px solid ${c.passes ? c.grade.color + "25" : "var(--border-dim)"}`,
+                  background: c.passes ? `${c.grade.color}1e` : isSelected ? "rgba(0,212,255,0.04)" : "transparent",
+                  border: `1px solid ${c.passes ? c.grade.color + "55" : isSelected ? "rgba(0,212,255,0.30)" : "var(--border-dim)"}`,
+                  boxShadow: c.passes ? `inset 3px 0 0 ${c.grade.color}` : isSelected ? "inset 3px 0 0 rgba(0,212,255,0.4)" : "none",
+                  transition: "background 0.25s, border-color 0.25s",
                 }}>
                   <span style={{ fontFamily: "var(--mono)", fontSize: "11px", flexShrink: 0, marginTop: "2px", color: c.passes ? c.grade.color : "var(--text-muted)" }}>
                     {c.passes ? "✓" : "✗"}
                   </span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "5px" }}>
-                      <span style={{ fontSize: "12px", fontWeight: c.passes ? 600 : 400, color: c.passes ? c.grade.color : "var(--text-muted)" }}>
-                        {c.grade.emoji} {c.label}
-                      </span>
-                      <span style={{ fontFamily: "var(--mono)", fontSize: "13px", fontWeight: 600, color: c.passes ? c.grade.color : "var(--text-muted)", flexShrink: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+                        <span style={{ fontSize: "12px", fontWeight: c.passes ? 600 : 400, color: c.passes ? c.grade.color : isSelected ? "var(--text)" : "var(--text-muted)" }}>
+                          {c.grade.emoji} {c.label}
+                        </span>
+                        {isSelected && (
+                          <span style={{
+                            fontSize: "8px", letterSpacing: "0.1em", textTransform: "uppercase",
+                            padding: "1px 5px", borderRadius: "3px",
+                            background: "rgba(0,212,255,0.12)", color: "var(--cyan)",
+                            border: "1px solid rgba(0,212,255,0.25)", flexShrink: 0,
+                          }}>selected</span>
+                        )}
+                      </div>
+                      <span style={{ fontFamily: "var(--mono)", fontSize: "13px", fontWeight: 600, color: c.passes ? c.grade.color : isSelected ? "var(--text)" : "var(--text-muted)", flexShrink: 0 }}>
                         {c.score}
                       </span>
                     </div>
-                    <div style={{ height: "3px", background: "var(--border-dim)", borderRadius: "2px", overflow: "hidden" }}>
-                      <div style={{ height: "100%", borderRadius: "2px", transition: "width 0.35s", background: c.passes ? c.grade.color : "var(--border)", width: `${c.score}%` }} />
+                    <div style={{ height: "4px", background: "var(--border-dim)", borderRadius: "2px", overflow: "hidden" }}>
+                      <div style={{ height: "100%", borderRadius: "2px", transition: "width 0.35s", background: c.passes ? c.grade.color : isSelected ? "rgba(0,212,255,0.35)" : "var(--border)", width: `${c.score}%` }} />
                     </div>
                     {!c.passes && c.bottleneck && (
                       <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "5px" }}>
@@ -309,7 +302,8 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

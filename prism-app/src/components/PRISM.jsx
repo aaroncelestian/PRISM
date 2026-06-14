@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Wand2, SlidersHorizontal, RotateCcw, Search } from "lucide-react";
-import { CONTEXTS, WEIGHTS, GRADES, detectCompoundGrades } from "../data/prism.js";
+import { CONTEXTS, WEIGHTS, GRADES, THRESHOLD, detectCompoundGrades } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import WizardMode from "./WizardMode.jsx";
 import ExpertMode from "./ExpertMode.jsx";
@@ -18,7 +18,6 @@ import { APP_VERSION } from "../version.js";
 import { useComparables } from "../hooks/useComparables.js";
 import ResearchMode from "./ResearchMode.jsx";
 
-const THRESHOLD = 70;
 function computePrimary(scores) {
   const all = CONTEXTS.map(c => {
     const W = WEIGHTS[c.key];
@@ -35,6 +34,26 @@ const DEFAULT_SCORES = {
   crystal: 0, speciesRarity: 0, localityRarity: 0,
   provenance: 0, aesthetics: 0, scientific: 0,
 };
+
+function ToolMenuItems({ items, isMobile }) {
+  return (
+    <>
+      {items.map((item, idx) =>
+        item.type === "header" ? (
+          <div key={idx} style={{ padding: isMobile ? "8px 16px 3px" : "7px 16px 3px", fontSize: "9px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.14em", textTransform: "uppercase", borderTop: idx > 0 ? "1px solid var(--border-dim)" : "none", marginTop: idx > 0 ? "2px" : "0" }}>
+            {item.label}
+          </div>
+        ) : (
+          <button key={item.label} onClick={item.action} style={{ display: "block", width: "100%", textAlign: "left", padding: isMobile ? "12px 16px" : "9px 16px", background: "none", border: "none", color: "var(--text-dim)", fontSize: isMobile ? "13px" : "12px", cursor: "pointer", transition: "background 0.1s" }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(0,212,255,0.06)"}
+            onMouseLeave={e => e.currentTarget.style.background = "none"}>
+            {item.label}
+          </button>
+        )
+      )}
+    </>
+  );
+}
 
 export default function PRISM() {
   const [mode, setMode] = useState("wizard"); // "wizard" | "expert" | "research"
@@ -56,11 +75,25 @@ export default function PRISM() {
   const [wizardKey,      setWizardKey]      = useState(0);     // increment to reset WizardMode step
   const [confirmReset,   setConfirmReset]   = useState(false);
   const resetTimerRef = useRef(null);
+  const [savedFlash, setSavedFlash] = useState(null);
+  const savedFlashTimerRef = useRef(null);
   const { records, saveRecord, deleteRecord, clearAll, importRecords } = useLocalCollection();
   const { comps, addComp, updateComp, deleteComp, clearAll: clearComps, importComps } = useComparables();
   const [verifyPayload, setVerifyPayload] = useState(null);
   const [showTools, setShowTools] = useState(false);
   const { isMobile } = useBreakpoint();
+
+  const toolMenuItems = [
+    { type: "header", label: "Reference" },
+    { label: "❓ Help / Guide",        action: () => { setShowHelp(true);        setShowTools(false); } },
+    { label: "🎓 Buyer Guide",         action: () => { setShowBuyerGuide(true);  setShowTools(false); } },
+    { label: "☄️ Meteorite ID",        action: () => { setShowMeteoriteID(true); setShowTools(false); } },
+    { type: "header", label: "Valuation" },
+    { label: "📤 Quick Summary",       action: () => { setShowExport(true);      setShowTools(false); } },
+    { label: "📜 Formal Certificate",  action: () => { setShowCert(true);        setShowTools(false); } },
+    { label: "💰 Sell / Trade",        action: () => { setShowPricing(true);     setShowTools(false); } },
+    { label: "🏛️ Donate to Museum",   action: () => { setShowDonation(true);    setShowTools(false); } },
+  ];
 
   useEffect(() => {
     if (!showTools) return;
@@ -118,10 +151,17 @@ export default function PRISM() {
 
   const handleSaveToCollection = () => {
     const key = JSON.stringify({ scores, spec, ctx });
-    if (key === lastSavedKey) return;
+    if (savedFlashTimerRef.current) clearTimeout(savedFlashTimerRef.current);
+    if (key === lastSavedKey) {
+      setSavedFlash("already");
+      savedFlashTimerRef.current = setTimeout(() => setSavedFlash(null), 1800);
+      return;
+    }
     const { score, grade, compoundGrades } = computePrimary(scores);
     saveRecord(spec, scores, ctx, grade.label, grade.emoji, score, compoundGrades);
     setLastSavedKey(key);
+    setSavedFlash("saved");
+    savedFlashTimerRef.current = setTimeout(() => setSavedFlash(null), 1800);
   };
 
   const handleScoreComp = (comp) => {
@@ -233,29 +273,7 @@ export default function PRISM() {
                   </button>
                   {showTools && (
                     <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 200, minWidth: "180px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", boxShadow: "0 8px 24px rgba(0,0,0,0.45)", overflow: "hidden" }}>
-                      {[
-                        { type: "header", label: "Reference" },
-                        { label: "❓ Help / Guide",         action: () => { setShowHelp(true);        setShowTools(false); } },
-                        { label: "🎓 Buyer Guide",         action: () => { setShowBuyerGuide(true);  setShowTools(false); } },
-                        { label: "☄️ Meteorite ID",        action: () => { setShowMeteoriteID(true); setShowTools(false); } },
-                        { type: "header", label: "Valuation" },
-                        { label: "📤 Quick Summary",       action: () => { setShowExport(true);      setShowTools(false); } },
-                        { label: "📜 Formal Certificate",  action: () => { setShowCert(true);        setShowTools(false); } },
-                        { label: "💰 Sell / Trade",        action: () => { setShowPricing(true);     setShowTools(false); } },
-                        { label: "🏛️ Donate to Museum",   action: () => { setShowDonation(true);   setShowTools(false); } },
-                      ].map((item, idx) =>
-                        item.type === "header" ? (
-                          <div key={idx} style={{ padding: "7px 16px 3px", fontSize: "9px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.14em", textTransform: "uppercase", borderTop: idx > 0 ? "1px solid var(--border-dim)" : "none", marginTop: idx > 0 ? "2px" : "0" }}>
-                            {item.label}
-                          </div>
-                        ) : (
-                          <button key={item.label} onClick={item.action} style={{ display: "block", width: "100%", textAlign: "left", padding: "9px 16px", background: "none", border: "none", color: "var(--text-dim)", fontSize: "12px", cursor: "pointer", transition: "background 0.1s" }}
-                            onMouseEnter={e => e.currentTarget.style.background = "rgba(0,212,255,0.06)"}
-                            onMouseLeave={e => e.currentTarget.style.background = "none"}>
-                            {item.label}
-                          </button>
-                        )
-                      )}
+                      <ToolMenuItems items={toolMenuItems} isMobile={false} />
                     </div>
                   )}
                 </div>
@@ -352,29 +370,7 @@ export default function PRISM() {
           <>
             <div onClick={() => setShowTools(false)} style={{ position: "fixed", inset: 0, zIndex: 199 }} />
             <div style={{ position: "fixed", top: "96px", right: "14px", zIndex: 200, minWidth: "200px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", boxShadow: "0 8px 24px rgba(0,0,0,0.5)", overflow: "hidden" }}>
-              {[
-                { type: "header", label: "Reference" },
-                { label: "❓ Help / Guide",         action: () => { setShowHelp(true);        setShowTools(false); } },
-                { label: "🎓 Buyer Guide",         action: () => { setShowBuyerGuide(true);  setShowTools(false); } },
-                { label: "☄️ Meteorite ID",        action: () => { setShowMeteoriteID(true); setShowTools(false); } },
-                { type: "header", label: "Valuation" },
-                { label: "📤 Quick Summary",       action: () => { setShowExport(true);      setShowTools(false); } },
-                { label: "📜 Formal Certificate",  action: () => { setShowCert(true);        setShowTools(false); } },
-                { label: "💰 Sell / Trade",        action: () => { setShowPricing(true);     setShowTools(false); } },
-                { label: "🏛️ Donate to Museum",   action: () => { setShowDonation(true);   setShowTools(false); } },
-              ].map((item, idx) =>
-                item.type === "header" ? (
-                  <div key={idx} style={{ padding: "8px 16px 3px", fontSize: "9px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.14em", textTransform: "uppercase", borderTop: idx > 0 ? "1px solid var(--border-dim)" : "none", marginTop: idx > 0 ? "2px" : "0" }}>
-                    {item.label}
-                  </div>
-                ) : (
-                  <button key={item.label} onClick={item.action} style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", background: "none", border: "none", color: "var(--text-dim)", fontSize: "13px", cursor: "pointer" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(0,212,255,0.06)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "none"}>
-                    {item.label}
-                  </button>
-                )
-              )}
+              <ToolMenuItems items={toolMenuItems} isMobile={true} />
             </div>
           </>
         )}

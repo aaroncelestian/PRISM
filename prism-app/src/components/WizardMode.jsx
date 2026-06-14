@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ChevronRight, ChevronLeft, HelpCircle, X } from "lucide-react";
 import { DIMS, CONTEXTS, WEIGHTS, GRADES } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
@@ -115,11 +115,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
   const currentDim = dimIndex >= 0 ? DIMS[dimIndex] : null;
   const progress = Math.round((step / (TOTAL_STEPS - 1)) * 100);
 
-  const canAdvance = () => {
-    if (step === 0) return true; // context always selected
-    if (step === 1) return spec.name.trim().length > 0 || spec.species.trim().length > 0;
-    return true;
-  };
+  const canAdvance = step !== 1 || spec.name.trim().length > 0 || spec.species.trim().length > 0;
 
   const next = () => {
     if (step < TOTAL_STEPS - 1) setStep(s => s + 1);
@@ -140,6 +136,25 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
     return Math.round(Object.entries(W).reduce((a, [k, w]) => a + (scores[k] ?? 50) * w, 0));
   }, [scores, ctx]);
   const quickGrade = GRADES.find(g => quickScore >= g.min) || GRADES[GRADES.length - 1];
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+      if (e.key === 'ArrowRight' || e.key === 'Enter') {
+        if (!isLastStep && canAdvance) { e.preventDefault(); setStep(s => Math.min(s + 1, TOTAL_STEPS - 1)); }
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault(); setStep(s => Math.max(s - 1, 0));
+      } else if (currentDim?.anchors) {
+        const idx = parseInt(e.key) - 1;
+        if (!isNaN(idx) && idx >= 0 && idx < currentDim.anchors.length) {
+          e.preventDefault();
+          setScores(s => ({ ...s, [currentDim.key]: currentDim.anchors[idx].value }));
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isLastStep, canAdvance, currentDim, setScores]);
 
   return (
     <div style={{
@@ -560,14 +575,14 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
           {!isLastStep ? (
             <button
               onClick={next}
-              disabled={!canAdvance()}
+              disabled={!canAdvance}
               style={{
                 display: "flex", alignItems: "center", gap: "5px",
                 padding: "8px 20px",
-                background: canAdvance() ? "rgba(0,212,255,0.09)" : "transparent",
-                border: `1px solid ${canAdvance() ? "rgba(0,212,255,0.4)" : "var(--border)"}`,
+                background: canAdvance ? "rgba(0,212,255,0.09)" : "transparent",
+                border: `1px solid ${canAdvance ? "rgba(0,212,255,0.4)" : "var(--border)"}`,
                 borderRadius: "4px",
-                color: canAdvance() ? "var(--cyan)" : "var(--text-muted)",
+                color: canAdvance ? "var(--cyan)" : "var(--text-muted)",
                 fontSize: "12px", fontWeight: 600,
                 letterSpacing: "0.08em",
               }}

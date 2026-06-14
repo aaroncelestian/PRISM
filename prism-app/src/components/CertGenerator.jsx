@@ -1,11 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, Award, Camera, Printer, Copy, FileDown, AlertTriangle } from "lucide-react";
 import QRCode from "qrcode";
-import { GRADES, DIMS, WEIGHTS, CONTEXTS, detectCompoundGrades } from "../data/prism.js";
+import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades } from "../data/prism.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-const THRESHOLD = 70;
 
 function computeContextScore(ctxKey, scores) {
   const W = WEIGHTS[ctxKey];

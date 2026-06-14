@@ -15,6 +15,8 @@ export const GRADES = [
   { min: 0,  label: "Bulk",       color: "#505060", emoji: "📦", desc: "Below collector grade — suitable for bulk, tumbling, or classroom use only." },
 ];
 
+export const THRESHOLD = 70;
+
 export const CONTEXTS = [
   {
     key: "museum",
@@ -54,20 +56,41 @@ export const CONTEXTS = [
 ];
 
 // ── Compound grades ───────────────────────────────────────────────────────────
-// Awarded when a specimen simultaneously meets the score thresholds for
-// multiple acquisition contexts. Ordered from most to least rare.
-// To compute: check that every context in `contexts[]` meets its threshold.
+// Single best classification — the first entry whose every context meets the
+// 70-point passing threshold. Ordered from most to least rare.
 
 export const COMPOUND_GRADES = [
+  {
+    key: "institutional_masterpiece",
+    label: "Institutional Masterpiece",
+    emoji: "🔮",
+    color: "#ff9040",
+    gradient: "linear-gradient(135deg, #e8b840, #90c0f0, #00c880, #5090ff, #ff9040)",
+    shortDesc: "All five evaluation grades achieved simultaneously",
+    detail: "An irreplaceable specimen excelling across every evaluation dimension — museum, exhibition, collector, scientific, and market standards all met. The rarest possible PRISM classification.",
+    contexts: { museum: 70, exhibition: 70, collector: 70, study: 70, commercial: 70 },
+    rarity: "Once in a Generation",
+  },
   {
     key: "grand_slam",
     label: "Grand Slam",
     emoji: "🏆",
-    color: "#ff9040",
+    color: "#e8b840",
     gradient: "linear-gradient(135deg, #e8b840, #90c0f0, #00c880, #5090ff)",
-    shortDesc: "Museum · Display · Collector · Science — all four grades achieved",
-    detail: "An extraordinary specimen meeting institutional, exhibition, collector, and scientific standards simultaneously. Essentially irreplaceable.",
-    contexts: { museum: 83, exhibition: 73, collector: 68, study: 65 },
+    shortDesc: "Museum · Display · Collector · Science — four prestige grades achieved",
+    detail: "An extraordinary specimen meeting institutional, exhibition, collector, and scientific standards simultaneously. Documented, visually exceptional, rare, and significant.",
+    contexts: { museum: 70, exhibition: 70, collector: 70, study: 70 },
+    rarity: "Extremely Rare",
+  },
+  {
+    key: "museum_trifecta",
+    label: "Museum Trifecta",
+    emoji: "🌠",
+    color: "#c070f0",
+    gradient: "linear-gradient(135deg, #e8b840, #90c0f0, #5090ff)",
+    shortDesc: "Museum · Display · Science — the institutional prestige combination",
+    detail: "Fully documented, visually stunning, and scientifically significant — the most coveted combination for institutional acquisition. Type locality pieces, published specimens, and emerging-science minerals that also dazzle on display.",
+    contexts: { museum: 70, exhibition: 70, study: 70 },
     rarity: "Extremely Rare",
   },
   {
@@ -78,8 +101,30 @@ export const COMPOUND_GRADES = [
     gradient: "linear-gradient(135deg, #e8b840, #90c0f0, #00c880)",
     shortDesc: "Museum · Display · Collector — three top grades simultaneously",
     detail: "Documented, visually exceptional, and genuinely rare. Suitable for the finest private and public collections worldwide.",
-    contexts: { museum: 83, exhibition: 73, collector: 68 },
+    contexts: { museum: 70, exhibition: 70, collector: 70 },
     rarity: "Very Rare",
+  },
+  {
+    key: "research_masterpiece",
+    label: "Research Masterpiece",
+    emoji: "🔭",
+    color: "#60a0e0",
+    gradient: "linear-gradient(135deg, #e8b840, #00c880, #5090ff)",
+    shortDesc: "Museum · Collector · Science — documented rarity with scientific depth",
+    detail: "A rare species or classic-locality specimen with full provenance and scientific significance. The gold standard for type collections and specialist researchers.",
+    contexts: { museum: 70, collector: 70, study: 70 },
+    rarity: "Very Rare",
+  },
+  {
+    key: "scientific_showpiece",
+    label: "Scientific Showpiece",
+    emoji: "�",
+    color: "#80b8f0",
+    gradient: "linear-gradient(135deg, #90c0f0, #00c880, #5090ff)",
+    shortDesc: "Display · Collector · Science — rare, beautiful, and significant",
+    detail: "Beautiful enough to display prominently, rare enough for advanced collectors, and significant enough to study. The triple threat for specialist collectors.",
+    contexts: { exhibition: 70, collector: 70, study: 70 },
+    rarity: "Rare",
   },
   {
     key: "museum_display",
@@ -87,20 +132,9 @@ export const COMPOUND_GRADES = [
     emoji: "🏛️✨",
     color: "#c0a0f0",
     gradient: "linear-gradient(135deg, #e8b840, #90c0f0)",
-    shortDesc: "Museum provenance with exhibition-grade visual impact",
+    shortDesc: "Museum · Display — institutional provenance with visual impact",
     detail: "Fully documented and visually stunning — exceptional on the show floor and in institutional collections alike.",
-    contexts: { museum: 83, exhibition: 73 },
-    rarity: "Rare",
-  },
-  {
-    key: "museum_collector",
-    label: "Museum Collector",
-    emoji: "🏛️💎",
-    color: "#d4a040",
-    gradient: "linear-gradient(135deg, #e8b840, #00c880)",
-    shortDesc: "Museum-grade documentation on a collector-grade rarity",
-    detail: "The investment-grade holy grail — a rare or classic-locality specimen with full provenance chain. Sought by both institutions and advanced collectors.",
-    contexts: { museum: 83, collector: 68 },
+    contexts: { museum: 70, exhibition: 70 },
     rarity: "Rare",
   },
   {
@@ -109,10 +143,21 @@ export const COMPOUND_GRADES = [
     emoji: "🏛️🔬",
     color: "#70b0e0",
     gradient: "linear-gradient(135deg, #e8b840, #5090ff)",
-    shortDesc: "Institutional provenance with high scientific significance",
+    shortDesc: "Museum · Science — institutional provenance with scientific significance",
     detail: "The gold standard for research institutions — documented, scientifically significant, and suitable for type collections.",
-    contexts: { museum: 83, study: 65 },
-    rarity: "Uncommon",
+    contexts: { museum: 70, study: 70 },
+    rarity: "Rare",
+  },
+  {
+    key: "museum_collector",
+    label: "Museum Collector",
+    emoji: "🏛️💎",
+    color: "#d4a040",
+    gradient: "linear-gradient(135deg, #e8b840, #00c880)",
+    shortDesc: "Museum · Collector — documented rarity prized by institutions and collectors",
+    detail: "The investment-grade holy grail — a rare or classic-locality specimen with full provenance chain. Sought by both institutions and advanced collectors.",
+    contexts: { museum: 70, collector: 70 },
+    rarity: "Rare",
   },
   {
     key: "collector_display",
@@ -120,9 +165,9 @@ export const COMPOUND_GRADES = [
     emoji: "💎✨",
     color: "#40d0a0",
     gradient: "linear-gradient(135deg, #00c880, #90c0f0)",
-    shortDesc: "Show-stopping rarity — rare AND visually exceptional",
-    detail: "The most sought-after category for advanced collectors who also show. Rare species or exhausted locality, and you can't take your eyes off it.",
-    contexts: { collector: 68, exhibition: 73 },
+    shortDesc: "Collector · Display — show-stopping rarity",
+    detail: "Rare species or exhausted locality, and you can't take your eyes off it. The most sought-after category for advanced collectors who also show.",
+    contexts: { collector: 70, exhibition: 70 },
     rarity: "Uncommon",
   },
   {
@@ -131,20 +176,20 @@ export const COMPOUND_GRADES = [
     emoji: "💎🔬",
     color: "#5090ff",
     gradient: "linear-gradient(135deg, #00c880, #5090ff)",
-    shortDesc: "Rare specimen with documented scientific significance",
+    shortDesc: "Collector · Science — rare specimen with scientific significance",
     detail: "A scarce mineral or classic locality piece that is also scientifically important — valuable to specialist collectors and researchers alike.",
-    contexts: { collector: 68, study: 65 },
+    contexts: { collector: 70, study: 70 },
     rarity: "Uncommon",
   },
   {
     key: "display_science",
-    label: "Scientific Showpiece",
+    label: "Display Science",
     emoji: "✨🔬",
     color: "#80b8f0",
     gradient: "linear-gradient(135deg, #90c0f0, #5090ff)",
-    shortDesc: "Visually striking AND scientifically significant",
+    shortDesc: "Display · Science — visually striking AND scientifically significant",
     detail: "Beautiful enough to display prominently, significant enough to study. Paragenetically complex specimens and type-locality showpieces often qualify.",
-    contexts: { exhibition: 73, study: 65 },
+    contexts: { exhibition: 70, study: 70 },
     rarity: "Uncommon",
   },
 ];
@@ -198,14 +243,16 @@ export function detectInconsistencies(scores, spec, sciCriteria) {
   return warnings;
 }
 
-// Helper: compute which compound grades a specimen achieves
+// Helper: returns the single highest-prestige compound grade achieved,
+// or an empty array if none qualify. Array wrapper preserves API compatibility.
 export function detectCompoundGrades(allCtxScores) {
-  return COMPOUND_GRADES.filter(cg =>
+  const match = COMPOUND_GRADES.find(cg =>
     Object.entries(cg.contexts).every(([ctxKey, threshold]) => {
       const s = allCtxScores[ctxKey] ?? 0;
       return s >= threshold;
     })
   );
+  return match ? [match] : [];
 }
 
 export const DIMS = [
@@ -262,11 +309,11 @@ export const DIMS = [
     desc: "How well can you document where this came from and who owned it?",
     detail: "Provenance is the documented history of a specimen — where it was found, who collected it, and the chain of ownership since. Strong provenance adds both scientific and monetary value, and confirms legal collection status.",
     tiers: [
-      { id: "T1", score: 95, desc: "Original field label + full chain of custody + legal collection documentation (permit, BLM form, or landowner permission)" },
+      { id: "T1", score: 100, desc: "Original field label + full chain of custody + legal collection documentation (permit, BLM form, or landowner permission)" },
       { id: "T2", score: 75, desc: "Original label, partial chain, locality verified" },
-      { id: "T3", score: 55, desc: "Known locality and approximate date, no original label, dealer attribution" },
-      { id: "T4", score: 35, desc: "Locality stated, undocumented, purchased from dealer" },
-      { id: "T5", score: 15, desc: "Locality unknown or unverifiable" },
+      { id: "T3", score: 50, desc: "Known locality and approximate date, no original label, dealer attribution" },
+      { id: "T4", score: 25, desc: "Locality stated, undocumented, purchased from dealer" },
+      { id: "T5", score: 0, desc: "Locality unknown or unverifiable" },
     ],
   },
   {
@@ -293,9 +340,9 @@ export const DIMS = [
     detail: "Scientific value is scored by checking which of five objective criteria apply. Each criterion that applies adds 20 points. A specimen meeting all five criteria scores 100.",
     criteria: [
       { key: "typeLocality",    label: "Type locality",              desc: "This is the described type locality for the species" },
-      { key: "analytical",      label: "Analytical utility",         desc: "Sufficient size and freshness for spectroscopic or diffraction analysis" },
+      { key: "emerging",        label: "Emerging science",           desc: "Species has documented applications in technology, medicine, or materials research (e.g. solar, batteries, pharmaceuticals, semiconductors)" },
       { key: "paragenetic",     label: "Paragenetic complexity",     desc: "Two or more associated species present" },
-      { key: "literature",      label: "Literature citation",        desc: "Specimen or locality appears in a published mineralogical study" },
+      { key: "literature",      label: "Literature citation",        desc: "This specimen or the locality it is from appears in a published mineralogical study" },
       { key: "compositional",   label: "Compositional significance", desc: "Represents an end-member or unusual composition for the species" },
     ],
   },

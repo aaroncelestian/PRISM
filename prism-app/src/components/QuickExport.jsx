@@ -1,8 +1,6 @@
 import { useState, useRef } from "react";
 import { X, Camera, Printer, Download } from "lucide-react";
-import { GRADES, DIMS, WEIGHTS, CONTEXTS } from "../data/prism.js";
-
-const THRESHOLD = 70;
+import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD } from "../data/prism.js";
 
 function computeContextScore(ctxKey, scores) {
   const W = WEIGHTS[ctxKey];
