@@ -118,6 +118,20 @@ function compressImage(dataUrl, maxPx = 800, quality = 0.75) {
   });
 }
 
+const STORAGE_LIMIT_BYTES = 10 * 1024 * 1024;
+const STORAGE_WARN_RATIO  = 0.9;
+
+function getStorageBytesUsed() {
+  try {
+    let total = 0;
+    for (const key of Object.keys(localStorage)) {
+      const v = localStorage.getItem(key);
+      if (v) total += v.length * 2;
+    }
+    return total;
+  } catch { return 0; }
+}
+
 function computePrimary(scores) {
   const all = CONTEXTS.map(c => {
     const W = WEIGHTS[c.key];
@@ -747,6 +761,10 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
 
   const scoredCount = comps.filter(c => c.prismScore != null).length;
 
+  const storageBytes = useMemo(() => getStorageBytesUsed(), [comps]);
+  const storageRatio = storageBytes / STORAGE_LIMIT_BYTES;
+  const showStorageWarning = storageRatio >= STORAGE_WARN_RATIO;
+
   const handleFormSave = (form) => {
     const data = { ...form, askingPrice: Number(form.askingPrice) || 0 };
     if (editingComp) {
@@ -896,6 +914,17 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
       <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "8px", opacity: 0.7 }}>
         💡 Saves to this device only — store the file in iCloud Drive, Google Drive, or Dropbox to access on any device
       </div>
+
+      {showStorageWarning && (
+        <div style={{ padding: "9px 13px", borderRadius: "5px", border: "1px solid rgba(255,160,40,0.35)", background: "rgba(255,160,40,0.06)", marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+          <div style={{ fontSize: "11px", color: "#ffa028", lineHeight: 1.5 }}>
+            <strong>Storage {Math.round(storageRatio * 100)}% full</strong> — photos may fail to save. Export a backup or remove listings with photos to free space.
+          </div>
+          <button onClick={handleSave} style={{ flexShrink: 0, padding: "4px 12px", background: "rgba(255,160,40,0.1)", border: "1px solid rgba(255,160,40,0.4)", borderRadius: "4px", color: "#ffa028", fontSize: "10px", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+            Save backup
+          </button>
+        </div>
+      )}
 
       {/* Stats row */}
       {comps.length > 0 && (
