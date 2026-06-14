@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { X, ChevronLeft, ChevronRight, DollarSign } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, DollarSign, Copy, CheckCheck, Printer } from "lucide-react";
 import { WEIGHTS, CONTEXTS, GRADES } from "../data/prism.js";
 
 // ── Data ─────────────────────────────────────────────────────────────────────
@@ -178,6 +178,143 @@ function computeMarketPosition(score, conditionKey) {
   return Math.max(0, Math.min(100, score + adj));
 }
 
+// ── Price estimation helpers ──────────────────────────────────────────────────
+
+const BASE_RETAIL = {
+  thumbnail: 18,
+  miniature: 55,
+  small_cab: 145,
+  cabinet:   360,
+  large_cab: 990,
+};
+
+function getQualityMult(score) {
+  if (score >= 90) return 8.0;
+  if (score >= 75) return 4.0;
+  if (score >= 60) return 2.0;
+  if (score >= 45) return 1.0;
+  if (score >= 22) return 0.5;
+  return 0.25;
+}
+
+function computePriceRange(score, sizeClass, conditionKey, channelKey) {
+  const base    = BASE_RETAIL[sizeClass] ?? 50;
+  const qMult   = getQualityMult(score);
+  const cMult   = CONDITIONS.find(c => c.key === conditionKey)?.mult ?? 1;
+  const chMult  = CHANNELS.find(c => c.key === channelKey)?.mult ?? 1;
+  const retail  = base * qMult * cMult;
+  const mid     = retail * chMult;
+  return {
+    low:          Math.round(mid * 0.72),
+    mid:          Math.round(mid),
+    high:         Math.round(mid * 1.42),
+    retail:       Math.round(retail),
+    suggestedAsk: Math.round(mid * 1.15),
+    floor:        Math.round(mid * 0.80),
+  };
+}
+
+function fmt(n) {
+  if (n >= 10000) return `$${Math.round(n / 1000)}k`;
+  if (n >= 1000)  return `$${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  return `$${n}`;
+}
+
+const NEGOTIATION_GUIDE = {
+  "Trophy":           { ask: "Price at the high end of your range and hold — exceptional pieces reward patient sellers.", floor: "Expect 85–90% of ask from serious buyers. Don't capitulate below that.", tip: "Document the PRISM score prominently. Top collectors pay premiums for quantified quality." },
+  "Investment Grade": { ask: "Price 15–20% above your target. Investment-grade pieces attract committed buyers.", floor: "80% of ask is a firm floor — better buyers exist, don't rush.", tip: "Provenance documentation materially adds to investment-grade value. Include it." },
+  "Premium":          { ask: "Price 10–15% above your target to allow normal collector negotiation.", floor: "70–75% of ask is a reasonable floor for this tier.", tip: "Highlight your highest-scoring PRISM dimensions — locality rarity and crystal quality close deals." },
+  "Above Average":    { ask: "Price at mid estimate with good presentation.", floor: "65–70% of ask is typical. Below that you're leaving money behind.", tip: "Photography and accurate locality info close deals faster than price adjustments at this tier." },
+  "Standard":         { ask: "Price at or slightly below mid estimate to remain competitive.", floor: "60–65% of ask is typical. Bundles and trades often net more than single-piece sales.", tip: "Flexible terms (trades, bundles) move standard-grade pieces more effectively than price cuts." },
+  "Entry / Bulk":     { ask: "Price at the low end — this tier is highly price-competitive.", floor: "Quick liquidation beats holding. Set a firm floor and focus on volume.", tip: "Lot sales or trade-up offers are usually more effective than single-piece listings at this tier." },
+};
+
+function buildListingTitle(spec, grade, sizeClass) {
+  const sz = SIZE_CLASSES.find(s => s.key === sizeClass);
+  const parts = [];
+  if (grade.min >= 75) parts.push("Superb");
+  else if (grade.min >= 60) parts.push("Fine");
+  if (spec?.species) parts.push(spec.species);
+  else parts.push("Mineral Specimen");
+  if (sz) parts.push(sz.label);
+  if (spec?.locality) parts.push(spec.locality);
+  parts.push(`PRISM ${grade.label}`);
+  return parts.join(" ");
+}
+
+function buildMarketReport({ spec, score, grade, sizeClass, condition, channel, position, tier, prices, scores }) {
+  const now  = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const sz   = SIZE_CLASSES.find(s => s.key === sizeClass);
+  const cond = CONDITIONS.find(c => c.key === condition);
+  const ch   = CHANNELS.find(c => c.key === channel);
+  const neg  = NEGOTIATION_GUIDE[tier.label] || {};
+  const fmtD = n => n >= 1000 ? `$${n.toLocaleString()}` : `$${n}`;
+  const LINE = "\u2500".repeat(52);
+  const DIM_DISPLAY = [
+    { key: "localityRarity", label: "Locality Rarity" },
+    { key: "speciesRarity",  label: "Species Rarity"  },
+    { key: "crystal",        label: "Crystal Quality" },
+    { key: "aesthetics",     label: "Aesthetics"      },
+    { key: "provenance",     label: "Provenance"      },
+    { key: "scientific",     label: "Scientific Value"},
+  ];
+  const lines = ["PRISM \u2014 SPECIMEN MARKET REPORT", `Generated: ${now}`, LINE, ""];
+  if (spec?.name || spec?.species || spec?.locality) {
+    lines.push("SPECIMEN");
+    if (spec?.name)     lines.push(`  Name:      ${spec.name}`);
+    if (spec?.species)  lines.push(`  Species:   ${spec.species}`);
+    if (spec?.locality) lines.push(`  Locality:  ${spec.locality}`);
+    lines.push("");
+  }
+  lines.push(
+    "QUALITY",
+    `  PRISM Score: ${score}/100`,
+    `  Grade:       ${grade.emoji} ${grade.label}`,
+    `  Condition:   ${cond?.label}`,
+    "",
+    "SIZE & CHANNEL",
+    `  Size Class:   ${sz?.label} (${sz?.range})`,
+    `  Sale Channel: ${ch?.label}`,
+    "",
+    `ESTIMATED PRICE RANGE \u2014 ${ch?.label}`,
+    `  Low: ${fmtD(prices.low)}   Mid: ${fmtD(prices.mid)}   High: ${fmtD(prices.high)}`,
+    `  Suggested Ask:   ${fmtD(prices.suggestedAsk)}`,
+    `  Walk-Away Floor: ${fmtD(prices.floor)}`,
+    "",
+    `MARKET POSITION: ${tier.label} (${position}/100 among ${sz?.label} specimens)`,
+    `  ${tier.desc}`,
+    "",
+    "VALUE DIMENSIONS",
+  );
+  DIM_DISPLAY.forEach(d => {
+    const v = scores?.[d.key] ?? 50;
+    const arrow = v >= 68 ? "\u2191" : v <= 38 ? "\u2193" : " ";
+    lines.push(`  ${arrow} ${d.label}: ${v}/100`);
+  });
+  const guidance = CHANNEL_GUIDANCE[channel]?.(position);
+  lines.push("", "CHANNEL GUIDANCE");
+  if (guidance) lines.push(`  ${guidance}`);
+  lines.push("", "SELLING TIPS");
+  (ch?.tips || []).forEach(t => lines.push(`  \u2022 ${t}`));
+  if (neg.ask) {
+    lines.push(
+      "", "NEGOTIATION",
+      `  Suggested Ask:   ${fmtD(prices.suggestedAsk)}`,
+      `  Walk-Away Floor: ${fmtD(prices.floor)}`,
+      `  Strategy: ${neg.ask}`,
+      ...(neg.floor ? [`  Floor:    ${neg.floor}`] : []),
+      ...(neg.tip   ? [`  Tip:      ${neg.tip}`]   : []),
+    );
+  }
+  lines.push(
+    "", LINE,
+    "PRISM (Precision Rating Index of Specimen Minerals)",
+    "Estimates are based on market norms and PRISM scoring.",
+    "Individual results vary. Not a guarantee of value.",
+  );
+  return lines.join("\n");
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function SelectGrid({ items, selected, onSelect, cols = 2 }) {
@@ -334,17 +471,21 @@ function ChannelStep({ channel, setChannel }) {
   );
 }
 
-function PriceGuideStep({ score, sizeClass, condition, channel, scores }) {
-  const sz    = SIZE_CLASSES.find(s => s.key === sizeClass);
-  const cond  = CONDITIONS.find(c => c.key === condition);
-  const ch    = CHANNELS.find(c => c.key === channel);
-  const grade = getGrade(score);
+function PriceGuideStep({ score, sizeClass, condition, channel, scores, spec }) {
+  const [copiedReport, setCopiedReport] = useState(false);
+  const [copiedTitle,  setCopiedTitle]  = useState(false);
 
+  const sz       = SIZE_CLASSES.find(s => s.key === sizeClass);
+  const cond     = CONDITIONS.find(c => c.key === condition);
+  const ch       = CHANNELS.find(c => c.key === channel);
+  const grade    = getGrade(score);
   const position = computeMarketPosition(score, condition);
-  const tier = POSITION_TIERS.find(t => position >= t.min) || POSITION_TIERS[POSITION_TIERS.length - 1];
+  const tier     = POSITION_TIERS.find(t => position >= t.min) || POSITION_TIERS[POSITION_TIERS.length - 1];
   const guidance = CHANNEL_GUIDANCE[channel]?.(position) || "";
+  const prices   = computePriceRange(score, sizeClass, condition, channel);
+  const neg      = NEGOTIATION_GUIDE[tier.label] || {};
+  const listingTitle = buildListingTitle(spec, grade, sizeClass);
 
-  // Dimension drivers
   const DIM_DISPLAY = [
     { key: "localityRarity", label: "Locality Rarity", icon: "📍" },
     { key: "speciesRarity",  label: "Species Rarity",  icon: "🌍" },
@@ -353,116 +494,180 @@ function PriceGuideStep({ score, sizeClass, condition, channel, scores }) {
     { key: "provenance",     label: "Provenance",      icon: "📜" },
     { key: "scientific",     label: "Scientific Value",icon: "🔬" },
   ];
-  const positiveDrivers = DIM_DISPLAY.filter(d => (scores?.[d.key] ?? 50) >= 68).sort((a,b) => (scores?.[b.key] ?? 50) - (scores?.[a.key] ?? 50));
-  const negativeDrivers = DIM_DISPLAY.filter(d => (scores?.[d.key] ?? 50) <= 38).sort((a,b) => (scores?.[a.key] ?? 50) - (scores?.[b.key] ?? 50));
+  const positiveDrivers = DIM_DISPLAY.filter(d => (scores?.[d.key] ?? 50) >= 68).sort((a, b) => (scores?.[b.key] ?? 50) - (scores?.[a.key] ?? 50));
+  const negativeDrivers = DIM_DISPLAY.filter(d => (scores?.[d.key] ?? 50) <= 38).sort((a, b) => (scores?.[a.key] ?? 50) - (scores?.[b.key] ?? 50));
+
+  const copyReport = () => {
+    const txt = buildMarketReport({ spec, score, grade, sizeClass, condition, channel, position, tier, prices, scores });
+    navigator.clipboard.writeText(txt)
+      .then(() => { setCopiedReport(true); setTimeout(() => setCopiedReport(false), 2500); })
+      .catch(() => {});
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       <div>
-        <h3 style={{ fontSize: "16px", fontWeight: 600, color: "var(--text)", marginBottom: "4px" }}>Market Position</h3>
+        <h3 style={{ fontSize: "16px", fontWeight: 600, color: "var(--text)", marginBottom: "4px" }}>Market Position &amp; Price Guide</h3>
         <p style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55 }}>
-          Where this specimen sits among comparable <strong>{sz?.label}</strong> pieces in the collector market —
-          relative to others of the same size class, not an absolute dollar figure.
+          Estimated pricing for a <strong>{sz?.label}</strong> sold via <strong>{ch?.label}</strong>.
+          Ranges reflect real-world variability — individual sales depend on buyer, timing, and presentation.
         </p>
       </div>
 
-      {/* Position card */}
-      <div style={{ padding: "18px 20px", background: "var(--bg-panel)", borderRadius: "8px", border: `1px solid ${tier.color}30` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
-          <div>
-            <div style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "4px" }}>
-              Position among {sz?.label} specimens
-            </div>
-            <div style={{ fontSize: "32px", fontWeight: 700, color: tier.color, fontFamily: "var(--mono)", lineHeight: 1 }}>
-              {position}<span style={{ fontSize: "16px", opacity: 0.6 }}>/100</span>
-            </div>
-          </div>
-          <div style={{
-            padding: "5px 12px", borderRadius: "4px", marginTop: "2px",
-            background: `${tier.color}18`, border: `1px solid ${tier.color}40`,
-            fontSize: "12px", fontWeight: 700, color: tier.color, letterSpacing: "0.06em",
-          }}>
-            {tier.label}
-          </div>
+      {/* ── Price Range Card ── */}
+      <div style={{ padding: "16px 18px", background: "var(--bg-panel)", borderRadius: "8px", border: `1px solid ${tier.color}35` }}>
+        <div style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "12px" }}>
+          Estimated Price Range · {ch?.icon} {ch?.label}
         </div>
-
-        {/* Position bar */}
-        <div style={{ height: "6px", background: "var(--bg)", borderRadius: "3px", marginBottom: "8px", overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${position}%`, background: tier.bar, borderRadius: "3px", transition: "width 0.5s" }} />
-        </div>
-
-        {/* Scale labels */}
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.08em", marginBottom: "10px" }}>
-          <span>Entry</span><span>Standard</span><span>Premium</span><span>Trophy</span>
-        </div>
-
-        <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>{tier.desc}</div>
-
-        {/* Summary chips */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px", marginTop: "12px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "12px" }}>
           {[
-            { label: "PRISM Grade", value: `${grade.emoji} ${grade.label}` },
-            { label: "Condition",   value: `${cond?.icon} ${cond?.label}` },
-            { label: "Size Class",  value: sz?.label },
-          ].map(({ label, value }) => (
-            <div key={label} style={{ textAlign: "center", padding: "6px", background: "var(--bg)", borderRadius: "4px" }}>
-              <div style={{ fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "3px" }}>{label}</div>
-              <div style={{ fontSize: "11px", color: "var(--text-dim)" }}>{value}</div>
+            { label: "Low",  value: prices.low,  color: "var(--text-muted)" },
+            { label: "Mid",  value: prices.mid,  color: tier.color },
+            { label: "High", value: prices.high, color: "var(--text-dim)" },
+          ].map(({ label, value, color }) => (
+            <div key={label} style={{ textAlign: "center", padding: "10px 8px", background: "var(--bg)", borderRadius: "5px" }}>
+              <div style={{ fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "4px" }}>{label}</div>
+              <div style={{ fontSize: label === "Mid" ? "20px" : "16px", fontWeight: 700, color, fontFamily: "var(--mono)" }}>{fmt(value)}</div>
             </div>
           ))}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "10px" }}>
+          <div style={{ padding: "8px 10px", background: "rgba(0,212,255,0.06)", borderRadius: "5px", border: "1px solid rgba(0,212,255,0.2)" }}>
+            <div style={{ fontSize: "8px", color: "rgba(0,212,255,0.5)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "3px" }}>Suggested Ask</div>
+            <div style={{ fontSize: "18px", fontWeight: 700, color: "var(--cyan)", fontFamily: "var(--mono)" }}>{fmt(prices.suggestedAsk)}</div>
+            <div style={{ fontSize: "9px", color: "rgba(0,212,255,0.4)", marginTop: "1px" }}>+15% above mid for negotiation room</div>
+          </div>
+          <div style={{ padding: "8px 10px", background: "rgba(255,80,80,0.04)", borderRadius: "5px", border: "1px solid rgba(255,80,80,0.15)" }}>
+            <div style={{ fontSize: "8px", color: "rgba(255,100,100,0.5)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "3px" }}>Walk-Away Floor</div>
+            <div style={{ fontSize: "18px", fontWeight: 700, color: "#ff8080", fontFamily: "var(--mono)" }}>{fmt(prices.floor)}</div>
+            <div style={{ fontSize: "9px", color: "rgba(255,100,100,0.4)", marginTop: "1px" }}>Don't accept below this</div>
+          </div>
+        </div>
+        <div style={{ fontSize: "9px", color: "var(--text-muted)", lineHeight: 1.5 }}>
+          Based on PRISM {score}/100 · {cond?.label} · {sz?.label} · {ch?.label} ({ch?.fees} fees).
+          Reference ranges only — not a formal appraisal.
         </div>
       </div>
 
-      {/* Position drivers */}
-      {(positiveDrivers.length > 0 || negativeDrivers.length > 0) && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-          <div style={{ fontSize: "9px", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "2px" }}>Position Drivers</div>
+      {/* ── Market Position ── */}
+      <div style={{ padding: "14px 16px", background: "var(--bg-panel)", borderRadius: "8px", border: `1px solid ${tier.color}25` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+          <div style={{ fontSize: "9px", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase" }}>
+            Market Position · {sz?.label} Class
+          </div>
+          <div style={{ padding: "3px 10px", borderRadius: "4px", background: `${tier.color}18`, border: `1px solid ${tier.color}40`, fontSize: "11px", fontWeight: 700, color: tier.color }}>
+            {tier.label}
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+          <div style={{ fontSize: "26px", fontWeight: 700, color: tier.color, fontFamily: "var(--mono)", lineHeight: 1 }}>
+            {position}<span style={{ fontSize: "13px", opacity: 0.6 }}>/100</span>
+          </div>
+          <div style={{ flex: 1, height: "5px", background: "var(--bg)", borderRadius: "2px", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${position}%`, background: tier.bar, borderRadius: "2px", transition: "width 0.5s" }} />
+          </div>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.07em", marginBottom: "7px" }}>
+          <span>Entry</span><span>Standard</span><span>Premium</span><span>Trophy</span>
+        </div>
+        <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>{tier.desc}</div>
+      </div>
+
+      {/* ── Value Drivers ── */}
+      {(positiveDrivers.length > 0 || negativeDrivers.length > 0 || condition === "repaired") && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <div style={{ fontSize: "9px", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "2px" }}>Value Drivers</div>
           {positiveDrivers.map(d => (
-            <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px", background: "rgba(0,200,128,0.05)", border: "1px solid rgba(0,200,128,0.18)", borderRadius: "4px" }}>
+            <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", background: "rgba(0,200,128,0.05)", border: "1px solid rgba(0,200,128,0.18)", borderRadius: "4px" }}>
               <span style={{ color: "#00c880", fontSize: "12px" }}>↑</span>
-              <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>
-                {d.icon} <strong style={{ color: "var(--text)" }}>{d.label}</strong> ({scores?.[d.key] ?? 50}/100) — pushing position up
-              </span>
+              <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>{d.icon} <strong style={{ color: "var(--text)" }}>{d.label}</strong> {scores?.[d.key] ?? 50}/100 — supports premium pricing</span>
             </div>
           ))}
           {negativeDrivers.map(d => (
-            <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px", background: "rgba(255,80,80,0.05)", border: "1px solid rgba(255,80,80,0.15)", borderRadius: "4px" }}>
+            <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", background: "rgba(255,80,80,0.05)", border: "1px solid rgba(255,80,80,0.15)", borderRadius: "4px" }}>
               <span style={{ color: "#ff6060", fontSize: "12px" }}>↓</span>
-              <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>
-                {d.icon} <strong style={{ color: "var(--text)" }}>{d.label}</strong> ({scores?.[d.key] ?? 50}/100) — pulling position down
-              </span>
+              <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>{d.icon} <strong style={{ color: "var(--text)" }}>{d.label}</strong> {scores?.[d.key] ?? 50}/100 — limiting market position</span>
             </div>
           ))}
           {condition === "repaired" && (
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px", background: "rgba(255,160,40,0.06)", border: "1px solid rgba(255,160,40,0.25)", borderRadius: "4px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", background: "rgba(255,160,40,0.06)", border: "1px solid rgba(255,160,40,0.25)", borderRadius: "4px" }}>
               <span style={{ color: "#ffa028", fontSize: "12px" }}>↓</span>
-              <span style={{ fontSize: "11px", color: "#ffa028" }}>
-                🔧 Repaired/restored — position adjusted down 32 pts. <strong>Must disclose.</strong>
-              </span>
+              <span style={{ fontSize: "11px", color: "#ffa028" }}>🔧 Repaired/restored — position adjusted down. <strong>Must disclose in every listing.</strong></span>
             </div>
           )}
         </div>
       )}
 
-      {/* Size class context */}
-      <div style={{ padding: "9px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border-dim)", fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>
-        📐 <strong style={{ color: "var(--text)" }}>{sz?.label}:</strong> {sz?.desc}
-      </div>
-
-      {/* Channel guidance */}
-      {guidance && (
+      {/* ── Channel guidance + tips ── */}
+      {(guidance || ch?.tips?.length > 0) && (
         <div style={{ padding: "10px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border-dim)" }}>
-          <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
-            {ch?.icon} {ch?.label} — Channel Guidance
+          <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "7px" }}>
+            {ch?.icon} {ch?.label} — Channel Strategy
           </div>
-          <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6 }}>{guidance}</div>
+          {guidance && <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: ch?.tips?.length ? "8px" : 0 }}>{guidance}</div>}
+          {ch?.tips?.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              {ch.tips.map((tip, i) => (
+                <div key={i} style={{ display: "flex", gap: "7px", fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.5 }}>
+                  <span style={{ color: "var(--cyan)", flexShrink: 0 }}>›</span>{tip}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* PRISM note */}
-      <div style={{ padding: "8px 12px", background: "var(--bg-card)", borderRadius: "4px", border: "1px solid var(--border-dim)", fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.5 }}>
-        📊 Position is based on your PRISM score of <strong style={{ color: "var(--text)" }}>{score}/100</strong> ({grade.label}),
-        adjusted for condition. Improving Crystal Quality, Aesthetics, or Locality score will raise your market position.
+      {/* ── Negotiation guide ── */}
+      {neg.ask && (
+        <div style={{ padding: "10px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border-dim)" }}>
+          <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "7px" }}>
+            Negotiation Guide · {tier.label}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>📣 <strong style={{ color: "var(--text)" }}>Ask:</strong> {neg.ask}</div>
+            {neg.floor && <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>🛑 <strong style={{ color: "var(--text)" }}>Floor:</strong> {neg.floor}</div>}
+            {neg.tip   && <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>💡 <strong style={{ color: "var(--text)" }}>Tip:</strong> {neg.tip}</div>}
+          </div>
+        </div>
+      )}
+
+      {/* ── Listing title helper ── */}
+      <div style={{ padding: "10px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border-dim)" }}>
+        <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "7px" }}>
+          Listing Title Helper
+        </div>
+        <div style={{ fontSize: "12px", color: "var(--text)", lineHeight: 1.5, padding: "7px 10px", background: "var(--bg)", borderRadius: "4px", border: "1px solid var(--border-dim)", marginBottom: "7px", fontStyle: "italic" }}>
+          "{listingTitle}"
+        </div>
+        <button
+          onClick={() => navigator.clipboard.writeText(listingTitle).then(() => { setCopiedTitle(true); setTimeout(() => setCopiedTitle(false), 2000); }).catch(() => {})}
+          style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", borderRadius: "4px", fontSize: "10px", fontWeight: 500, cursor: "pointer", background: copiedTitle ? "rgba(0,200,128,0.09)" : "rgba(0,212,255,0.07)", border: `1px solid ${copiedTitle ? "rgba(0,200,128,0.4)" : "rgba(0,212,255,0.25)"}`, color: copiedTitle ? "#00c880" : "var(--cyan)", transition: "all 0.2s" }}
+        >
+          {copiedTitle ? <CheckCheck size={11} /> : <Copy size={11} />}
+          {copiedTitle ? "Copied!" : "Copy Title"}
+        </button>
+      </div>
+
+      {/* ── Export ── */}
+      <div style={{ borderTop: "1px solid var(--border-dim)", paddingTop: "14px" }}>
+        <div style={{ fontSize: "9px", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>
+          Export Market Report
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+          <button
+            onClick={copyReport}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", padding: "7px 10px", borderRadius: "5px", fontSize: "10px", fontWeight: 500, cursor: "pointer", background: copiedReport ? "rgba(0,200,128,0.09)" : "var(--bg-card)", border: `1px solid ${copiedReport ? "rgba(0,200,128,0.4)" : "var(--border)"}`, color: copiedReport ? "#00c880" : "var(--text-dim)", transition: "all 0.2s" }}
+          >
+            {copiedReport ? <CheckCheck size={12} /> : <Copy size={12} />}
+            {copiedReport ? "Copied!" : "Copy Report"}
+          </button>
+          <button
+            onClick={() => window.print()}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", padding: "7px 10px", borderRadius: "5px", fontSize: "10px", fontWeight: 500, cursor: "pointer", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-dim)" }}
+          >
+            <Printer size={12} /> Print
+          </button>
+        </div>
       </div>
     </div>
   );
