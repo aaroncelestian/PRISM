@@ -27,18 +27,69 @@ const CONDITIONS = [
   { key: "damaged",   label: "Damaged",         icon: "⚠️" },
 ];
 
-const COMMON_SOURCES = ["iRocks", "eBay", "Mindat Market", "Tucson Show", "Denver Show", "Dealer", "Heritage Auctions", "Catawiki", "Show Table"];
+const COMMON_SOURCES = ["iRocks", "eBay", "Mindat Market", "Weinrich Minerals", "The Arkenstone", "Dakota Matrix", "Heritage Auctions", "Catawiki", "Tucson Show", "Denver Show", "Munich Show", "Show Table", "Dealer", "Etsy"];
 
 const DOMAIN_TO_SOURCE = {
-  "irocks.com": "iRocks", "weinrichminerals.com": "Weinrich Minerals",
-  "arkenstone.com": "The Arkenstone", "dakotamatrix.com": "Dakota Matrix",
-  "mindat.org": "Mindat Market", "minfind.com": "Minfind",
-  "ebay.com": "eBay", "ebay.com.au": "eBay",
-  "heritage-auctions.com": "Heritage Auctions", "ha.com": "Heritage Auctions",
-  "catawiki.com": "Catawiki", "invaluable.com": "Invaluable",
-  "liveauctioneers.com": "LiveAuctioneers", "mineralauctions.com": "Mineral Auctions",
-  "collector.com": "Collector.com", "rubylane.com": "Ruby Lane",
-  "bidspirit.com": "BidSpirit", "crystalauctions.com": "Crystal Auctions",
+  // ── Mineral dealers ──────────────────────────────────────────────────────────
+  "irocks.com": "iRocks",
+  "weinrichminerals.com": "Weinrich Minerals",
+  "arkenstone.com": "The Arkenstone",
+  "dakotamatrix.com": "Dakota Matrix",
+  "mindat.org": "Mindat Market",
+  "minfind.com": "Minfind",
+  "pala.com": "Pala International",
+  "johnbetts-fineminerals.com": "John Betts Fine Minerals",
+  "collectorsedge.com": "Collector's Edge",
+  "spiritminerals.com": "Spirit Minerals",
+  "spiriferminerals.com": "Spirifer Minerals",
+  "kristalle.com": "Kristalle",
+  "minerary.com": "Minerary",
+  "mineralogy.com": "Mineralogy.com",
+  "crystalclassics.co.uk": "Crystal Classics",
+  "westlandminerals.com": "Westland Minerals",
+  "fineminerals.com": "Fine Minerals Intl",
+  "minshop.com": "MinShop",
+  "renaissanceminerals.com": "Renaissance Minerals",
+  "alfredsminerals.com": "Alfreds Minerals",
+  "hollandminerals.com": "Holland Minerals",
+  "stonebridge-imports.com": "Stonebridge Imports",
+  "fossilera.com": "Fossilera",
+  "gemrockauctions.com": "Gem Rock Auctions",
+  "mineralienatlas.de": "Mineralienatlas",
+  "mineralienreich.de": "Mineralienreich",
+  "minrec.org": "Mineralogical Record",
+  // ── Auction platforms ────────────────────────────────────────────────────────
+  "ebay.com": "eBay",
+  "ebay.com.au": "eBay",
+  "ebay.co.uk": "eBay",
+  "ebay.de": "eBay",
+  "ebay.fr": "eBay",
+  "ebay.ca": "eBay",
+  "ebay.it": "eBay",
+  "ebay.es": "eBay",
+  "heritage-auctions.com": "Heritage Auctions",
+  "ha.com": "Heritage Auctions",
+  "catawiki.com": "Catawiki",
+  "invaluable.com": "Invaluable",
+  "liveauctioneers.com": "LiveAuctioneers",
+  "mineralauctions.com": "Mineral Auctions",
+  "bidspirit.com": "BidSpirit",
+  "crystalauctions.com": "Crystal Auctions",
+  "bonhams.com": "Bonhams",
+  "christies.com": "Christie's",
+  "sothebys.com": "Sotheby's",
+  "1stdibs.com": "1stDibs",
+  "shopgoodwill.com": "Shop Goodwill",
+  "aspireauctions.com": "Aspire Auctions",
+  "bidsquare.com": "Bid Square",
+  "proxibid.com": "Proxibid",
+  // ── General marketplaces ─────────────────────────────────────────────────────
+  "etsy.com": "Etsy",
+  "amazon.com": "Amazon",
+  "collector.com": "Collector.com",
+  "rubylane.com": "Ruby Lane",
+  "facebook.com": "Facebook Marketplace",
+  "instagram.com": "Instagram",
 };
 
 const DIM_DISPLAY = [
@@ -96,8 +147,159 @@ function detectSourceFromUrl(url) {
     for (const [domain, name] of Object.entries(DOMAIN_TO_SOURCE)) {
       if (host === domain || host.endsWith("." + domain)) return name;
     }
+    // Smart fallback: format the domain root as a readable source name
+    const parts = host.split(".");
+    const isCountryTld = parts.length >= 3 && ["co", "com", "net", "org", "edu"].includes(parts[parts.length - 2]);
+    const root = isCountryTld ? parts[parts.length - 3] : (parts.length >= 2 ? parts[parts.length - 2] : parts[0]);
+    if (root && root.length > 2) {
+      return root
+        .replace(/-/g, " ")
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/\b\w/g, l => l.toUpperCase());
+    }
   } catch {}
   return "";
+}
+
+// ── Listing auto-fill from URL ───────────────────────────────────────────────
+
+const LISTING_STOPWORDS = new Set([
+  "specimen","crystal","crystals","mineral","minerals","natural","raw","rough",
+  "matrix","cluster","single","piece","item","lot","collection","authentic",
+  "genuine","rare","display","quality","grade","nice","beautiful","stunning",
+  "amazing","large","small","mini","micro","thumbnail","cabinet","on","with",
+  "from","and","the","a","an","for","in","of","listing","sale","buy","shop",
+  "purchase","order","stone","stones","rock","rocks","gem","gems","fine",
+  "old","antique","vintage","estate","gift","perfect","choice","select","top",
+  "high","premium","super","extra","special","new","used","free","shipping",
+]);
+
+function parseSlugSpecies(url) {
+  try {
+    const pathname = new URL(url.includes("://") ? url : "https://" + url).pathname;
+    const slug = pathname.split("/").filter(Boolean).pop() || "";
+    const words = slug.replace(/^\d+-/, "").split(/[-_]/).filter(w => w.length > 1 && !/^\d+$/.test(w));
+    for (const w of words) {
+      if (!LISTING_STOPWORDS.has(w.toLowerCase())) {
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      }
+    }
+  } catch {}
+  return null;
+}
+
+function htmlDecode(str) {
+  return (str || "")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n))).trim();
+}
+
+function extractFromTitle(title) {
+  if (!title) return {};
+  const clean = title
+    .replace(/\s*[-|–]\s*[^-|–]+\.(com|net|org|co\.[a-z]{2}|de|fr|uk|au)\s*$/i, "")
+    .replace(/\s*[-|–]\s*(iRocks|eBay|Etsy|Mindat|Catawiki|Bonhams|1stDibs)[^-|–]*$/i, "")
+    .trim();
+  const fromMatch = clean.match(/^(.+?)\s+from\s+(.+)$/i);
+  if (fromMatch) return { species: fromMatch[1].trim(), locality: fromMatch[2].trim() };
+  const parts = clean.split(/\s*,\s*/);
+  if (parts.length >= 2) return { species: parts[0].trim(), locality: parts.slice(1).join(", ").trim() };
+  const words = clean.split(/\s+/);
+  return { species: words[0] || "" };
+}
+
+function extractPriceFromHtml(html) {
+  const jsonBlocks = [...html.matchAll(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)];
+  for (const [, content] of jsonBlocks) {
+    try {
+      const obj = JSON.parse(content);
+      const items = Array.isArray(obj) ? obj : [obj];
+      for (const item of items) {
+        const o = Array.isArray(item.offers) ? item.offers[0] : item.offers;
+        if (o?.price && Number(o.price) > 0) return String(Math.round(Number(o.price)));
+      }
+    } catch {}
+  }
+  const ogPrice = html.match(/<meta[^>]+property="og:price:amount"[^>]+content="([\d.]+)"/i)
+               || html.match(/<meta[^>]+content="([\d.]+)"[^>]+property="og:price:amount"/i);
+  if (ogPrice) return String(Math.round(Number(ogPrice[1])));
+  const itemProp = html.match(/itemprop="price"[^>]*content="([\d.]+)"/i);
+  if (itemProp) return String(Math.round(Number(itemProp[1])));
+  const dataPx = html.match(/data-price="([\d.]+)"/i);
+  if (dataPx) return String(Math.round(Number(dataPx[1])));
+  return null;
+}
+
+function sizeFromText(text) {
+  const cmM  = text.match(/(\d+(?:\.\d+)?)\s*cm/i);
+  const mmM  = text.match(/(\d+(?:\.\d+)?)\s*mm/i);
+  const inM  = text.match(/(\d+(?:\.\d+)?)\s*(?:inch|in\b|")/i);
+  let cm = null;
+  if (cmM)      cm = parseFloat(cmM[1]);
+  else if (mmM) cm = parseFloat(mmM[1]) / 10;
+  else if (inM) cm = parseFloat(inM[1]) * 2.54;
+  if (cm == null) return null;
+  if (cm < 2.5)  return "thumbnail";
+  if (cm < 4.5)  return "miniature";
+  if (cm < 7.5)  return "small_cab";
+  if (cm < 12)   return "cabinet";
+  if (cm < 25)   return "large_cab";
+  return "museum";
+}
+
+async function fetchListingDetails(url) {
+  const result = {};
+  const slugSpecies = parseSlugSpecies(url);
+  if (slugSpecies) result.species = slugSpecies;
+
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+  const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(12000) });
+  if (!resp.ok) throw new Error("proxy error");
+  const json = await resp.json();
+  const html = json.contents || "";
+
+  const ogTitle  = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i)
+                || html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:title"/i);
+  const titleTag = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  const rawTitle = ogTitle ? htmlDecode(ogTitle[1]) : (titleTag ? htmlDecode(titleTag[1]) : null);
+
+  if (rawTitle) {
+    const parsed = extractFromTitle(rawTitle);
+    if (parsed.species && !result.species) result.species = parsed.species;
+    if (parsed.locality) result.locality = parsed.locality;
+  }
+
+  const price = extractPriceFromHtml(html);
+  if (price) result.price = price;
+
+  const ogDesc = html.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i);
+  const descText = ogDesc ? htmlDecode(ogDesc[1]) : "";
+  const sizeClass = sizeFromText((rawTitle || "") + " " + descText);
+  if (sizeClass) result.sizeClass = sizeClass;
+
+  const ogImg = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i)
+             || html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/i);
+  if (ogImg) {
+    const imgUrl = htmlDecode(ogImg[1]);
+    if (imgUrl.startsWith("http")) {
+      try {
+        const imgProxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(imgUrl)}`;
+        const imgResp = await fetch(imgProxy, { signal: AbortSignal.timeout(8000) });
+        if (imgResp.ok) {
+          const blob = await imgResp.blob();
+          const dataUrl = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.readAsDataURL(blob);
+          });
+          result.photo = await compressImage(dataUrl);
+        }
+      } catch {}
+    }
+  }
+
+  return result;
 }
 
 function splitCSVLine(line) {
@@ -224,15 +426,45 @@ function MiniBar({ label, icon, value }) {
 function CompForm({ initial = EMPTY_FORM, onSave, onCancel }) {
   const { isMobile } = useBreakpoint();
   const [form, setForm] = useState({ ...EMPTY_FORM, ...initial });
+  const [autoFill, setAutoFill] = useState("idle");  // idle | loading | done | none | error
+  const [fillSummary, setFillSummary] = useState(null);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const canSave = form.species.trim().length > 0 && form.askingPrice !== "" && form.sizeClass;
   const detectedSource = detectSourceFromUrl(form.sourceUrl || "");
+
   const handleUrlChange = (e) => {
     const url = e.target.value;
     set("sourceUrl", url);
     if (!form.source) {
       const detected = detectSourceFromUrl(url);
       if (detected) set("source", detected);
+    }
+    setAutoFill("idle");
+    setFillSummary(null);
+  };
+
+  const handleExtract = async () => {
+    const url = (form.sourceUrl || "").trim();
+    if (!url) return;
+    setAutoFill("loading");
+    setFillSummary(null);
+    try {
+      const data = await fetchListingDetails(url);
+      const filled = [];
+      setForm(f => {
+        const next = { ...f };
+        if (data.species  && !f.species.trim())            { next.species     = data.species;    filled.push("species"); }
+        if (data.locality && !f.locality.trim())           { next.locality    = data.locality;   filled.push("locality"); }
+        if (data.price    && !f.askingPrice)               { next.askingPrice = data.price;      filled.push("price"); }
+        if (data.sizeClass && f.sizeClass === "miniature") { next.sizeClass   = data.sizeClass;  filled.push("size"); }
+        if (data.photo    && !f.photo)                     { next.photo       = data.photo;      filled.push("photo"); }
+        return next;
+      });
+      setFillSummary(filled.length ? `Filled: ${filled.join(", ")}` : "No new fields detected — fill manually.");
+      setAutoFill(filled.length ? "done" : "none");
+    } catch {
+      setAutoFill("error");
+      setFillSummary("Could not reach the listing — fill manually.");
     }
   };
 
@@ -267,12 +499,33 @@ function CompForm({ initial = EMPTY_FORM, onSave, onCancel }) {
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <input type="text" value={form.sourceUrl || ""} onChange={handleUrlChange}
             placeholder="https://irocks.com/minerals/specimen/…" style={{ flex: 1 }} />
+          {form.sourceUrl?.trim() && autoFill !== "loading" && (
+            <button onClick={handleExtract} style={{
+              padding: "4px 11px", fontSize: "10px", borderRadius: "4px", border: "none",
+              background: autoFill === "done" ? "rgba(0,200,128,0.15)" : "rgba(0,212,255,0.1)",
+              color: autoFill === "done" ? "#00c880" : "var(--cyan)",
+              cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, fontWeight: 600,
+            }}>
+              {autoFill === "done" ? "✓ Done" : "⬇ Extract"}
+            </button>
+          )}
+          {autoFill === "loading" && (
+            <span style={{ fontSize: "10px", color: "var(--cyan)", flexShrink: 0, whiteSpace: "nowrap", opacity: 0.8 }}>
+              Fetching…
+            </span>
+          )}
           {detectedSource && (
             <span style={{ fontSize: "10px", color: "var(--cyan)", padding: "3px 9px", borderRadius: "3px", background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.3)", whiteSpace: "nowrap", flexShrink: 0 }}>
               ✓ {detectedSource}
             </span>
           )}
         </div>
+        {fillSummary && (
+          <div style={{ fontSize: "10px", marginTop: "5px",
+            color: autoFill === "done" ? "#00c880" : autoFill === "error" ? "#ff8060" : "var(--text-muted)" }}>
+            {fillSummary}
+          </div>
+        )}
       </div>
 
       {/* Row 2: Size + Condition + Price + Source */}
@@ -298,6 +551,7 @@ function CompForm({ initial = EMPTY_FORM, onSave, onCancel }) {
           <div style={{ position: "relative", minWidth: 0 }}>
             <span style={{ position: "absolute", left: "9px", top: "50%", transform: "translateY(-50%)", fontSize: "11px", color: "var(--text-muted)", zIndex: 1 }}>$</span>
             <input type="number" min="0" step="1" value={form.askingPrice} onChange={e => set("askingPrice", e.target.value)}
+              onBlur={e => { if (e.target.value !== "") set("askingPrice", String(Math.round(Number(e.target.value)))); }}
               placeholder="0" style={{ paddingLeft: "20px", width: "100%" }} />
           </div>
         </div>
@@ -468,12 +722,20 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
   const [showForm, setShowForm]     = useState(false);
   const [editingComp, setEditing]   = useState(null);
 
-  const speciesList = useMemo(() =>
-    [...new Set(comps.map(c => c.species).filter(Boolean))].sort(), [comps]);
+  const speciesList = useMemo(() => {
+    const seen = new Map();
+    comps.forEach(c => {
+      if (c.species) {
+        const key = c.species.trim().toLowerCase();
+        if (!seen.has(key)) { const t = c.species.trim(); seen.set(key, t.charAt(0).toUpperCase() + t.slice(1)); }
+      }
+    });
+    return [...seen.values()].sort();
+  }, [comps]);
 
   const filtered = useMemo(() => {
     let list = comps;
-    if (filterSpecies !== "all") list = list.filter(c => c.species === filterSpecies);
+    if (filterSpecies !== "all") list = list.filter(c => (c.species || "").trim().toLowerCase() === filterSpecies.trim().toLowerCase());
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(c =>

@@ -41,6 +41,8 @@ function logLinearRegression(points) {
 
 const fmt  = (n) => n != null ? "$" + Number(n).toLocaleString() : "—";
 const fmtK = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)}`;
+const normKey  = s => (s || "Unknown").trim().toLowerCase();
+const capFirst = s => { const t = (s || "Unknown").trim(); return t ? t.charAt(0).toUpperCase() + t.slice(1) : "Unknown"; };
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
@@ -117,12 +119,12 @@ export default function ResearchAnalysis({ comps }) {
     // ── By species ───────────────────────────────────────────────────────────
     const speciesMap = {};
     priced.forEach(c => {
-      const sp = c.species || "Unknown";
-      if (!speciesMap[sp]) speciesMap[sp] = [];
-      speciesMap[sp].push(Number(c.askingPrice));
+      const key = normKey(c.species);
+      if (!speciesMap[key]) speciesMap[key] = { display: capFirst(c.species), prices: [] };
+      speciesMap[key].prices.push(Number(c.askingPrice));
     });
-    const bySpecies = Object.entries(speciesMap)
-      .map(([sp, ps]) => ({ species: sp, avg: Math.round(mean(ps)), median: Math.round(median(ps)), count: ps.length }))
+    const bySpecies = Object.values(speciesMap)
+      .map(({ display, prices: ps }) => ({ species: display, avg: Math.round(mean(ps)), median: Math.round(median(ps)), count: ps.length }))
       .sort((a, b) => b.avg - a.avg)
       .slice(0, 10);
 
@@ -170,13 +172,13 @@ export default function ResearchAnalysis({ comps }) {
     // Per-species regressions
     const speciesGroups = {};
     pricedAndScored.forEach(c => {
-      const sp = (c.species || "Unknown").trim();
-      if (!speciesGroups[sp]) speciesGroups[sp] = [];
-      speciesGroups[sp].push({ x: c.prismScore, y: Number(c.askingPrice) });
+      const key = normKey(c.species);
+      if (!speciesGroups[key]) speciesGroups[key] = { display: capFirst(c.species), pts: [] };
+      speciesGroups[key].pts.push({ x: c.prismScore, y: Number(c.askingPrice) });
     });
     let colorIdx = 0;
     const speciesRegs = {};
-    Object.entries(speciesGroups).forEach(([sp, pts]) => {
+    Object.entries(speciesGroups).forEach(([key, { display, pts }]) => {
       if (pts.length < 3) return;
       const r = logLinearRegression(pts);
       if (!r) return;
@@ -186,13 +188,13 @@ export default function ResearchAnalysis({ comps }) {
         const x = x0 + (i / 39) * (x1 - x0);
         return { x: Math.round(x * 10) / 10, y: Math.round(Math.exp(r.slope * x + r.intercept)), _curve: true };
       });
-      speciesRegs[sp] = { reg: r, color: SPECIES_CURVE_COLORS[colorIdx++ % SPECIES_CURVE_COLORS.length], curve };
+      speciesRegs[key] = { reg: r, color: SPECIES_CURVE_COLORS[colorIdx++ % SPECIES_CURVE_COLORS.length], curve, display };
     });
     const hasSpeciesCurves = Object.keys(speciesRegs).length >= 2;
 
     const marketPosition = pricedAndScored.map(c => {
-      const sp = (c.species || "Unknown").trim();
-      const activeReg = speciesRegs[sp]?.reg || reg;
+      const key = normKey(c.species);
+      const activeReg = speciesRegs[key]?.reg || reg;
       const expectedPrice = activeReg ? Math.max(0, Math.round(Math.exp(activeReg.slope * c.prismScore + activeReg.intercept))) : null;
       const delta = expectedPrice != null ? Number(c.askingPrice) - expectedPrice : null;
       const pct   = expectedPrice ? Math.round((delta / expectedPrice) * 100) : null;
@@ -202,24 +204,24 @@ export default function ResearchAnalysis({ comps }) {
     // Locality premium analysis (score-adjusted)
     const localityMap = {};
     pricedAndScored.forEach(c => {
-      const loc = (c.locality || "Unknown").trim();
-      if (!localityMap[loc]) localityMap[loc] = [];
-      localityMap[loc].push(c);
+      const key = normKey(c.locality);
+      if (!localityMap[key]) localityMap[key] = { display: capFirst(c.locality), items: [] };
+      localityMap[key].items.push(c);
     });
-    const byLocality = Object.entries(localityMap)
-      .map(([loc, items]) => {
+    const byLocality = Object.values(localityMap)
+      .map(({ display, items }) => {
         const avgActual = Math.round(mean(items.map(c => Number(c.askingPrice))));
         const avgScore  = Math.round(mean(items.map(c => c.prismScore)));
-        const species   = [...new Set(items.map(c => c.species).filter(Boolean))];
+        const species   = [...new Set(items.map(c => capFirst(c.species)).filter(Boolean))];
         const premiums  = items.map(c => {
-          const sp = (c.species || "Unknown").trim();
-          const activeReg = speciesRegs[sp]?.reg || reg;
+          const key = normKey(c.species);
+          const activeReg = speciesRegs[key]?.reg || reg;
           if (!activeReg) return null;
           const expected = Math.exp(activeReg.slope * c.prismScore + activeReg.intercept);
           return (Number(c.askingPrice) - expected) / expected * 100;
         }).filter(x => x != null);
         const avgPremium = premiums.length ? Math.round(mean(premiums)) : null;
-        return { loc, count: items.length, avgActual, avgScore, avgPremium, species };
+        return { loc: display, count: items.length, avgActual, avgScore, avgPremium, species };
       })
       .filter(x => x.avgPremium != null && x.count >= 2)
       .sort((a, b) => a.avgPremium - b.avgPremium);
@@ -229,35 +231,49 @@ export default function ResearchAnalysis({ comps }) {
              speciesRegs, hasSpeciesCurves, byLocality };
   }, [comps]);
 
-  const speciesList = useMemo(() =>
-    [...new Set(comps.map(c => c.species).filter(Boolean))].sort(), [comps]);
+  const speciesList = useMemo(() => {
+    const seen = new Map();
+    comps.forEach(c => {
+      if (c.species) {
+        const key = c.species.trim().toLowerCase();
+        if (!seen.has(key)) seen.set(key, capFirst(c.species));
+      }
+    });
+    return [...seen.values()].sort();
+  }, [comps]);
 
   const { bubbleData, colorDimLabel, topColorValues } = useMemo(() => {
     const base = comps.filter(c => Number(c.askingPrice) > 0);
-    const filtered = driversSpecies === "all" ? base : base.filter(c => c.species === driversSpecies);
+    const filtered = driversSpecies === "all" ? base : base.filter(c => normKey(c.species) === normKey(driversSpecies));
     const colorDim = colorBy === "source" ? "source"
       : driversSpecies === "all" ? "species" : "locality";
     const colorDimLabel = colorBy === "source" ? "vendor"
       : driversSpecies === "all" ? "species" : "locality";
 
+    const colorDisplayMap = {};
     const counts = {};
     filtered.forEach(c => {
-      const v = (c[colorDim] || "Unknown").trim() || "Unknown";
-      counts[v] = (counts[v] || 0) + 1;
+      const raw = (c[colorDim] || "Unknown").trim() || "Unknown";
+      const key = raw.toLowerCase();
+      if (!colorDisplayMap[key]) colorDisplayMap[key] = capFirst(raw);
+      counts[key] = (counts[key] || 0) + 1;
     });
-    const topColorValues = Object.entries(counts)
-      .sort((a, b) => b[1] - a[1]).slice(0, 6).map(([v]) => v);
+    const topColorKeys = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k]) => k);
+    const topColorValues = topColorKeys.map(k => colorDisplayMap[k] || k);
 
     const bubbleData = filtered.map((c, i) => {
-      const colorVal = (c[colorDim] || "Unknown").trim() || "Unknown";
-      const colorIdx = topColorValues.indexOf(colorVal);
+      const raw = (c[colorDim] || "Unknown").trim() || "Unknown";
+      const colorKey = raw.toLowerCase();
+      const colorLabel = colorDisplayMap[colorKey] || capFirst(raw);
+      const colorIdx = topColorKeys.indexOf(colorKey);
       const color = colorIdx >= 0 ? BUBBLE_PALETTE[colorIdx] : "#3d4f60";
       const sizeNum = SIZE_NUM[c.sizeClass] || 2;
       const jitter = ((i * 0.6180339887) % 1 - 0.5) * 0.38;
       const condRank = COND_RANK[c.condition] || 3;
       return {
         id: c.id, x: sizeNum + jitter, y: Number(c.askingPrice),
-        color, colorLabel: colorVal,
+        color, colorLabel,
         species: c.species || "Unknown", locality: c.locality || "Unknown",
         source: c.source || "Unknown",
         sizeLabel: SIZE_SHORT[sizeNum] || c.sizeClass,
@@ -393,10 +409,10 @@ export default function ResearchAnalysis({ comps }) {
           </div>
           {hasSpeciesCurves && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
-              {Object.entries(speciesRegs).map(([sp, { color }]) => (
-                <div key={sp} style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "var(--text-muted)" }}>
+              {Object.entries(speciesRegs).map(([key, { color, display }]) => (
+                <div key={key} style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "var(--text-muted)" }}>
                   <svg width="18" height="4"><line x1="0" y1="2" x2="18" y2="2" stroke={color} strokeWidth="1.5" strokeDasharray="4 2" /></svg>
-                  {sp}
+                  {display}
                 </div>
               ))}
             </div>
@@ -417,8 +433,8 @@ export default function ResearchAnalysis({ comps }) {
                   if (!active || !payload?.length) return null;
                   const d = payload[0].payload;
                   if (d._curve) return null;
-                  const sp = (d.label || "").trim();
-                  const activeReg = speciesRegs[sp]?.reg || reg;
+                  const key = normKey(d.label);
+                  const activeReg = speciesRegs[key]?.reg || reg;
                   const expected = activeReg ? Math.round(Math.exp(activeReg.slope * d.x + activeReg.intercept)) : null;
                   return (
                     <div style={CUSTOM_TOOLTIP_STYLE}>
@@ -431,8 +447,8 @@ export default function ResearchAnalysis({ comps }) {
                 }}
               />
               {hasSpeciesCurves
-                ? Object.entries(speciesRegs).map(([sp, { curve, color }]) => (
-                    <Scatter key={sp} data={curve} fill="transparent"
+                ? Object.entries(speciesRegs).map(([key, { curve, color }]) => (
+                    <Scatter key={key} data={curve} fill="transparent"
                       line={{ stroke: color, strokeWidth: 1.5, strokeDasharray: "5 3" }}
                       shape={() => <g />} isAnimationActive={false}
                     />
@@ -446,8 +462,8 @@ export default function ResearchAnalysis({ comps }) {
               }
               <Scatter data={regPoints} fill="#00d4ff">
                 {regPoints.map((p, i) => {
-                  const sp = (p.label || "").trim();
-                  const spEntry = speciesRegs[sp];
+                  const key = normKey(p.label);
+                  const spEntry = speciesRegs[key];
                   const activeReg = spEntry?.reg || reg;
                   const neutralColor = spEntry?.color || "#00d4ff";
                   const expected = activeReg ? Math.exp(activeReg.slope * p.x + activeReg.intercept) : p.y;
