@@ -55,7 +55,7 @@ export default function VerifyView({ payload }) {
     const { sig, ...dataToVerify } = payload;
     if (!sig) { setSigStatus("unsigned"); return; }
     computeHmac(JSON.stringify(dataToVerify))
-      .then(computed => setSigStatus(computed === sig ? "valid" : "invalid"))
+      .then(computed => setSigStatus(computed.startsWith(sig) ? "valid" : "invalid"))
       .catch(() => setSigStatus("invalid"));
   }, []);
 

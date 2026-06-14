@@ -517,7 +517,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
     ps: primaryCtx.score,
     gr: grade.label,
     cg: compoundGrades.map(c => c.key),
-    pt: docData.provTier,
+    pt: (docData.provTier || "").replace(/\s*\(.*$/, "").trim(),
     at: {
       in: attestations.integrity,
       di: attestations.disclosure,
@@ -530,9 +530,9 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
   useEffect(() => {
     computeHmac(JSON.stringify(certData))
       .then(sig => {
-        const signed = { ...certData, sig };
+        const signed = { ...certData, sig: sig.slice(0, 20) };
         const url = `${PRISM_BASE}?verify=${safeB64Encode(JSON.stringify(signed))}`;
-        return QRCode.toDataURL(url, { width: 160, margin: 2, color: { dark: "#0d1520", light: "#ffffff" } });
+        return QRCode.toDataURL(url, { width: 300, margin: 2, errorCorrectionLevel: "L", color: { dark: "#0d1520", light: "#ffffff" } });
       })
       .then(setQrUrl)
       .catch(console.error);
@@ -595,7 +595,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
           </div>
           {qrUrl && (
             <div style={{ textAlign: "center" }}>
-              <img src={qrUrl} width={80} height={80} alt="QR" style={{ display: "block" }} />
+              <img src={qrUrl} width={110} height={110} alt="QR" style={{ display: "block" }} />
               <div style={{ fontSize: "7px", color: "#507090", marginTop: "2px", letterSpacing: "0.06em" }}>SCAN TO VERIFY</div>
             </div>
           )}
@@ -717,8 +717,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
 
         {/* Footer */}
         <div style={{ fontSize: "8px", color: "#8090a0", lineHeight: 1.5 }}>
-          Scan QR to verify at <strong>aaroncelestian.github.io/PRISM</strong> — encodes all six PRISM scores, grade, compound grades, provenance tier, and attestation flags.
-          Photos and extended notes are embedded in this document only. Certificate ID: {certId}.
+          Scan QR to verify at <strong>aaroncelestian.github.io/PRISM</strong>
         </div>
       </div>
     </div>
