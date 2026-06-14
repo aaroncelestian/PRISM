@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ChevronRight, ChevronLeft, HelpCircle, X } from "lucide-react";
-import { DIMS, CONTEXTS } from "../data/prism.js";
+import { DIMS, CONTEXTS, WEIGHTS, GRADES } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import ScorePanel from "./ScorePanel.jsx";
 import TierSelector from "./TierSelector.jsx";
@@ -133,6 +133,12 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
 
   const isLastStep = step === TOTAL_STEPS - 1;
   const { isMobile } = useBreakpoint();
+  const [showScorePanel, setShowScorePanel] = useState(false);
+  const quickScore = useMemo(() => {
+    const W = WEIGHTS[ctx];
+    return Math.round(Object.entries(W).reduce((a, [k, w]) => a + (scores[k] ?? 50) * w, 0));
+  }, [scores, ctx]);
+  const quickGrade = GRADES.find(g => quickScore >= g.min) || GRADES[GRADES.length - 1];
 
   return (
     <div style={{
@@ -141,14 +147,16 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
       gridTemplateColumns: isMobile ? undefined : "1fr 380px",
       flex: 1,
       minHeight: 0,
-      overflow: isMobile ? "auto" : "hidden",
+      overflow: "hidden",
     }}>
 
       {/* ── Left: wizard content ── */}
       <div style={{
         display: "flex",
         flexDirection: "column",
-        borderRight: "1px solid var(--border)",
+        flex: isMobile ? 1 : undefined,
+        minHeight: 0,
+        borderRight: isMobile ? "none" : "1px solid var(--border)",
         overflow: "hidden",
       }}>
 
@@ -400,7 +408,10 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                 Your PRISM score is ready!
               </h2>
               <p style={{ fontSize: "13px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: "28px" }}>
-                Check the panel on the right to see your score, grade, and profile.
+                {isMobile
+                  ? "Tap the score bar below to see your full grade and profile."
+                  : "Check the panel on the right to see your score, grade, and profile."
+                }{" "}
                 Switch to Expert Mode anytime to fine-tune individual values.
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "center" }}>
@@ -452,6 +463,42 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
             </div>
           )}
         </div>
+
+        {/* ── Mobile score mini bar ── */}
+        {isMobile && (
+          <button
+            onClick={() => setShowScorePanel(true)}
+            style={{
+              padding: "9px 18px",
+              background: `${quickGrade.color}06`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexShrink: 0,
+              cursor: "pointer",
+              border: "none",
+              borderTop: "1px solid var(--border-dim)",
+              width: "100%",
+              textAlign: "left",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontFamily: "var(--mono)", fontSize: "22px", fontWeight: 600, color: quickGrade.color, lineHeight: 1 }}>
+                {quickScore}
+              </span>
+              <span style={{ fontSize: "9px", color: "var(--text-muted)", marginTop: "2px" }}>/100</span>
+              <span style={{
+                padding: "3px 9px", borderRadius: "3px",
+                background: `${quickGrade.color}12`,
+                border: `1px solid ${quickGrade.color}30`,
+                color: quickGrade.color, fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em",
+              }}>
+                {quickGrade.emoji} {quickGrade.label}
+              </span>
+            </div>
+            <span style={{ fontSize: "10px", color: "rgba(0,212,255,0.55)", letterSpacing: "0.06em" }}>View Score ›</span>
+          </button>
+        )}
 
         {/* ── Navigation ── */}
         <div style={{
@@ -517,13 +564,40 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
         </div>
       </div>
 
-      {/* ── Right: live score panel ── */}
-      <div style={isMobile
-        ? { borderTop: "1px solid var(--border)" }
-        : { overflow: "hidden", display: "flex", flexDirection: "column" }
-      }>
-        <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} />
-      </div>
+      {/* ── Right: live score panel (desktop only) ── */}
+      {!isMobile && (
+        <div style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} />
+        </div>
+      )}
+
+      {/* ── Mobile: score panel modal overlay ── */}
+      {isMobile && showScorePanel && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 300,
+          background: "var(--bg)",
+          display: "flex", flexDirection: "column",
+          overflow: "hidden",
+        }}>
+          <div style={{
+            padding: "10px 16px",
+            borderBottom: "1px solid var(--border)",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            flexShrink: 0, background: "var(--bg-panel)",
+          }}>
+            <span style={{ fontSize: "11px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase" }}>PRISM Score</span>
+            <button
+              onClick={() => setShowScorePanel(false)}
+              style={{ background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-dim)", display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", padding: "4px 10px", cursor: "pointer" }}
+            >
+              <X size={13} /> Close
+            </button>
+          </div>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
