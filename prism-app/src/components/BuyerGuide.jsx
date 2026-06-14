@@ -411,10 +411,12 @@ export default function BuyerGuide({ onClose }) {
   const [localitySearch, setLocalitySearch] = useState("");
   const [expandedLocality, setExpandedLocality] = useState(null);
   const [expandedLevel, setExpandedLevel] = useState(null);
+  const [localitySigFilter, setLocalitySigFilter] = useState("world_class");
+  const [speciesSearch, setSpeciesSearch] = useState("");
 
   const localityResults = localitySearch.trim().length >= 2
     ? searchLocalities(localitySearch)
-    : LOCALITIES.filter(l => l.significance === "world_class");
+    : LOCALITIES.filter(l => localitySigFilter === "all" ? true : l.significance === localitySigFilter);
 
   const tabs = [
     { key: "crystal",    label: "Crystal Quality" },
@@ -607,11 +609,32 @@ export default function BuyerGuide({ onClose }) {
                 />
               </div>
 
-              {localitySearch.trim().length < 2 && (
-                <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase" }}>
-                  Showing world-class localities — search to filter
-                </div>
-              )}
+              {/* Significance filter buttons */}
+              <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+                {[
+                  { key: "world_class", label: "World-Class" },
+                  { key: "exceptional", label: "Exceptional" },
+                  { key: "notable",     label: "Notable" },
+                  { key: "all",         label: "All" },
+                ].map(({ key, label }) => {
+                  const active = localitySigFilter === key;
+                  const col = key === "world_class" ? "#e8b840" : key === "exceptional" ? "#90c0f0" : key === "notable" ? "#00c880" : "var(--text-muted)";
+                  return (
+                    <button key={key} onClick={() => setLocalitySigFilter(key)} style={{
+                      padding: "4px 10px", borderRadius: "4px", fontSize: "10px", cursor: "pointer",
+                      border: active ? `1px solid ${col}` : "1px solid var(--border-dim)",
+                      background: active ? `${col}18` : "var(--bg-panel)",
+                      color: active ? col : "var(--text-muted)", fontWeight: active ? 700 : 400,
+                      letterSpacing: "0.06em",
+                    }}>{label}</button>
+                  );
+                })}
+                {localitySearch.trim().length < 2 && (
+                  <span style={{ fontSize: "9px", letterSpacing: "0.12em", color: "var(--text-muted)", textTransform: "uppercase", alignSelf: "center", marginLeft: "4px" }}>
+                    {localityResults.length} localities
+                  </span>
+                )}
+              </div>
 
               {localityResults.length === 0 && localitySearch.trim().length >= 2 && (
                 <div style={{ padding: "14px", textAlign: "center", color: "var(--text-muted)", fontSize: "11px" }}>
@@ -619,6 +642,7 @@ export default function BuyerGuide({ onClose }) {
                 </div>
               )}
 
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px", flexShrink: 0 }}>
               {localityResults.map(loc => {
                 const sig = SIGNIFICANCE[loc.significance];
                 const st = STATUS_LOC[loc.status];
@@ -662,6 +686,7 @@ export default function BuyerGuide({ onClose }) {
                   </div>
                 );
               })}
+              </div>
             </>
           )}
 
@@ -672,12 +697,43 @@ export default function BuyerGuide({ onClose }) {
                 <strong style={{ color: "var(--text)" }}>How to use:</strong> Species rarity measures how uncommon the mineral species is, not how nice the crystal is. If a dealer implies a common species is rare to justify a high price, that's a red flag. Fine crystal quality of a common species should push Crystal Quality — not Species Rarity.
               </div>
 
-              <div style={{ padding: "8px 12px", background: "rgba(255,160,40,0.06)", border: "1px solid rgba(255,160,40,0.25)", borderRadius: "5px", fontSize: "11px", color: "#ffa028", lineHeight: 1.5 }}>
-                ⚠️ The species below should score <strong>10–30</strong> on Species Rarity regardless of how impressive the crystal is. A gem-quality pyrite cube is a beautiful crystal — but pyrite is not a rare species.
+              {/* Search */}
+              <div style={{ position: "relative" }}>
+                <Search size={13} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+                <input
+                  value={speciesSearch}
+                  onChange={e => setSpeciesSearch(e.target.value)}
+                  placeholder="Search species name or forms..."
+                  style={{
+                    width: "100%", padding: "9px 12px 9px 30px",
+                    background: "var(--bg-panel)", border: "1px solid var(--border)",
+                    borderRadius: "5px", color: "var(--text)", fontSize: "12px",
+                    boxSizing: "border-box", outline: "none",
+                  }}
+                />
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {COMMON_SPECIES.map(sp => (
+              <div style={{ padding: "8px 12px", background: "rgba(255,160,40,0.06)", border: "1px solid rgba(255,160,40,0.25)", borderRadius: "5px", fontSize: "11px", color: "#ffa028", lineHeight: 1.5 }}>
+                ⚠️ The species below should score <strong>10–30</strong> on Species Rarity regardless of how impressive the crystal is. A gem-quality fluorite cube is a beautiful crystal — but fluorite is not a rare species.
+              </div>
+
+              {(() => {
+                const q = speciesSearch.trim().toLowerCase();
+                const filtered = q.length < 2
+                  ? COMMON_SPECIES
+                  : COMMON_SPECIES.filter(sp =>
+                      sp.name.toLowerCase().includes(q) ||
+                      sp.forms.toLowerCase().includes(q)
+                    );
+                return (
+                  <>
+                    {filtered.length === 0 && (
+                      <div style={{ padding: "14px", textAlign: "center", color: "var(--text-muted)", fontSize: "11px" }}>
+                        No matching species found.
+                      </div>
+                    )}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      {filtered.map(sp => (
                   <div key={sp.name} style={{ padding: "10px 13px", background: "var(--bg-panel)", border: "1px solid var(--border-dim)", borderRadius: "5px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "4px" }}>
                       <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)" }}>{sp.name}</span>
@@ -688,8 +744,11 @@ export default function BuyerGuide({ onClose }) {
                     <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "3px" }}>Forms: {sp.forms}</div>
                     <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.5 }}>{sp.note}</div>
                   </div>
-                ))}
-              </div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
 
               <div style={{ padding: "10px 12px", background: "var(--bg-panel)", border: "1px solid var(--border-dim)", borderRadius: "5px", fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6 }}>
                 💡 <strong style={{ color: "var(--text)" }}>Genuinely rare species</strong> include: phoenicochroite, semseyite, sartorite, thalenite, clinohedrite, olmiite, esperite — minerals from just one or two localities globally. If a dealer claims rarity, ask: "How many known localities produce this species?"
