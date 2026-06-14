@@ -187,7 +187,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
           </div>
         )}
 
-        {/* Step counter + Start Over */}
+        {/* Step counter + context badge */}
         <div style={{
           padding: "10px 22px",
           borderBottom: "1px solid var(--border-dim)",
@@ -199,24 +199,20 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
           <span style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
             Step {step + 1} of {TOTAL_STEPS}
           </span>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {step > 0 && (() => { const c = CONTEXTS.find(c => c.key === ctx); return c ? (
+              <button
+                onClick={() => setStep(0)}
+                title="Change evaluation context"
+                style={{ display: "flex", alignItems: "center", gap: "4px", background: "rgba(0,212,255,0.05)", border: "1px solid rgba(0,212,255,0.2)", borderRadius: "3px", padding: "2px 8px", cursor: "pointer", fontSize: "10px", color: "rgba(0,212,255,0.65)", letterSpacing: "0.06em" }}
+              >
+                {c.icon} {c.label}
+              </button>
+            ) : null; })()}
             {currentDim && (
               <span style={{ fontSize: "10px", color: "rgba(0,212,255,0.5)", letterSpacing: "0.08em" }}>
                 {currentDim.icon} {currentDim.label}
               </span>
-            )}
-            {step > 0 && (
-              <button
-                onClick={() => { setStep(0); onReset?.(); }}
-                style={{
-                  background: "none", border: "none", cursor: "pointer",
-                  fontSize: "10px", color: "var(--text-muted)",
-                  letterSpacing: "0.08em", textDecoration: "underline",
-                  padding: "2px 0",
-                }}
-              >
-                ↺ Start Over
-              </button>
             )}
           </div>
         </div>

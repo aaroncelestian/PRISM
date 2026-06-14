@@ -199,18 +199,6 @@ export default function PRISM() {
           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
 
 
-            {/* Meteorite ID button */}
-            <button onClick={() => setShowMeteoriteID(true)} title="Meteorite identification guide"
-              style={{ display: "flex", alignItems: "center", gap: "4px", padding: "5px 11px",
-                background: "transparent", border: "1px solid var(--border)", borderRadius: "5px",
-                color: "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em",
-                cursor: "pointer", transition: "all 0.15s", flexShrink: 0 }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(0,212,255,0.35)"; e.currentTarget.style.color = "var(--cyan)"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-muted)"; }}
-            >
-              Meteor ID
-            </button>
-
             {/* Mode toggle */}
             <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "5px", overflow: "hidden" }}>
               {[
@@ -256,24 +244,33 @@ export default function PRISM() {
                 <div data-tools-menu style={{ position: "relative" }}>
                   <button onClick={() => setShowTools(t => !t)}
                     style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: showTools ? "rgba(0,212,255,0.08)" : "transparent", border: `1px solid ${showTools ? "rgba(0,212,255,0.35)" : "var(--border)"}`, borderRadius: "5px", color: showTools ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.15s" }}>
-                    �️ Tools ▾
+                    🛠️ Tools ▾
                   </button>
                   {showTools && (
                     <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 200, minWidth: "180px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", boxShadow: "0 8px 24px rgba(0,0,0,0.45)", overflow: "hidden" }}>
                       {[
-                        { label: "❓ Help / Guide",        action: () => { setShowHelp(true);       setShowTools(false); } },
-                        { label: "📤 Export Record",      action: () => { setShowExport(true);     setShowTools(false); } },
-                        { label: "🎖️ Certificate",        action: () => { setShowCert(true);       setShowTools(false); } },
-                        { label: "🎓 Buyer Guide",        action: () => { setShowBuyerGuide(true); setShowTools(false); } },
-                        { label: "💰 Sell / Trade",       action: () => { setShowPricing(true);    setShowTools(false); } },
-                        { label: "🏛️ Donate to Museum",  action: () => { setShowDonation(true);  setShowTools(false); } },
-                      ].map(item => (
-                        <button key={item.label} onClick={item.action} style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 16px", background: "none", border: "none", borderBottom: "1px solid var(--border-dim)", color: "var(--text-dim)", fontSize: "12px", cursor: "pointer", transition: "background 0.1s" }}
-                          onMouseEnter={e => e.currentTarget.style.background = "rgba(0,212,255,0.06)"}
-                          onMouseLeave={e => e.currentTarget.style.background = "none"}>
-                          {item.label}
-                        </button>
-                      ))}
+                        { type: "header", label: "Reference" },
+                        { label: "❓ Help / Guide",         action: () => { setShowHelp(true);        setShowTools(false); } },
+                        { label: "🎓 Buyer Guide",         action: () => { setShowBuyerGuide(true);  setShowTools(false); } },
+                        { label: "☄️ Meteorite ID",        action: () => { setShowMeteoriteID(true); setShowTools(false); } },
+                        { type: "header", label: "Valuation" },
+                        { label: "📤 Quick Summary",       action: () => { setShowExport(true);      setShowTools(false); } },
+                        { label: "📜 Formal Certificate",  action: () => { setShowCert(true);        setShowTools(false); } },
+                        { label: "💰 Sell / Trade",        action: () => { setShowPricing(true);     setShowTools(false); } },
+                        { label: "🏛️ Donate to Museum",   action: () => { setShowDonation(true);   setShowTools(false); } },
+                      ].map((item, idx) =>
+                        item.type === "header" ? (
+                          <div key={idx} style={{ padding: "7px 16px 3px", fontSize: "9px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.14em", textTransform: "uppercase", borderTop: idx > 0 ? "1px solid var(--border-dim)" : "none", marginTop: idx > 0 ? "2px" : "0" }}>
+                            {item.label}
+                          </div>
+                        ) : (
+                          <button key={item.label} onClick={item.action} style={{ display: "block", width: "100%", textAlign: "left", padding: "9px 16px", background: "none", border: "none", color: "var(--text-dim)", fontSize: "12px", cursor: "pointer", transition: "background 0.1s" }}
+                            onMouseEnter={e => e.currentTarget.style.background = "rgba(0,212,255,0.06)"}
+                            onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                            {item.label}
+                          </button>
+                        )
+                      )}
                     </div>
                   )}
                 </div>
@@ -358,7 +355,7 @@ export default function PRISM() {
             </button>
             <button onClick={() => setShowTools(t => !t)}
               style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: showTools ? "rgba(0,212,255,0.08)" : "transparent", border: `1px solid ${showTools ? "rgba(0,212,255,0.35)" : "var(--border)"}`, color: showTools ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
-              �️ Tools ▾
+              🛠️ Tools ▾
             </button>
           </div>
         )}
@@ -369,17 +366,28 @@ export default function PRISM() {
             <div onClick={() => setShowTools(false)} style={{ position: "fixed", inset: 0, zIndex: 199 }} />
             <div style={{ position: "fixed", top: "96px", right: "14px", zIndex: 200, minWidth: "200px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", boxShadow: "0 8px 24px rgba(0,0,0,0.5)", overflow: "hidden" }}>
               {[
-                { label: "❓ Help / Guide",       action: () => { setShowHelp(true);       setShowTools(false); } },
-                { label: "📤 Export Record",     action: () => { setShowExport(true);     setShowTools(false); } },
-                { label: "🎖️ Certificate",       action: () => { setShowCert(true);       setShowTools(false); } },
-                { label: "🎓 Buyer Guide",       action: () => { setShowBuyerGuide(true); setShowTools(false); } },
-                { label: "💰 Sell / Trade",      action: () => { setShowPricing(true);    setShowTools(false); } },
-                { label: "🏛️ Donate to Museum", action: () => { setShowDonation(true);  setShowTools(false); } },
-              ].map(item => (
-                <button key={item.label} onClick={item.action} style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", background: "none", border: "none", borderBottom: "1px solid var(--border-dim)", color: "var(--text-dim)", fontSize: "13px", cursor: "pointer" }}>
-                  {item.label}
-                </button>
-              ))}
+                { type: "header", label: "Reference" },
+                { label: "❓ Help / Guide",         action: () => { setShowHelp(true);        setShowTools(false); } },
+                { label: "🎓 Buyer Guide",         action: () => { setShowBuyerGuide(true);  setShowTools(false); } },
+                { label: "☄️ Meteorite ID",        action: () => { setShowMeteoriteID(true); setShowTools(false); } },
+                { type: "header", label: "Valuation" },
+                { label: "📤 Quick Summary",       action: () => { setShowExport(true);      setShowTools(false); } },
+                { label: "📜 Formal Certificate",  action: () => { setShowCert(true);        setShowTools(false); } },
+                { label: "💰 Sell / Trade",        action: () => { setShowPricing(true);     setShowTools(false); } },
+                { label: "🏛️ Donate to Museum",   action: () => { setShowDonation(true);   setShowTools(false); } },
+              ].map((item, idx) =>
+                item.type === "header" ? (
+                  <div key={idx} style={{ padding: "8px 16px 3px", fontSize: "9px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.14em", textTransform: "uppercase", borderTop: idx > 0 ? "1px solid var(--border-dim)" : "none", marginTop: idx > 0 ? "2px" : "0" }}>
+                    {item.label}
+                  </div>
+                ) : (
+                  <button key={item.label} onClick={item.action} style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", background: "none", border: "none", color: "var(--text-dim)", fontSize: "13px", cursor: "pointer" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(0,212,255,0.06)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                    {item.label}
+                  </button>
+                )
+              )}
             </div>
           </>
         )}
