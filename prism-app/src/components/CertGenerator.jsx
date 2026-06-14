@@ -66,22 +66,43 @@ const PROV_TIERS = [
 
 function PhotoCapture({ label, value, onChange }) {
   const ref = useRef();
-  const handleFile = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      onChange(reader.result);
+
+  const loadAndCompress = (file) => {
+    const blobUrl = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.onload = () => {
+      const MAX = 1400;
+      const iw = img.naturalWidth || img.width || MAX;
+      const ih = img.naturalHeight || img.height || MAX;
+      const scale = Math.min(1, MAX / Math.max(iw, ih));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(iw * scale);
+      canvas.height = Math.round(ih * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(blobUrl);
+      onChange(canvas.toDataURL("image/jpeg", 0.85));
       if (ref.current) ref.current.value = "";
     };
-    reader.readAsDataURL(file);
+    img.onerror = () => {
+      URL.revokeObjectURL(blobUrl);
+      const reader = new FileReader();
+      reader.onload = () => { onChange(reader.result); if (ref.current) ref.current.value = ""; };
+      reader.readAsDataURL(file);
+    };
+    img.src = blobUrl;
   };
+
+  const handleFile = (e) => {
+    const file = e.target.files[0];
+    if (file) loadAndCompress(file);
+  };
+
   return (
     <div>
-      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" onChange={handleFile} style={{ display: "none" }} />
+      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleFile} style={{ display: "none" }} />
       {value ? (
         <div style={{ position: "relative", display: "inline-block", width: "100%" }}>
-          <img key={value.slice(0, 32)} src={value} alt={label} style={{ width: "100%", maxHeight: "110px", objectFit: "cover", borderRadius: "4px", display: "block" }} />
+          <img src={value} alt={label} style={{ width: "100%", maxHeight: "110px", objectFit: "cover", borderRadius: "4px", display: "block" }} />
           <button onClick={() => { onChange(null); if (ref.current) ref.current.value = ""; }} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.7)", border: "none", borderRadius: "3px", color: "#fff", fontSize: "10px", padding: "2px 6px", cursor: "pointer" }}>✕ Remove</button>
         </div>
       ) : (
