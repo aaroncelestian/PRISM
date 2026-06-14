@@ -57,7 +57,7 @@ export default function PRISM() {
   const [confirmReset,   setConfirmReset]   = useState(false);
   const resetTimerRef = useRef(null);
   const { records, saveRecord, deleteRecord, clearAll, importRecords } = useLocalCollection();
-  const { comps, addComp, updateComp, deleteComp, clearAll: clearComps, importComps } = useComparables();
+  const { comps, addComp, updateComp, deleteComp, clearAll: clearComps, importComps, history: researchHistory, deleteFromHistory, clearHistory } = useComparables();
   const [verifyPayload, setVerifyPayload] = useState(null);
   const [showTools, setShowTools] = useState(false);
   const { isMobile } = useBreakpoint();
@@ -419,9 +419,10 @@ export default function PRISM() {
           onClearAll={clearAll}
           onClose={() => setShowHistory(false)}
           onImport={importRecords}
-          comps={comps}
-          onDeleteComp={deleteComp}
-          onClearComps={clearComps}
+          comps={researchHistory}
+          onDeleteComp={deleteFromHistory}
+          onClearComps={clearHistory}
+          onOpenResearch={() => { setShowHistory(false); setMode("research"); }}
         />
       )}
         {mode === "wizard" ? (

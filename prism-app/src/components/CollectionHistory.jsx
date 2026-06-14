@@ -42,7 +42,7 @@ function saveToFile(data, filename) {
   URL.revokeObjectURL(url);
 }
 
-export default function CollectionHistory({ records, onLoad, onDelete, onClearAll, onClose, onImport, comps = [], onDeleteComp, onClearComps }) {
+export default function CollectionHistory({ records, onLoad, onDelete, onClearAll, onClose, onImport, comps = [], onDeleteComp, onClearComps, onOpenResearch }) {
   const [tab, setTab]               = useState("collection");
   const [query, setQuery]           = useState("");
   const [expanded, setExpanded]     = useState(null);
@@ -406,12 +406,14 @@ export default function CollectionHistory({ records, onLoad, onDelete, onClearAl
               </div>
             ) : (
               <>
-                <div style={{ fontSize: "10px", color: "var(--text-muted)", opacity: 0.7, marginRight: "auto" }}>
-                  Full research tools available in the Research tab
-                </div>
-                <button onClick={() => setConfirmClearComps(true)} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "transparent", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer" }}>
+                <button onClick={() => setConfirmClearComps(true)} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "transparent", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer", marginRight: "auto" }}>
                   <Trash2 size={11} /> Clear all
                 </button>
+                {onOpenResearch && (
+                  <button onClick={onOpenResearch} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 16px", background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.35)", borderRadius: "4px", color: "var(--cyan)", fontSize: "11px", fontWeight: 600, cursor: "pointer" }}>
+                    Open in Research
+                  </button>
+                )}
               </>
             )}
           </div>
