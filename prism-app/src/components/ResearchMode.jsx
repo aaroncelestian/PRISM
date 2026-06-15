@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from "react";
-import { Plus, X, Search, Edit2, Trash2, Award, Camera, Download, FolderOpen, ExternalLink, Upload } from "lucide-react";
+import { Plus, X, Search, Edit2, Trash2, Award, Camera, Download, FolderOpen, ExternalLink, Upload, Bot, Copy, Check } from "lucide-react";
 import { GRADES, WEIGHTS, CONTEXTS, THRESHOLD } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import { COMPS_SCHEMA } from "../version.js";
@@ -736,6 +736,8 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
   const [filterSpecies, setFilter]  = useState("all");
   const [showForm, setShowForm]     = useState(false);
   const [editingComp, setEditing]   = useState(null);
+  const [showAIPrompt, setShowAIPrompt] = useState(false);
+  const [promptCopied, setPromptCopied] = useState(false);
 
   const speciesList = useMemo(() => {
     const seen = new Map();
@@ -913,6 +915,10 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
           <Upload size={13} /> CSV
         </button>
         <input ref={csvImportRef} type="file" accept=".csv,text/csv" onChange={handleCSVImport} style={{ display: "none" }} />
+        <button onClick={() => setShowAIPrompt(true)} title="Get AI data collection prompt"
+          style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: "rgba(124,92,252,0.08)", border: "1px solid rgba(124,92,252,0.35)", borderRadius: "4px", color: "#a07cfc", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
+          <Bot size={13} /> AI Prompt
+        </button>
       </div>
       <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "8px", opacity: 0.7 }}>
         💡 Saves to this device only — store the file in iCloud Drive, Google Drive, or Dropbox to access on any device
@@ -928,6 +934,87 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
           </button>
         </div>
       )}
+
+      {/* AI Prompt modal */}
+      {showAIPrompt && (() => {
+        const PROMPT = `I need you to search the internet for mineral specimens currently for sale and return the results as a JSON array I can import into my mineral pricing tool.
+
+Search for: [SPECIES] specimens for sale
+Optional filters: [LOCALITY], [SIZE], [PRICE RANGE]
+
+For each listing you find, extract the following fields and return them in this exact JSON format:
+
+[
+  {
+    "species": "exact mineral species name",
+    "locality": "Mine name, Region, Country (as specific as possible)",
+    "sizeClass": "one of: thumbnail | miniature | small_cab | cabinet | large_cab | museum",
+    "condition": "one of: pristine | excellent | good | repaired | damaged",
+    "askingPrice": 000,
+    "soldPrice": null,
+    "source": "Vendor or platform name (e.g. iRocks, eBay, Heritage Auctions)",
+    "sourceUrl": "https://direct-link-to-this-specific-listing",
+    "notes": "Brief description: crystal habit, color, size in cm, any damage or notable features",
+    "photoUrl": "https://direct-link-to-the-main-photo-of-this-specimen"
+  }
+]
+
+Size class guide:
+- thumbnail  = under 2.5 cm
+- miniature  = 2.5 – 4.5 cm
+- small_cab  = 4.5 – 7.5 cm
+- cabinet    = 7.5 – 12 cm
+- large_cab  = 12 – 18 cm
+- museum     = over 18 cm
+
+Condition guide:
+- pristine  = gem, no damage at all
+- excellent = display quality, minor wear only
+- good      = minor chips or dings visible
+- repaired  = restored, glued, or repaired damage
+- damaged   = significant breakage
+
+Rules:
+- Only include listings with a visible asking price.
+- Include a direct URL to the individual specimen page (not a category page).
+- Include a direct URL to the main specimen photo if visible.
+- Do not include duplicate listings.
+- Return ONLY the raw JSON array — no explanation, no markdown fences, no extra text.
+- If a field is unknown, use null for numbers or "" for strings.
+- Aim for 10–20 listings.`;
+
+        const handleCopy = () => {
+          navigator.clipboard.writeText(PROMPT).then(() => {
+            setPromptCopied(true);
+            setTimeout(() => setPromptCopied(false), 2000);
+          });
+        };
+
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+            onClick={e => { if (e.target === e.currentTarget) setShowAIPrompt(false); }}>
+            <div style={{ background: "var(--bg-panel)", border: "1px solid rgba(124,92,252,0.4)", borderRadius: "10px", width: "100%", maxWidth: "640px", maxHeight: "85vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Bot size={16} style={{ color: "#a07cfc" }} />
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text)" }}>AI Data Collection Prompt</span>
+                </div>
+                <button onClick={() => setShowAIPrompt(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "2px" }}><X size={16} /></button>
+              </div>
+              <div style={{ padding: "14px 20px", fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.6, borderBottom: "1px solid var(--border)" }}>
+                Paste this into <strong style={{ color: "var(--text-dim)" }}>Claude</strong> or <strong style={{ color: "var(--text-dim)" }}>Gemini</strong> (with web search enabled). Replace the bracketed placeholders, then save the JSON output and import it with the <strong style={{ color: "var(--text-dim)" }}>Open</strong> button.
+              </div>
+              <pre style={{ flex: 1, overflowY: "auto", margin: 0, padding: "16px 20px", fontSize: "11px", fontFamily: "var(--mono)", color: "var(--text-dim)", lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word", background: "var(--bg-input)" }}>{PROMPT}</pre>
+              <div style={{ padding: "12px 20px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end" }}>
+                <button onClick={handleCopy}
+                  style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 18px", background: promptCopied ? "rgba(0,200,128,0.12)" : "rgba(124,92,252,0.12)", border: `1px solid ${promptCopied ? "rgba(0,200,128,0.5)" : "rgba(124,92,252,0.5)"}`, borderRadius: "5px", color: promptCopied ? "#00c880" : "#a07cfc", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
+                  {promptCopied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy Prompt</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Stats row */}
       {comps.length > 0 && (
