@@ -1,17 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, Award, Camera, Printer, Copy, FileDown, AlertTriangle } from "lucide-react";
 import QRCode from "qrcode";
-import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades } from "../data/prism.js";
+import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades, applyNonLinearTransform } from "../data/prism.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+const GRADE_FOR = Object.fromEntries(CONTEXTS.map((c, i) => [c.key, GRADES[i]]));
+
 function computeContextScore(ctxKey, scores) {
   const W = WEIGHTS[ctxKey];
-  return Math.round(Object.entries(W).reduce((a, [k, w]) => a + (scores[k] ?? 50) * w, 0));
-}
-
-function getGrade(score) {
-  return GRADES.find(g => score >= g.min) || GRADES[GRADES.length - 1];
+  const adj = Object.fromEntries(Object.entries(scores).map(([k, v]) => [k, applyNonLinearTransform(k, v ?? 50)]));
+  return Math.round(Object.entries(W).reduce((a, [k, w]) => a + (adj[k] ?? 50) * w, 0));
 }
 
 const HMAC_SECRET = "prism-cert-integrity-v1-2024-mineral-evaluation";
@@ -42,10 +41,12 @@ function generateCertId() {
 function computeDisplayScore(scores) {
   const all = CONTEXTS.map(c => {
     const score = computeContextScore(c.key, scores);
-    return { key: c.key, score };
+    return { key: c.key, score, grade: GRADE_FOR[c.key] };
   });
-  const best = all.find(c => c.score >= THRESHOLD) || all[0];
-  return { score: best.score, grade: getGrade(best.score) };
+  const passing = all.filter(c => c.score >= THRESHOLD);
+  const best = passing.length > 0 ? passing.reduce((b, c) => c.score > b.score ? c : b) : all[0];
+  const allCtxScores = Object.fromEntries(all.map(c => [c.key, c.score]));
+  return { score: best.score, grade: best.grade, compoundGrades: detectCompoundGrades(allCtxScores) };
 }
 
 const SIZE_CLASSES = [
@@ -625,15 +626,39 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
           ))}
         </div>
 
-        {/* Grade */}
+        {/* Grade — compound grade hero when present, context grade otherwise */}
         <div style={{ marginBottom: "10px", paddingBottom: "10px", borderBottom: "1px solid #d0dce8" }}>
-          <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "8px" }}>
-            <div style={{ fontSize: "14px", fontWeight: 800, color: grade.color }}>{grade.label.toUpperCase()} GRADE</div>
-            <div style={{ fontSize: "11px", color: "#507090" }}>Score: <strong style={{ color: grade.color }}>{primaryCtx.score}/100</strong></div>
-            {compoundGrades.length > 0 && (
-              <div style={{ fontSize: "9px", color: "#8090a0", letterSpacing: "0.04em" }}>{compoundGrades.map(cg => cg.label).join(" · ")}</div>
-            )}
-          </div>
+          {compoundGrades.length > 0 ? (
+            <>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+                  <span style={{ fontSize: "16px" }}>{compoundGrades[0].emoji}</span>
+                  <span style={{ fontSize: "14px", fontWeight: 800, color: compoundGrades[0].color, letterSpacing: "0.06em" }}>
+                    {compoundGrades[0].label.toUpperCase()}
+                  </span>
+                </div>
+                <span style={{ fontSize: "8px", padding: "2px 7px", borderRadius: "3px", background: `${compoundGrades[0].color}18`, color: compoundGrades[0].color, border: `1px solid ${compoundGrades[0].color}40`, letterSpacing: "0.08em", fontWeight: 600 }}>
+                  {compoundGrades[0].rarity}
+                </span>
+              </div>
+              <div style={{ fontSize: "9px", color: "#507090", marginBottom: "5px", lineHeight: 1.4 }}>
+                {compoundGrades[0].shortDesc}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                <span style={{ fontSize: "9px", padding: "2px 9px", borderRadius: "2px", border: `1px solid ${grade.color}50`, color: grade.color, fontWeight: 600, letterSpacing: "0.08em" }}>
+                  {grade.emoji} {grade.label} Grade
+                </span>
+                <span style={{ fontSize: "10px", color: "#507090" }}>
+                  Score: <strong style={{ color: compoundGrades[0].color }}>{primaryCtx.score}/100</strong>
+                </span>
+              </div>
+            </>
+          ) : (
+            <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "8px" }}>
+              <div style={{ fontSize: "14px", fontWeight: 800, color: grade.color }}>{grade.label.toUpperCase()} GRADE</div>
+              <div style={{ fontSize: "11px", color: "#507090" }}>Score: <strong style={{ color: grade.color }}>{primaryCtx.score}/100</strong></div>
+            </div>
+          )}
         </div>
 
         {/* Scores */}
@@ -870,9 +895,12 @@ export default function CertGenerator({ scores: initScores, spec: initSpec, reco
   // Compute context data
   const allCtxData = CONTEXTS.map(c => {
     const score = computeContextScore(c.key, workingScores);
-    return { ...c, score, grade: getGrade(score) };
+    return { ...c, score, grade: GRADE_FOR[c.key] };
   });
-  const primaryCtx = allCtxData.find(c => c.score >= THRESHOLD) || allCtxData[0];
+  const passingCtx = allCtxData.filter(c => c.score >= THRESHOLD);
+  const primaryCtx = passingCtx.length > 0
+    ? passingCtx.reduce((best, c) => c.score > best.score ? c : best)
+    : allCtxData[0];
   const allCtxScores = Object.fromEntries(allCtxData.map(c => [c.key, c.score]));
   const rawCompounds = detectCompoundGrades(allCtxScores);
   const compoundGrades = rawCompounds.filter(cg => {

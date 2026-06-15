@@ -1,11 +1,11 @@
-# PRISM
+# PRISM v1.1.0
 **Precision Rating Index of Specimen Minerals**
 
-A comprehensive mineral specimen evaluation and market analysis tool designed to bring transparency and standardization to the mineral collecting market.
+A 6-dimensional, non-linear specimen scoring system that evaluates mineral specimens across 5 weighted evaluation contexts to produce a compound classification — visualized as a spectrum of simultaneously scored qualities.
 
 ## Overview
 
-PRISM addresses the fundamental information asymmetry problem in mineral specimen markets by making implicit expert heuristics explicit, auditable, and comparable across transactions. The application provides collectors, dealers, and institutions with objective scoring criteria and market data to make informed decisions about specimen quality and pricing.
+PRISM addresses the fundamental information asymmetry problem in mineral specimen markets by making implicit expert heuristics explicit, auditable, and comparable across transactions. Unlike simple rating systems, PRISM applies dimension-specific non-linear transforms across 6 independent inputs and evaluates them simultaneously through 5 distinct context lenses — producing a compound classification (e.g. "Institutional Masterpiece") that reflects a specimen's true multi-dimensional identity rather than a single collapsed number.
 
 ### Core Purpose
 
@@ -24,25 +24,59 @@ PRISM addresses the fundamental information asymmetry problem in mineral specime
 
 ### Scoring System
 
-PRISM evaluates specimens across six dimensions:
+#### 6 Input Dimensions
 
-1. **Crystal Quality**: Symmetry expression, termination completeness, surface condition
-2. **Species Rarity**: Relative scarcity of the mineral species
-3. **Locality Rarity**: Significance and scarcity of the collection locality
-4. **Provenance**: Documentation quality and collection history
-5. **Aesthetics**: Visual appeal and display quality
-6. **Scientific Value**: Research significance and educational value
+Each specimen is scored independently across six qualities:
 
-Scores are **context-weighted** based on evaluation purpose:
-- **Museum Grade**: Emphasizes provenance and scientific value
-- **Exhibition Grade**: Prioritizes aesthetics and crystal quality
-- **Collector Grade**: Balances all factors for personal collections
+| # | Dimension | What it measures |
+|---|-----------|------------------|
+| 1 | **Crystal Quality** | Symmetry, termination completeness, surface condition |
+| 2 | **Species / Variety Rarity** | Relative scarcity of the mineral species or variety |
+| 3 | **Locality Rarity** | Mine status, pocket frequency, auction appearance |
+| 4 | **Provenance** | Documentation quality and chain of custody (T1–T5 tiers) |
+| 5 | **Aesthetics** | Visual impact and display quality |
+| 6 | **Scientific Value** | Research significance, type locality, emerging science |
+
+#### Non-Linear Transforms
+
+Raw dimension scores are passed through **dimension-specific non-linear functions** before weighting — reflecting real-world value curves where the top end is disproportionately rare:
+
+| Dimension | Transform | Effect |
+|-----------|-----------|--------|
+| Aesthetics, Crystal | Power function (x^0.7) | High performers boosted; diminishing penalty at low end |
+| Species Rarity, Locality Rarity | Sigmoid curve (k=3.5) | Sharp S-curve — truly exceptional rarity scores much higher than merely uncommon |
+| Provenance | Asymmetric sigmoid boost | Excellent provenance earns a bonus; poor provenance is not catastrophically penalized |
+| Scientific Value | One-sided sigmoid boost | Presence amplifies; absence is neutral |
+
+#### 5 Evaluation Contexts
+
+The same 6 transformed scores are then weighted differently across 5 independent evaluation contexts. Each context answers a distinct question about the specimen:
+
+| Context | Primary weights | Purpose |
+|---------|----------------|---------|
+| **Museum Specimen** | Locality rarity 25%, Provenance 25%, Species rarity 20% | Irreplaceability and documentation |
+| **Display / Show** | Crystal quality 42%, Aesthetics 30% | Visual impact for exhibition |
+| **Collector's Piece** | Species rarity 26%, Locality rarity 26%, Crystal 22% | Rarity-driven collector appeal |
+| **Scientific Study** | Scientific value 42%, Provenance 26% | Research and educational use |
+| **General Market** | Crystal quality 38%, Aesthetics 15%, Species/locality rarity ~31% | Broad retail appeal |
+
+#### Compound Classification
+
+When multiple contexts simultaneously pass the quality threshold (70/100), a **compound grade** emerges that describes the specimen's identity across all dimensions:
+
+- **Institutional Masterpiece** — all 5 contexts qualify simultaneously *(once in a generation)*
+- **World-Class Specimen** — museum + exhibition + collector qualify
+- **Museum Display** — museum + exhibition qualify
+- **Collector Display** — exhibition + collector qualify
+- *(and more)*
+
+The compound classification is the primary output of PRISM — a single number cannot capture a 6-dimensional, 5-context analysis. The spectrum bar visualization shows all 5 context results simultaneously as colored bands, one per context, glowing when that context's threshold is met.
 
 ### Additional Tools
 
 - **Pricing Tool**: Market analysis with comparable specimen data
 - **Buyer's Guide**: Educational resources for collectors
-- **Certificate Generator**: QR-coded verification certificates
+- **Evaluation Record Generator**: QR-coded, HMAC-signed evaluation records
 - **Donation Evaluator**: IRS Form 8283 compliance documentation
 - **Meteorite Identification**: Specialized tool for meteorite specimens
 - **Collection History**: Track and manage specimen provenance
@@ -160,7 +194,7 @@ PRISM tracks collection legality across multiple regulatory frameworks:
 
 ## Version
 
-Current version: **1.0.2**
+Current version: **1.1.0**
 
 ## License
 

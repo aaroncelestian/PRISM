@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
 } from "recharts";
-import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades, detectInconsistencies } from "../data/prism.js";
+import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades, detectInconsistencies, applyNonLinearTransform } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 
 function useAnimatedScore(target) {
@@ -31,21 +31,32 @@ function useAnimatedScore(target) {
 
 // CONTEXTS is prestige-ordered (museum → commercial), same index as GRADES
 const GRADE_FOR = Object.fromEntries(CONTEXTS.map((c, i) => [c.key, GRADES[i]]));
+
+// Spectrum bar colors — one per context, in light-spectrum order
+const SPECTRUM_COLORS = ["#ff5555", "#ffaa00", "#00dd88", "#0088ff", "#aa55ff"];
 // Grade lookup by raw score (used when no context passes threshold)
 function gradeFromScore(score) {
   return GRADES.find(g => score >= g.min) ?? GRADES[GRADES.length - 1];
 }
+
+
 function computeContextData(ctxKey, scores) {
   const W = WEIGHTS[ctxKey];
+  
+  // Apply universal non-linear transformations to all dimensions
+  const adjustedScores = Object.fromEntries(
+    Object.entries(scores).map(([k, v]) => [k, applyNonLinearTransform(k, v ?? 50)])
+  );
+  
   const score = Math.round(
-    Object.entries(W).reduce((acc, [k, w]) => acc + (scores[k] ?? 50) * w, 0)
+    Object.entries(W).reduce((acc, [k, w]) => acc + (adjustedScores[k] ?? 50) * w, 0)
   );
   const passes = score >= THRESHOLD;
   let bottleneck = null;
   if (!passes) {
     let maxShortfall = -Infinity;
     Object.entries(W).forEach(([k, w]) => {
-      const shortfall = w * Math.max(0, THRESHOLD - (scores[k] ?? 50));
+      const shortfall = w * Math.max(0, THRESHOLD - (adjustedScores[k] ?? 50));
       if (shortfall > maxShortfall) {
         maxShortfall = shortfall;
         bottleneck = DIMS.find(d => d.key === k);
@@ -98,6 +109,7 @@ function generateNarrative(scores, primaryCtx, allCtxData) {
 
 export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = false }) {
   const [tab, setTab] = useState("grade");
+  const [openCtxTip, setOpenCtxTip] = useState(null);
   const { isMobile } = useBreakpoint();
   const W = WEIGHTS[ctx]; // used only for weight bars (diagnostic context)
   const allCtxData = CONTEXTS.map(c => ({
@@ -134,34 +146,84 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
         {/* Score card — horizontal 2-column layout */}
         <div style={{
           display: "flex", alignItems: "center", gap: "16px", padding: "14px 18px 12px",
-          background: `radial-gradient(ellipse at 30% 0%, ${primaryCtx.grade.color}07, transparent 60%)`,
+          background: `radial-gradient(ellipse at 30% 0%, ${compoundGrades.length > 0 ? compoundGrades[0].color : primaryCtx.grade.color}09, transparent 60%)`,
         }}>
-          {/* Left: number */}
-          <div style={{ textAlign: "center", flexShrink: 0, minWidth: "72px" }}>
-            <div style={{ fontSize: "8px", letterSpacing: "0.2em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "2px" }}>PRISM</div>
-            <div style={{ fontFamily: "var(--mono)", fontSize: "54px", fontWeight: 600, lineHeight: 1, color: primaryCtx.grade.color, transition: "color 0.3s" }}>
-              {displayScore}
+          {/* Left: PRISM spectrum bar */}
+          <div style={{ textAlign: "center", flexShrink: 0 }}>
+            <div style={{ fontSize: "7px", letterSpacing: "0.22em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "7px" }}>PRISM</div>
+            <div style={{ display: "flex", gap: "3px", alignItems: "flex-end" }}>
+              {allCtxData.map((c, i) => (
+                <div
+                  key={c.key}
+                  title={`${c.label}: ${c.score}`}
+                  style={{
+                    width: "11px",
+                    height: "44px",
+                    borderRadius: "2px",
+                    background: `linear-gradient(to bottom, ${SPECTRUM_COLORS[i]}cc, ${SPECTRUM_COLORS[i]})`,
+                    opacity: c.passes ? 1 : 0.1,
+                    boxShadow: c.passes ? `0 0 10px ${SPECTRUM_COLORS[i]}90, 0 0 4px ${SPECTRUM_COLORS[i]}60` : "none",
+                    transition: "all 0.4s ease",
+                  }}
+                />
+              ))}
             </div>
-            <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "1px" }}>/100</div>
+            <div style={{ fontSize: "8px", color: "var(--text-muted)", marginTop: "5px", letterSpacing: "0.04em" }}>
+              {allCtxData.filter(c => c.passes).length}/5
+            </div>
           </div>
           {/* Divider */}
           <div style={{ width: "1px", alignSelf: "stretch", background: "var(--border-dim)", margin: "4px 0" }} />
-          {/* Right: grade badge + desc */}
+          {/* Right: compound grade hero OR context grade */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: "6px", marginBottom: "7px",
-              padding: "4px 13px", borderRadius: "3px",
-              border: `1px solid ${primaryCtx.grade.color}35`,
-              background: `${primaryCtx.grade.color}0c`,
-              color: primaryCtx.grade.color, fontSize: "11px", fontWeight: 600,
-              letterSpacing: "0.11em", textTransform: "uppercase",
-            }}>
-              <span>{primaryCtx.grade.emoji}</span>
-              <span>{primaryCtx.grade.label} Grade</span>
-            </div>
-            <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.45 }}>
-              {primaryCtx.grade.desc}
-            </div>
+            {compoundGrades.length > 0 ? (
+              <>
+                {/* Compound grade is the headline */}
+                <div style={{
+                  display: "inline-flex", alignItems: "center", gap: "6px", marginBottom: "6px",
+                  padding: "4px 13px", borderRadius: "3px",
+                  border: `1px solid ${compoundGrades[0].color}45`,
+                  background: `${compoundGrades[0].color}12`,
+                  color: compoundGrades[0].color, fontSize: "12px", fontWeight: 700,
+                  letterSpacing: "0.09em", textTransform: "uppercase",
+                }}>
+                  <span>{compoundGrades[0].emoji}</span>
+                  <span>{compoundGrades[0].label}</span>
+                  <span style={{ fontSize: "7px", padding: "1px 5px", borderRadius: "2px", background: `${compoundGrades[0].color}20`, border: `1px solid ${compoundGrades[0].color}30`, marginLeft: "2px" }}>{compoundGrades[0].rarity}</span>
+                </div>
+                <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.4, marginBottom: "6px" }}>
+                  {compoundGrades[0].shortDesc}
+                </div>
+                {/* Context grade demoted to secondary */}
+                <div style={{
+                  display: "inline-flex", alignItems: "center", gap: "5px", padding: "2px 8px",
+                  borderRadius: "2px", border: `1px solid ${primaryCtx.grade.color}30`,
+                  color: primaryCtx.grade.color, fontSize: "9px", fontWeight: 500,
+                  letterSpacing: "0.08em", textTransform: "uppercase",
+                }}>
+                  <span>{primaryCtx.grade.emoji}</span>
+                  <span>{primaryCtx.grade.label}{primaryCtx.passes ? " ✓" : ` · +${THRESHOLD - primaryCtx.score} pts`}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* No compound grade — context grade is the headline */}
+                <div style={{
+                  display: "inline-flex", alignItems: "center", gap: "6px", marginBottom: "7px",
+                  padding: "4px 13px", borderRadius: "3px",
+                  border: `1px solid ${primaryCtx.grade.color}35`,
+                  background: `${primaryCtx.grade.color}0c`,
+                  color: primaryCtx.grade.color, fontSize: "11px", fontWeight: 600,
+                  letterSpacing: "0.11em", textTransform: "uppercase",
+                }}>
+                  <span>{primaryCtx.grade.emoji}</span>
+                  <span>{primaryCtx.grade.label} Grade</span>
+                </div>
+                <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.45 }}>
+                  {primaryCtx.grade.desc}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -232,27 +294,6 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
         {tab === "grade" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
 
-            {/* Compound grades */}
-            {compoundGrades.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <div style={{ fontSize: "9px", letterSpacing: "0.22em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "2px" }}>Combined Classification</div>
-                {compoundGrades.map(cg => (
-                  <div key={cg.key} style={{ padding: "1.5px", borderRadius: "7px", background: cg.gradient, boxShadow: `0 0 8px ${cg.color}25` }}>
-                    <div style={{ padding: "10px 13px", borderRadius: "5.5px", background: "var(--bg-panel)" }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "3px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
-                          <span style={{ fontSize: "16px" }}>{cg.emoji}</span>
-                          <span style={{ fontSize: "13px", fontWeight: 700, color: cg.color }}>{cg.label}</span>
-                        </div>
-                        <span style={{ fontSize: "8px", letterSpacing: "0.12em", textTransform: "uppercase", padding: "2px 7px", borderRadius: "3px", background: `${cg.color}18`, color: cg.color, border: `1px solid ${cg.color}35` }}>{cg.rarity}</span>
-                      </div>
-                      <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.5 }}>{cg.shortDesc}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {/* All-context grade profile */}
             <div>
               <div style={{ fontSize: "9px", letterSpacing: "0.22em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "10px", display: "flex", justifyContent: "space-between" }}>
@@ -279,6 +320,12 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
                         <span style={{ fontSize: "12px", fontWeight: c.passes ? 600 : 400, color: c.passes ? c.grade.color : isSelected ? "var(--text)" : "var(--text-muted)" }}>
                           {c.grade.emoji} {c.label}
                         </span>
+                        <button
+                          onClick={() => setOpenCtxTip(openCtxTip === c.key ? null : c.key)}
+                          style={{ background: "none", border: "none", padding: "1px 2px", cursor: "pointer", color: openCtxTip === c.key ? "var(--cyan)" : "var(--text-muted)", flexShrink: 0, display: "flex", alignItems: "center" }}
+                        >
+                          <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11zm0 3.25a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5zm-.75 1.5h1.5v3.5h-1.5V7.25z"/></svg>
+                        </button>
                         {isSelected && (
                           <span style={{
                             fontSize: "8px", letterSpacing: "0.1em", textTransform: "uppercase",
@@ -295,6 +342,13 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
                     <div style={{ height: "4px", background: "var(--border-dim)", borderRadius: "2px", overflow: "hidden" }}>
                       <div style={{ height: "100%", borderRadius: "2px", transition: "width 0.35s", background: c.passes ? c.grade.color : isSelected ? "rgba(0,212,255,0.35)" : "var(--border)", width: `${c.score}%` }} />
                     </div>
+                    {openCtxTip === c.key && (
+                      <div style={{ marginTop: "7px", padding: "8px 10px", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "4px", fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.55 }}>
+                        <div style={{ fontWeight: 600, color: "var(--text)", marginBottom: "3px" }}>{c.icon} {c.label}</div>
+                        <div style={{ marginBottom: "5px" }}>{c.desc}</div>
+                        {c.detail && <div style={{ color: "var(--text-muted)", fontSize: "9.5px", lineHeight: 1.6, borderTop: "1px solid var(--border-dim)", paddingTop: "5px" }}>{c.detail}</div>}
+                      </div>
+                    )}
                     {!c.passes && c.bottleneck && (
                       <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "5px" }}>
                         ↳ bottleneck: {c.bottleneck.icon} {c.bottleneck.label}

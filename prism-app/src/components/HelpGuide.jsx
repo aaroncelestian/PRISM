@@ -300,8 +300,8 @@ function TabContexts() {
 
       <Section title="The Five Contexts">
         <CtxCard icon="🏛️" name="Museum"
-          focus="Provenance 35% · Scientific 20% · Crystal/Species/Locality 13% each"
-          use="Use when evaluating a specimen for museum acquisition, donation, or institutional loan. Provenance is weighted at 35% because documented legal acquisition is a non-negotiable institutional requirement — not an optional nice-to-have. Scientific value is weighted at 20% reflecting the research mission of natural history collections. Aesthetics and crystal quality, while relevant, are secondary to documentation and scientific significance." />
+          focus="Locality 30% · Provenance 25% · Species 15% · Crystal 12% · Scientific 14% · Aesthetics 4%"
+          use="Use when evaluating a specimen for museum acquisition, donation, or institutional loan. Locality irreplaceability (30%) and provenance documentation (25%) dominate — a specimen from a unique or exhausted locality with a verified chain of custody is the museum ideal. Scientific value is rewarded asymmetrically: low scores are not penalized (most specimens lack immediate research applications), but high scores receive a strong non-linear boost. Aesthetics barely factor in at 4%." />
         <CtxCard icon="✨" name="Exhibition"
           focus="Crystal 42% · Aesthetics 30% · Locality 12%"
           use="Use for display-quality specimens destined for showcases, exhibitions, or gallery sales. Crystal perfection and visual impact dominate." />

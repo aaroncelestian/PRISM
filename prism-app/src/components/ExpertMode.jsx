@@ -1,10 +1,12 @@
 import { useState, useMemo } from "react";
 import { HelpCircle, X } from "lucide-react";
-import { DIMS, WEIGHTS, GRADES } from "../data/prism.js";
+import { DIMS, WEIGHTS, GRADES, CONTEXTS } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import ScorePanel from "./ScorePanel.jsx";
 import TierSelector from "./TierSelector.jsx";
 import CriteriaChecklist from "./CriteriaChecklist.jsx";
+
+const EXPERT_SPECTRUM = ["#ff5555", "#ffaa00", "#00dd88", "#0088ff", "#aa55ff"];
 
 function DimRow({ dim, score, weight, onChange, sciCriteria, onSciCriteriaChange }) {
   const [open, setOpen] = useState(false);
@@ -42,12 +44,20 @@ function DimRow({ dim, score, weight, onChange, sciCriteria, onSciCriteriaChange
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-          <span style={{
-            fontSize: "9px", color: "rgba(0,212,255,0.5)",
-            letterSpacing: "0.06em", textTransform: "uppercase",
-          }}>
-            wt {Math.round(weight * 100)}%
-          </span>
+          <div style={{ display: "flex", gap: "2px", alignItems: "flex-end", height: "18px" }} title="Context weights">
+            {CONTEXTS.map((c, i) => {
+              const w = WEIGHTS[c.key][dim.key];
+              return (
+                <div key={c.key} style={{
+                  width: "5px",
+                  height: `${Math.max(3, Math.round((w / 0.45) * 16))}px`,
+                  borderRadius: "1px",
+                  background: EXPERT_SPECTRUM[i],
+                  opacity: 0.7,
+                }} />
+              );
+            })}
+          </div>
           <span style={{
             fontFamily: "var(--mono)", fontSize: "19px", fontWeight: 600,
             color: barColor, minWidth: "28px", textAlign: "right",
@@ -73,6 +83,21 @@ function DimRow({ dim, score, weight, onChange, sciCriteria, onSciCriteriaChange
           fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6,
         }}>
           {dim.detail}
+          <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid var(--border-dim)" }}>
+            <div style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "6px" }}>Context Weights</div>
+            {CONTEXTS.map((c, i) => {
+              const w = WEIGHTS[c.key][dim.key];
+              return (
+                <div key={c.key} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
+                  <span style={{ fontSize: "10px", color: "var(--text-dim)", width: "120px", flexShrink: 0 }}>{c.icon} {c.label}</span>
+                  <div style={{ flex: 1, height: "3px", background: "var(--border-dim)", borderRadius: "2px" }}>
+                    <div style={{ height: "100%", width: `${Math.round(w * 100)}%`, background: EXPERT_SPECTRUM[i], borderRadius: "2px" }} />
+                  </div>
+                  <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: EXPERT_SPECTRUM[i], width: "28px", textAlign: "right" }}>{Math.round(w * 100)}%</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -205,7 +230,7 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
         }}>
           Sub-score Inputs
           <span style={{ color: "rgba(0,212,255,0.45)", fontWeight: 400 }}>
-            · {ctx} weights active
+            · hover <span style={{ fontSize: "8px" }}>?</span> for context weights
           </span>
         </div>
 

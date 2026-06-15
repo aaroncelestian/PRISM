@@ -1,15 +1,19 @@
 import { useState, useRef } from "react";
 import { X, Camera, Printer, Download } from "lucide-react";
-import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD } from "../data/prism.js";
+import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades, applyNonLinearTransform } from "../data/prism.js";
+
+const GRADE_FOR = Object.fromEntries(CONTEXTS.map((c, i) => [c.key, GRADES[i]]));
 
 function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
   const primary = (() => {
     const ctxScores = CONTEXTS.map(c => {
       const W = WEIGHTS[c.key];
-      const score = Math.round(Object.entries(W).reduce((a, [k, w]) => a + (initScores[k] ?? 50) * w, 0));
-      return { ...c, score, grade: GRADES.find(g => score >= g.min) || GRADES[GRADES.length - 1] };
+      const adj = Object.fromEntries(Object.entries(initScores).map(([k, v]) => [k, applyNonLinearTransform(k, v ?? 50)]));
+      const score = Math.round(Object.entries(W).reduce((a, [k, w]) => a + (adj[k] ?? 50) * w, 0));
+      return { ...c, score, grade: GRADE_FOR[c.key] };
     });
-    return ctxScores.find(c => c.score >= THRESHOLD) || ctxScores[0];
+    const passing = ctxScores.filter(c => c.score >= THRESHOLD);
+    return passing.length > 0 ? passing.reduce((b, c) => c.score > b.score ? c : b) : ctxScores[0];
   })();
 
   return (
@@ -80,15 +84,21 @@ function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
 
 function computeContextScore(ctxKey, scores) {
   const W = WEIGHTS[ctxKey];
-  return Math.round(Object.entries(W).reduce((a, [k, w]) => a + (scores[k] ?? 50) * w, 0));
+  const adj = Object.fromEntries(Object.entries(scores).map(([k, v]) => [k, applyNonLinearTransform(k, v ?? 50)]));
+  return Math.round(Object.entries(W).reduce((a, [k, w]) => a + (adj[k] ?? 50) * w, 0));
 }
 
 function getPrimaryGrade(scores) {
   const ctxScores = CONTEXTS.map(c => {
     const score = computeContextScore(c.key, scores);
-    return { ...c, score, grade: GRADES.find(g => score >= g.min) || GRADES[GRADES.length - 1] };
+    return { ...c, score, grade: GRADE_FOR[c.key] };
   });
-  return ctxScores.find(c => c.score >= THRESHOLD) || ctxScores[0];
+  const passing = ctxScores.filter(c => c.score >= THRESHOLD);
+  const primary = passing.length > 0
+    ? passing.reduce((best, c) => c.score > best.score ? c : best)
+    : ctxScores[0];
+  const allCtxScores = Object.fromEntries(ctxScores.map(c => [c.key, c.score]));
+  return { ...primary, compoundGrades: detectCompoundGrades(allCtxScores) };
 }
 
 function PhotoCapture({ value, onChange }) {
@@ -256,16 +266,30 @@ export default function QuickExport({ scores: initScores, spec: initSpec, spSour
                 <div style={{ fontSize: "8px", letterSpacing: "0.12em", color: "#507090", textTransform: "uppercase" }}>Specimen Record</div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: "22px", fontWeight: 700, color: primary.grade.color, fontFamily: "monospace", lineHeight: 1 }}>{primary.score}</div>
+                <div style={{ fontSize: "22px", fontWeight: 700, color: primary.compoundGrades?.length > 0 ? primary.compoundGrades[0].color : primary.grade.color, fontFamily: "monospace", lineHeight: 1 }}>{primary.score}</div>
                 <div style={{ fontSize: "8px", color: "#507090" }}>/ 100</div>
               </div>
             </div>
 
-            {/* Grade badge */}
+            {/* Classification — compound grade hero when present, context grade otherwise */}
             <div style={{ textAlign: "center", marginBottom: "12px" }}>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 14px", borderRadius: "3px", border: `1px solid ${primary.grade.color}60`, background: `${primary.grade.color}12`, color: primary.grade.color, fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em" }}>
-                {primary.grade.emoji} {primary.grade.label} Grade
-              </div>
+              {primary.compoundGrades?.length > 0 ? (
+                <>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "5px 16px", borderRadius: "3px", border: `1px solid ${primary.compoundGrades[0].color}70`, background: `${primary.compoundGrades[0].color}14`, color: primary.compoundGrades[0].color, fontSize: "12px", fontWeight: 700, letterSpacing: "0.09em", marginBottom: "5px" }}>
+                    <span>{primary.compoundGrades[0].emoji}</span>
+                    <span>{primary.compoundGrades[0].label}</span>
+                    <span style={{ fontSize: "7px", padding: "1px 5px", borderRadius: "2px", background: `${primary.compoundGrades[0].color}20`, border: `1px solid ${primary.compoundGrades[0].color}40` }}>{primary.compoundGrades[0].rarity}</span>
+                  </div>
+                  <div style={{ fontSize: "9px", color: "#507090", marginBottom: "4px", lineHeight: 1.4 }}>{primary.compoundGrades[0].shortDesc}</div>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "2px 10px", borderRadius: "2px", border: `1px solid ${primary.grade.color}40`, color: primary.grade.color, fontSize: "9px", fontWeight: 600, letterSpacing: "0.09em" }}>
+                    {primary.grade.emoji} {primary.grade.label} Grade
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 14px", borderRadius: "3px", border: `1px solid ${primary.grade.color}60`, background: `${primary.grade.color}12`, color: primary.grade.color, fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em" }}>
+                  {primary.grade.emoji} {primary.grade.label} Grade
+                </div>
+              )}
             </div>
 
             {/* Specimen info */}

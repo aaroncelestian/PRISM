@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { ChevronRight, ChevronLeft, HelpCircle, X } from "lucide-react";
-import { DIMS, CONTEXTS, WEIGHTS, GRADES } from "../data/prism.js";
+import { DIMS, WEIGHTS, GRADES } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import ScorePanel from "./ScorePanel.jsx";
 import TierSelector from "./TierSelector.jsx";
 import CriteriaChecklist from "./CriteriaChecklist.jsx";
 
-const TOTAL_STEPS = 2 + DIMS.length + 1; // intro (context + specimen) + 6 dims + done
+const TOTAL_STEPS = 1 + DIMS.length + 1; // specimen info + 6 dims + done
 
 function Tooltip({ text, onClose }) {
   return (
@@ -76,32 +76,6 @@ function AnchorButton({ anchor, selected, onClick }) {
   );
 }
 
-function ContextCard({ ctx, selected, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "14px 16px",
-        background: selected ? "rgba(0,212,255,0.07)" : "var(--bg-card)",
-        border: `1px solid ${selected ? "rgba(0,212,255,0.4)" : "var(--border)"}`,
-        borderRadius: "7px",
-        color: selected ? "var(--cyan)" : "var(--text-dim)",
-        textAlign: "left",
-        transition: "all 0.15s",
-        cursor: "pointer",
-        width: "100%",
-      }}
-    >
-      <div style={{ fontSize: "20px", marginBottom: "6px" }}>{ctx.icon}</div>
-      <div style={{ fontSize: "13px", fontWeight: selected ? 600 : 500, marginBottom: "4px" }}>
-        {ctx.label}
-      </div>
-      <div style={{ fontSize: "11px", lineHeight: 1.5, color: selected ? "rgba(0,212,255,0.65)" : "var(--text-muted)" }}>
-        {ctx.desc}
-      </div>
-    </button>
-  );
-}
 
 export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSpec, sciCriteria, onSciCriteriaChange, onReset, onExport, initialStep = 0, scoringComp = null, onSaveToComp = null, onSaveToCollection = null }) {
   const [step, setStep] = useState(initialStep);
@@ -109,14 +83,13 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
   const [saveFlash, setSaveFlash] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(() => localStorage.getItem('prism_autoAdvance') === 'true');
 
-  // step 0 = choose context
-  // step 1 = specimen info
-  // steps 2..7 = DIMS[0..5]
-  const dimIndex = step - 2;
+  // step 0 = specimen info
+  // steps 1..6 = DIMS[0..5]
+  const dimIndex = step - 1;
   const currentDim = dimIndex >= 0 ? DIMS[dimIndex] : null;
   const progress = Math.round((step / (TOTAL_STEPS - 1)) * 100);
 
-  const canAdvance = step !== 1 || spec.name.trim().length > 0 || spec.species.trim().length > 0;
+  const canAdvance = step !== 0 || spec.name.trim().length > 0 || spec.species.trim().length > 0;
 
   const next = () => {
     if (step < TOTAL_STEPS - 1) setStep(s => s + 1);
@@ -220,15 +193,6 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
             Step {step + 1} of {TOTAL_STEPS}
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            {step > 0 && (() => { const c = CONTEXTS.find(c => c.key === ctx); return c ? (
-              <button
-                onClick={() => setStep(0)}
-                title="Change evaluation context"
-                style={{ display: "flex", alignItems: "center", gap: "4px", background: "rgba(0,212,255,0.05)", border: "1px solid rgba(0,212,255,0.2)", borderRadius: "3px", padding: "2px 8px", cursor: "pointer", fontSize: "10px", color: "rgba(0,212,255,0.65)", letterSpacing: "0.06em" }}
-              >
-                {c.icon} {c.label}
-              </button>
-            ) : null; })()}
             {currentDim && (
               <span style={{ fontSize: "10px", color: "rgba(0,212,255,0.5)", letterSpacing: "0.08em" }}>
                 {currentDim.icon} {currentDim.label}
@@ -240,44 +204,8 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
         {/* ── Scrollable content ── */}
         <div style={{ flex: 1, overflowY: "auto", padding: "28px 28px 20px" }}>
 
-          {/* Step 0: Choose context */}
+          {/* Step 0: Specimen info */}
           {step === 0 && (
-            <div>
-              <h2 style={{
-                fontFamily: "var(--sans)", fontSize: "22px", fontWeight: 600,
-                color: "var(--text)", marginBottom: "6px",
-              }}>
-                Why are you evaluating this specimen?
-              </h2>
-              <p style={{ fontSize: "13px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: "22px" }}>
-                PRISM weighs the same six qualities differently depending on your goal.
-                Choose the context that best fits your purpose.
-              </p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                {CONTEXTS.map(c => (
-                  <ContextCard
-                    key={c.key}
-                    ctx={c}
-                    selected={ctx === c.key}
-                    onClick={() => setCtx(c.key)}
-                  />
-                ))}
-              </div>
-              {ctx && (
-                <div style={{
-                  marginTop: "16px", padding: "12px 14px",
-                  background: "var(--bg-card)", borderRadius: "5px",
-                  border: "1px solid var(--border)",
-                  fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.5,
-                }}>
-                  💡 {CONTEXTS.find(c => c.key === ctx)?.detail}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Step 1: Specimen info */}
-          {step === 1 && (
             <div>
               <h2 style={{
                 fontFamily: "var(--sans)", fontSize: "22px", fontWeight: 600,

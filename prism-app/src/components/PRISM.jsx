@@ -310,41 +310,10 @@ export default function PRISM() {
           </div>
         </div>
 
-        {/* Context sub-row — Expert mode, desktop only */}
-        {mode === "expert" && !isMobile && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: "6px",
-            padding: "5px 22px", borderTop: "1px solid var(--border-dim)",
-            background: "rgba(0,212,255,0.015)",
-          }}>
-            <span style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", flexShrink: 0 }}>Context:</span>
-            {CONTEXTS.map(c => (
-              <button key={c.key} onClick={() => setCtx(c.key)} title={c.desc} style={{
-                padding: "3px 11px", borderRadius: "3px", flexShrink: 0,
-                border: ctx === c.key ? "1px solid rgba(0,212,255,0.45)" : "1px solid var(--border)",
-                background: ctx === c.key ? "rgba(0,212,255,0.08)" : "transparent",
-                color: ctx === c.key ? "var(--cyan)" : "var(--text-muted)",
-                fontSize: "10px", fontWeight: ctx === c.key ? 600 : 400,
-                letterSpacing: "0.06em", transition: "all 0.15s",
-              }}>{c.icon} {c.label}</button>
-            ))}
-          </div>
-        )}
 
         {/* Mobile action row — horizontally scrollable */}
         {isMobile && (
           <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 14px 8px", overflowX: "auto", borderTop: "1px solid var(--border-dim)", scrollbarWidth: "none" }}>
-            {mode === "expert" && (
-              <>
-                {CONTEXTS.map(c => (
-                  <button key={c.key} onClick={() => setCtx(c.key)}
-                    style={{ flexShrink: 0, padding: "5px 10px", borderRadius: "4px", border: ctx === c.key ? "1px solid rgba(0,212,255,0.45)" : "1px solid var(--border)", background: ctx === c.key ? "rgba(0,212,255,0.08)" : "transparent", color: ctx === c.key ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", whiteSpace: "nowrap" }}>
-                    {c.icon} {c.label}
-                  </button>
-                ))}
-                <div style={{ width: "1px", height: "20px", background: "var(--border-dim)", flexShrink: 0 }} />
-              </>
-            )}
             <button onClick={handleSaveToCollection}
               style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", whiteSpace: "nowrap", fontSize: "12px",
                 background: savedFlash === "saved" ? "rgba(0,200,128,0.15)" : savedFlash === "already" ? "rgba(170,170,170,0.07)" : "transparent",
@@ -434,7 +403,7 @@ export default function PRISM() {
             onSciCriteriaChange={handleSciCriteria}
             onReset={reset}
             onExport={() => setShowExport(true)}
-            initialStep={spSource || scoringCompId ? 2 : 0}
+            initialStep={spSource || scoringCompId ? 1 : 0}
             scoringComp={scoringCompId ? comps.find(c => c.id === scoringCompId) : null}
             onSaveToComp={scoringCompId ? handleSaveToComp : null}
             onSaveToCollection={handleSaveToCollection}

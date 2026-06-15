@@ -1,5 +1,5 @@
 export const WEIGHTS = {
-  museum:     { crystal: 0.13, speciesRarity: 0.13,  localityRarity: 0.13,  provenance: 0.35, aesthetics: 0.06, scientific: 0.20 },
+  museum:     { crystal: 0.12, speciesRarity: 0.20,  localityRarity: 0.25,  provenance: 0.25, aesthetics: 0.04, scientific: 0.14 },
   exhibition: { crystal: 0.42, speciesRarity: 0.07,  localityRarity: 0.12,  provenance: 0.06, aesthetics: 0.30, scientific: 0.03 },
   collector:  { crystal: 0.22, speciesRarity: 0.26,  localityRarity: 0.26,  provenance: 0.10, aesthetics: 0.12, scientific: 0.04 },
   study:      { crystal: 0.11, speciesRarity: 0.08,  localityRarity: 0.08,  provenance: 0.26, aesthetics: 0.05, scientific: 0.42 },
@@ -23,7 +23,7 @@ export const CONTEXTS = [
     label: "Museum Specimen",
     icon: "🏛️",
     desc: "I'm evaluating this as a potential museum-quality specimen.",
-    detail: "Museum-quality specimens must show strength across all pillars. Provenance and scientific significance are the non-negotiable foundation — but locality rarity and species rarity now carry real weight. A common species from a common locality rarely achieves museum grade without extraordinary scientific documentation.",
+    detail: "Museum-quality specimens are defined by irreplaceability and documentation. Locality rarity (30%) and provenance (25%) dominate — a specimen from an exhausted or unique locality with a verified chain of custody represents the museum ideal. Scientific value is rewarded asymmetrically: absent science doesn't penalize, but exceptional science gets a major non-linear boost. Aesthetics barely factor in at 4%.",
   },
   {
     key: "exhibition",
@@ -193,6 +193,40 @@ export const COMPOUND_GRADES = [
     rarity: "Uncommon",
   },
 ];
+
+// Non-linear dimension transforms — shared by ScorePanel and QuickExport
+export function applyNonLinearTransform(dimKey, rawScore) {
+  const x = rawScore / 100;
+  let transformed;
+  switch (dimKey) {
+    case 'aesthetics':
+    case 'crystal':
+      transformed = Math.pow(x, 0.7) * 100;
+      break;
+    case 'speciesRarity':
+    case 'localityRarity': {
+      const normalized = (x - 0.5) * 2;
+      const sig = 1 / (1 + Math.exp(-3.5 * normalized));
+      transformed = sig * 100;
+      break;
+    }
+    case 'provenance': {
+      const norm = (x - 0.5) * 2;
+      const boost = 10 * (1 / (1 + Math.exp(-3 * norm)) - 0.5) * 2;
+      transformed = Math.max(0, Math.min(100, rawScore + boost));
+      break;
+    }
+    case 'scientific': {
+      const norm = (x - 0.5) * 2;
+      const boost = Math.max(0, 12 * (1 / (1 + Math.exp(-3 * norm)) - 0.5) * 2);
+      transformed = Math.min(100, rawScore + boost);
+      break;
+    }
+    default:
+      return rawScore;
+  }
+  return Math.max(0, Math.min(100, transformed));
+}
 
 // Helper: detect suspicious score combinations that may indicate input errors
 // Returns array of { key, level ('warn'|'info'), dim, msg }
