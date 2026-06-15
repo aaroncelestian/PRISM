@@ -442,7 +442,7 @@ export default function MeteoriteID({ onClose }) {
         <StepBar step={step} />
 
         {/* Scrollable content */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "18px 20px" }}>
           {step === 0 && <StepField    answers={fieldAnswers}   setAnswers={setFieldAnswers} />}
           {step === 1 && <StepSurface  answers={surfaceAnswers} setAnswers={setSurfaceAnswers} />}
           {step === 2 && <StepClassify clues={classClues}       setClues={setClassClues} />}

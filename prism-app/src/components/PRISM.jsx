@@ -386,10 +386,10 @@ export default function PRISM() {
         <MeteoriteID onClose={() => setShowMeteoriteID(false)} />
       )}
       {showDonation && (
-        <DonationEval scores={scores} spec={spec} onClose={() => setShowDonation(false)} />
+        <DonationEval scores={scores} spec={spec} records={records} onClose={() => setShowDonation(false)} />
       )}
       {showPricing && (
-        <PricingTool scores={scores} spec={spec} onClose={() => setShowPricing(false)} />
+        <PricingTool scores={scores} spec={spec} records={records} onClose={() => setShowPricing(false)} />
       )}
       {showBuyerGuide && (
         <BuyerGuide onClose={() => setShowBuyerGuide(false)} />
@@ -398,7 +398,7 @@ export default function PRISM() {
         <CertGenerator scores={scores} spec={spec} records={records} onClose={() => setShowCert(false)} />
       )}
       {showExport && (
-        <QuickExport scores={scores} spec={spec} spSource={spSource} onClose={() => setShowExport(false)} />
+        <QuickExport scores={scores} spec={spec} spSource={spSource} records={records} onClose={() => setShowExport(false)} />
       )}
       {showHistory && (
         <CollectionHistory

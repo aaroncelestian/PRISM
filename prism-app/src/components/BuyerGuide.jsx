@@ -473,7 +473,7 @@ export default function BuyerGuide({ onClose }) {
         </div>
 
         {/* Scroll body */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "18px 20px", display: "flex", flexDirection: "column", gap: "14px" }}>
 
           {/* ── CRYSTAL QUALITY TAB ── */}
           {tab === "crystal" && (

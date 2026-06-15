@@ -36,10 +36,16 @@ html, body, #root {
   min-height: 100vh;
 }
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+/* ── Scrollbar — always visible ── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-panel); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.40); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,212,255,0.70); }
+::-webkit-scrollbar-corner { background: var(--bg-panel); }
+/* Firefox: auto keeps bar always present when content overflows */
+* { scrollbar-width: auto; scrollbar-color: rgba(0,212,255,0.40) var(--bg-panel); }
+/* Reserve gutter space so layout doesn't shift when scrollbar appears */
+html { scrollbar-gutter: stable; }
 
 /* ── Range inputs ── */
 input[type=range] {

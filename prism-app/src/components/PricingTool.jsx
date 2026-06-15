@@ -1,6 +1,81 @@
 import { useState, useMemo } from "react";
 import { X, ChevronLeft, ChevronRight, DollarSign, Copy, CheckCheck, Printer } from "lucide-react";
-import { WEIGHTS, CONTEXTS, GRADES } from "../data/prism.js";
+import { WEIGHTS, CONTEXTS, GRADES, THRESHOLD } from "../data/prism.js";
+
+function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
+  let best = 0, bestGrade = GRADES[GRADES.length - 1];
+  CONTEXTS.forEach(c => {
+    const W = WEIGHTS[c.key];
+    const s = Math.round(Object.entries(W).reduce((a, [k, w]) => a + (initScores[k] ?? 50) * w, 0));
+    if (s > best) { best = s; bestGrade = GRADES.find(g => s >= g.min) || GRADES[GRADES.length - 1]; }
+  });
+  const curScore = best; const curGrade = bestGrade;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(4,8,18,0.88)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+      <div style={{ width: "100%", maxWidth: "600px", maxHeight: "92vh", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "10px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-dim)", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>💰 Sell / Trade Price Guide</div>
+            <div style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "2px" }}>Select the specimen to price</div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={16} /></button>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div>
+            <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Current Evaluation</div>
+            <button onClick={() => onSelect(initScores, initSpec)}
+              style={{ width: "100%", textAlign: "left", padding: "12px 14px", background: "rgba(0,212,255,0.04)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: "7px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.5)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.25)"}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>{initSpec.name || initSpec.species || "Unnamed Specimen"}</div>
+                {(initSpec.species || initSpec.locality) && <div style={{ fontSize: "10px", color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{[initSpec.species, initSpec.locality].filter(Boolean).join(" \u00b7 ")}</div>}
+                <div style={{ marginTop: "4px", fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.08em" }}>Active session — not yet saved to history</div>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ fontSize: "20px", fontWeight: 700, fontFamily: "var(--mono)", color: curGrade.color, lineHeight: 1 }}>{curScore}</div>
+                <div style={{ marginTop: "3px", fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: `${curGrade.color}15`, color: curGrade.color, border: `1px solid ${curGrade.color}30`, fontWeight: 600, letterSpacing: "0.06em", display: "inline-block" }}>{curGrade.emoji} {curGrade.label}</div>
+              </div>
+            </button>
+          </div>
+          <div>
+            <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Saved Collection {records.length > 0 ? `(${records.length})` : ""}</div>
+            {records.length === 0 ? (
+              <div style={{ padding: "16px", textAlign: "center", fontSize: "11px", color: "var(--text-muted)", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)", lineHeight: 1.6 }}>No specimens saved to history yet.<br />Save a PRISM evaluation first using the Save button.</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {records.map(rec => {
+                  const g = GRADES.find(gr => gr.label === rec.grade) || GRADES[GRADES.length - 1];
+                  const d = new Date(rec.savedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                  return (
+                    <button key={rec.id} onClick={() => onSelect(rec.scores, rec.spec)}
+                      style={{ width: "100%", textAlign: "left", padding: "10px 14px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.3)"}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>{rec.spec?.name || rec.spec?.species || "Unnamed Specimen"}</div>
+                        <div style={{ fontSize: "10px", color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{[rec.spec?.species, rec.spec?.locality].filter(Boolean).join(" \u00b7 ")}</div>
+                        <div style={{ marginTop: "3px", fontSize: "9px", color: "var(--text-muted)" }}>Saved {d}</div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ fontSize: "18px", fontWeight: 700, fontFamily: "var(--mono)", color: g.color, lineHeight: 1 }}>{rec.prismScore}</div>
+                        <div style={{ marginTop: "3px", fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: `${g.color}15`, color: g.color, border: `1px solid ${g.color}30`, fontWeight: 600, letterSpacing: "0.06em", display: "inline-block" }}>{rec.gradeEmoji} {rec.grade}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+        <div style={{ padding: "12px 20px", borderTop: "1px solid var(--border-dim)", flexShrink: 0 }}>
+          <button onClick={onClose} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer" }}><X size={13} /> Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -675,7 +750,10 @@ function PriceGuideStep({ score, sizeClass, condition, channel, scores, spec }) 
 
 // ── Main modal ────────────────────────────────────────────────────────────────
 
-export default function PricingTool({ scores, spec, onClose }) {
+export default function PricingTool({ scores: initScores, spec: initSpec, records = [], onClose }) {
+  const [showPicker, setShowPicker] = useState(true);
+  const [scores, setScores]         = useState(initScores);
+  const [spec, setSpec]             = useState(initSpec);
   const [step, setStep]         = useState(0);
   const [sizeClass, setSizeClass] = useState(null);
   const [condition, setCondition] = useState(null);
@@ -683,6 +761,16 @@ export default function PricingTool({ scores, spec, onClose }) {
 
   const score = useMemo(() => computePrimaryScore(scores), [scores]);
   const grade = getGrade(score);
+
+  if (showPicker) {
+    return (
+      <_PickerScreen
+        initScores={initScores} initSpec={initSpec} records={records}
+        onSelect={(s, sp) => { setScores(s); setSpec(sp); setShowPicker(false); }}
+        onClose={onClose}
+      />
+    );
+  }
 
   const canAdvance = () => {
     if (step === 0) return !!sizeClass;
@@ -747,7 +835,7 @@ export default function PricingTool({ scores, spec, onClose }) {
         </div>
 
         {/* Content */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "22px 24px" }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "22px 24px" }}>
           {step === 0 && <SizeStep sizeClass={sizeClass} setSizeClass={setSizeClass} grade={grade} score={score} spec={spec} />}
           {step === 1 && <ConditionStep condition={condition} setCondition={setCondition} />}
           {step === 2 && <ChannelStep channel={channel} setChannel={setChannel} />}

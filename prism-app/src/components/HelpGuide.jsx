@@ -84,47 +84,113 @@ function CtxCard({ icon, name, focus, use }) {
 function TabWhy() {
   return (
     <>
-      <Section title="The Problem">
+      <Section title="Why PRISM Exists">
         <P>
-          Mineral specimen pricing is one of the least transparent markets in the collectibles world.
-          Two Wulfenite specimens from the same mine, same size, can sell for $200 or $2,000 — and buyers
-          are often left wondering why.
+          PRISM was created by Aaron Celestian, Curator of Gem and Minerals at the Natural History
+          Museum of Los Angeles County (NHMLAC) — one of the largest natural history collections in
+          the western United States.
         </P>
         <P>
-          Prices are set by dealer intuition, auction momentum, and collected wisdom that rarely gets
-          written down. New collectors pay premiums they shouldn't; experienced collectors struggle to
-          justify prices when selling or donating.
+          After more than a decade curating a world-class mineral collection, a core problem became
+          impossible to ignore: the mineral collecting community has no standard language for what
+          makes a specimen truly valuable — and museums are increasingly required to have one.
         </P>
       </Section>
 
-      <Section title="What PRISM Does">
-        <Callout icon="🔬">
-          PRISM gives you a <strong>systematic, repeatable score from 0–100</strong> based on the six
-          factors that actually drive mineral specimen value: crystal quality, species rarity, locality
-          significance, provenance, aesthetics, and scientific interest.
+      <Section title="The Compliance Reality">
+        <P>
+          Museums receiving funding from city, county, state, and federal agencies face mounting pressure
+          to document acquisition compliance for every specimen in their collection. Geomaterials rank
+          lower in urgency than human remains, cultural artifacts, or vertebrate specimens — but they
+          are held to exactly the same institutional standards.
+        </P>
+        <Callout icon="⚖️" color="#ffa028">
+          PRISM is designed to stay ahead of where museum accession standards are heading — not just
+          where they are today. The heavy weight given to provenance and scientific value in the Museum
+          context is intentional. That is the direction this field is moving, rapidly.
         </Callout>
         <P>
-          The score is weighted differently depending on your purpose — a museum curator cares about
-          provenance and scientific value far more than a collector focused on beauty.
+          At the institutional level, an undocumented specimen is a liability — a potential lawsuit,
+          a repatriation demand, or an illegal activity investigation that individual collectors might
+          consider trivial, but that institutions take extremely seriously.
         </P>
       </Section>
 
-      <Section title="When to Use It">
-        <Callout icon="🛍️" color="#00c880">
-          <strong>Before buying</strong> — score a specimen you're considering. Compare its asking price
-          to other scored pieces in your research database to see if it's fairly priced.
+      <Section title="What 'Museum Quality' Actually Means">
+        <Callout icon="🎯" color="#ff5050">
+          <strong>Forget what you know about "museum quality."</strong> That is a Hollywood myth. Private
+          collectors at the Tucson Gem and Mineral Show routinely have more spectacular specimens than
+          most museum collections. Museums simply cannot compete with private buyers at today's prices.
+          Many collectors don't value donating fine specimens for the public interest.
+        </Callout>
+        <P>
+          Real museum quality means a specimen that is:
+        </P>
+        <ul style={{ paddingLeft: "18px", margin: "0 0 10px" }}>
+          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.85 }}>Legally collected or legally acquired with a documented chain of custody</li>
+          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.85 }}>Well-documented: locality, collection date, collector name, acquisition history</li>
+          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.85 }}>Scientifically significant, or filling a genuine gap in the institutional collection</li>
+          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.85 }}>Representative of its species, locality, or phenomenon in a way that serves research and public education</li>
+        </ul>
+        <P>
+          A museum quality specimen can serve research or public display — rarely both. Beauty and
+          rarity matter, but provenance and scientific value are equally important. This is why the
+          Museum context in PRISM weights them accordingly. If that weighting seems strict, that is
+          by design.
+        </P>
+      </Section>
+
+      <Section title="The Paper Trail Is Non-Negotiable">
+        <P>
+          People collect for recreation. People enter mines where they have verbal permission.
+          There has historically been no paper trail, and for personal collecting there doesn't need
+          to be one. That is an individual's choice.
+        </P>
+        <Callout icon="�" color="#c04040">
+          <strong>If you want to donate to a museum, there must be a paper trail.</strong> It is not
+          the curator's responsibility to create justification on your behalf. The burden is entirely
+          on the collector or donor to document legal collection and proper acquisition.
+        </Callout>
+        <P>
+          <strong>Older specimens</strong> are evaluated case by case. Before the establishment of
+          national parks and federal land protections, there was essentially no protected land —
+          material collected in that era required no permits, and provenance is judged with that
+          historical context in mind.
+        </P>
+        <P>
+          <strong>Recent material is different.</strong> If a specimen was collected on National Park
+          land, military land, or without the required permits — that is a disqualifying problem for
+          institutional acquisition, regardless of how routine the practice seems to collectors.
+        </P>
+      </Section>
+
+      <Section title="The Curator's Responsibility">
+        <P>
+          The curator's mandate is to maintain and build a world-class research repository while
+          serving the public interest. Those two goals are often in tension. A scientifically critical
+          specimen may not be displayable; a visually stunning piece may have no research value.
+        </P>
+        <Callout icon="🏛️" color="#7c5cfc">
+          The museum's collection belongs to the public — held in trust by the institution, not
+          owned by it. The curator is the steward of the county's precious collection. That responsibility
+          demands the highest standards for what enters the collection, especially for recent acquisitions.
+        </Callout>
+      </Section>
+
+      <Section title="For Collectors and Dealers">
+        <Callout icon="🔬">
+          Use PRISM to understand where your specimens stand before approaching a museum or writing
+          an insurance appraisal. The scoring framework is the same one institutional curators use
+          to evaluate donation candidates.
         </Callout>
         <Callout icon="💰" color="#ffb347">
-          <strong>Before selling</strong> — use your PRISM score to justify your asking price with buyers.
-          Use the Sell/Trade tool to estimate fair market value.
-        </Callout>
-        <Callout icon="🏛️" color="#7c5cfc">
-          <strong>For donations &amp; insurance</strong> — an objective score creates a defensible
-          valuation for museum donations or insurance appraisals.
+          <strong>Before selling</strong> — use your PRISM score to justify your asking price.
+          Use the Sell/Trade tool to estimate fair market value and identify where your specimen
+          sits relative to the market.
         </Callout>
         <Callout icon="📊" color="#f472b6">
-          <strong>Market research</strong> — track listings you find across eBay, iRocks, Tucson shows,
-          and dealer sites. Score them and instantly see which localities or vendors price at a premium.
+          <strong>Market research</strong> — track listings from eBay, iRocks, Tucson shows, and
+          dealer sites. Score them and see which localities or vendors price at a premium.
         </Callout>
       </Section>
     </>
@@ -235,7 +301,7 @@ function TabContexts() {
       <Section title="The Five Contexts">
         <CtxCard icon="🏛️" name="Museum"
           focus="Provenance 35% · Scientific 20% · Crystal/Species/Locality 13% each"
-          use="Use when evaluating a specimen for museum acquisition, donation, or institutional loan. Emphasizes documentation, research value, and species/locality rarity." />
+          use="Use when evaluating a specimen for museum acquisition, donation, or institutional loan. Provenance is weighted at 35% because documented legal acquisition is a non-negotiable institutional requirement — not an optional nice-to-have. Scientific value is weighted at 20% reflecting the research mission of natural history collections. Aesthetics and crystal quality, while relevant, are secondary to documentation and scientific significance." />
         <CtxCard icon="✨" name="Exhibition"
           focus="Crystal 42% · Aesthetics 30% · Locality 12%"
           use="Use for display-quality specimens destined for showcases, exhibitions, or gallery sales. Crystal perfection and visual impact dominate." />
@@ -371,7 +437,7 @@ export default function HelpGuide({ onClose }) {
         <div style={{ padding: "10px 18px", borderTop: "1px solid var(--border-dim)", flexShrink: 0,
           display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: "10px", color: "var(--text-muted)", opacity: 0.6 }}>
-            PRISM is a personal research tool — scores are estimates, not certified appraisals.
+            PRISM is a research and planning tool — scores are structured estimates, not certified appraisals. Museum acceptance decisions are made by curators on a case-by-case basis.
           </span>
           <button onClick={onClose} style={{ padding: "5px 16px", background: "rgba(0,212,255,0.08)",
             border: "1px solid rgba(0,212,255,0.3)", borderRadius: "4px", color: "var(--cyan)",

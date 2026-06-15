@@ -759,7 +759,7 @@ function SpecimenPickerScreen({ initScores, initSpec, records, onSelect, onClose
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
           {/* Current evaluation */}
           <div>
@@ -945,7 +945,7 @@ export default function CertGenerator({ scores: initScores, spec: initSpec, reco
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "18px 20px" }}>
           {step === 0 && <ReviewStep scores={workingScores} spec={workingSpec} sizeClass={sizeClass} setSizeClass={setSizeClass} allCtxData={allCtxData} primaryCtx={primaryCtx} compoundGrades={compoundGrades} />}
           {step === 1 && <DocumentationStep scores={workingScores} spec={workingSpec} docData={docData} setDocData={setDocData} photos={photos} setPhotos={setPhotos} />}
           {step === 2 && <AttestationStep attestations={attestations} setAttestations={setAttestations} evaluatorName={evaluatorName} setEvaluatorName={setEvaluatorName} evaluatorOrg={evaluatorOrg} setEvaluatorOrg={setEvaluatorOrg} customAttestations={customAttestations} setCustomAttestations={setCustomAttestations} />}

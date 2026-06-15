@@ -1,9 +1,123 @@
 import { useState, useEffect, useRef } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { X, ChevronLeft, ChevronRight, MapPin, Download, Printer, Copy, CheckCheck } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, MapPin, Search, Download, Printer, Copy, CheckCheck } from "lucide-react";
 import { lookupCountryFlag, STATUS_COLORS, STATUS_LABELS } from "../data/countryFlags.js";
+import { GRADES, WEIGHTS, CONTEXTS, THRESHOLD } from "../data/prism.js";
+
+function _ctxScore(ctxKey, scores) {
+  const W = WEIGHTS[ctxKey];
+  return Math.round(Object.entries(W).reduce((a, [k, w]) => a + (scores[k] ?? 50) * w, 0));
+}
+function _bestScore(scores) {
+  const all = CONTEXTS.map(c => ({ key: c.key, score: _ctxScore(c.key, scores) }));
+  const best = all.find(c => c.score >= THRESHOLD) || all[0];
+  const grade = GRADES.find(g => best.score >= g.min) || GRADES[GRADES.length - 1];
+  return { score: best.score, grade };
+}
+
+// ── Specimen Picker ───────────────────────────────────────────────────────────
+
+function DonationPickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
+  const { score: curScore, grade: curGrade } = _bestScore(initScores);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(4,8,18,0.88)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+      <div style={{ width: "100%", maxWidth: "600px", maxHeight: "92vh", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "10px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+        {/* Header */}
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-dim)", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: "7px" }}>🏛️ Museum Donation Evaluation</div>
+            <div style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "2px" }}>Select the specimen to evaluate</div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={16} /></button>
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+
+          {/* Current session */}
+          <div>
+            <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Current Evaluation</div>
+            <button
+              onClick={() => onSelect(initScores, initSpec)}
+              style={{ width: "100%", textAlign: "left", padding: "12px 14px", background: "rgba(0,212,255,0.04)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: "7px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.5)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.25)"}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>
+                  {initSpec.name || initSpec.species || "Unnamed Specimen"}
+                </div>
+                {(initSpec.species || initSpec.locality) && (
+                  <div style={{ fontSize: "10px", color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {[initSpec.species, initSpec.locality].filter(Boolean).join(" \u00b7 ")}
+                  </div>
+                )}
+                <div style={{ marginTop: "4px", fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.08em" }}>Active session — not yet saved to history</div>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ fontSize: "20px", fontWeight: 700, fontFamily: "var(--mono)", color: curGrade.color, lineHeight: 1 }}>{curScore}</div>
+                <div style={{ marginTop: "3px", fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: `${curGrade.color}15`, color: curGrade.color, border: `1px solid ${curGrade.color}30`, fontWeight: 600, letterSpacing: "0.06em", display: "inline-block" }}>{curGrade.emoji} {curGrade.label}</div>
+              </div>
+            </button>
+          </div>
+
+          {/* Saved collection */}
+          <div>
+            <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>
+              Saved Collection {records.length > 0 ? `(${records.length})` : ""}
+            </div>
+            {records.length === 0 ? (
+              <div style={{ padding: "16px", textAlign: "center", fontSize: "11px", color: "var(--text-muted)", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)", lineHeight: 1.6 }}>
+                No specimens saved to history yet.<br />Save a PRISM evaluation first using the Save button.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {records.map(rec => {
+                  const gradeObj = GRADES.find(g => g.label === rec.grade) || GRADES[GRADES.length - 1];
+                  const dateStr = new Date(rec.savedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                  return (
+                    <button
+                      key={rec.id}
+                      onClick={() => onSelect(rec.scores, rec.spec)}
+                      style={{ width: "100%", textAlign: "left", padding: "10px 14px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.3)"}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>
+                          {rec.spec?.name || rec.spec?.species || "Unnamed Specimen"}
+                        </div>
+                        <div style={{ fontSize: "10px", color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {[rec.spec?.species, rec.spec?.locality].filter(Boolean).join(" \u00b7 ")}
+                        </div>
+                        <div style={{ marginTop: "3px", fontSize: "9px", color: "var(--text-muted)" }}>Saved {dateStr}</div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ fontSize: "18px", fontWeight: 700, fontFamily: "var(--mono)", color: gradeObj.color, lineHeight: 1 }}>{rec.prismScore}</div>
+                        <div style={{ marginTop: "3px", fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: `${gradeObj.color}15`, color: gradeObj.color, border: `1px solid ${gradeObj.color}30`, fontWeight: 600, letterSpacing: "0.06em", display: "inline-block" }}>{rec.gradeEmoji} {rec.grade}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: "12px 20px", borderTop: "1px solid var(--border-dim)", flexShrink: 0 }}>
+          <button onClick={onClose} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer" }}>
+            <X size={13} /> Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Fix Leaflet default marker icons broken by Vite's asset pipeline
 delete L.Icon.Default.prototype._getIconUrl;
@@ -43,6 +157,7 @@ const LAND_TYPES = [
   { key: "state",   label: "State Land",               color: "#7ab0e0", desc: "Rules vary by state — consult the relevant state land management agency." },
   { key: "private", label: "Private Land",             color: "#c89058", desc: "Landowner permission required; written documentation strongly preferred." },
   { key: "tribal",  label: "Tribal / Native Land",    color: "#c060c0", desc: "Tribal permission and/or federal permit required; NHPA Section 106 may apply." },
+  { key: "dod",     label: "Military / DOD Land",     color: "#b03030", desc: "Department of Defense controlled installation — collecting strictly prohibited; access requires explicit military authorization." },
   { key: "unknown", label: "Unknown / Undocumented",  color: "#607090", desc: "Insufficient locality data — provenance severely limited for institutional acquisition." },
 ];
 
@@ -85,6 +200,13 @@ const LAND_LEGAL = {
     detail: "Collecting on Tribal or Indigenous lands without explicit permission from the governing tribal authority is a federal offense under ARPA. NHPA Section 106 consultation may also apply. Institutional acquisition is heavily scrutinized.",
     action: "Do not proceed without documented tribal authority permission and all applicable federal permits on file.",
   },
+  dod: {
+    status: "prohibited",
+    color: "#c04040",
+    heading: "Collecting Strictly Prohibited",
+    detail: "Military installations and Department of Defense lands are strictly controlled federal areas. Collecting any materials, unauthorized access, or removal of any resources is a federal crime punishable by fines and imprisonment.",
+    action: "No mineral collection permit exists for active military land. A specimen claimed from here cannot be accepted by any institution without verified military authorization.",
+  },
   unknown: {
     status: "unknown",
     color: "#607090",
@@ -126,12 +248,12 @@ const LAND_QUESTIONS = {
 };
 
 const PROVENANCE_QUESTIONS = [
-  { id: "field_label",   label: "Original field label exists",        desc: "A label written at or near the time of collection accompanies the specimen.",          required: true  },
+  { id: "field_label",   label: "Original field label exists",        desc: "A label written at or near the time of collection accompanies the specimen. Significantly strengthens institutional confidence.",          required: true, recommended: true  },
   { id: "gps_coords",    label: "GPS / precise location recorded",    desc: "GPS coordinates, UTM grid, or a detailed locality description was documented.",        required: true  },
-  { id: "date_known",    label: "Collection date documented",         desc: "The year (at minimum) the specimen was collected is known and recorded.",              required: true  },
+  { id: "date_known",    label: "Collection date documented",         desc: "The year (at minimum) the specimen was collected is known and recorded. Undated specimens are often declined by institutions.",              required: true, recommended: true  },
   { id: "chain_doc",     label: "Full chain of custody documented",   desc: "All owners since original collection can be accounted for with records.",              required: false },
   { id: "no_cites",      label: "No international export restrictions", desc: "Specimen was not illegally exported from its country of origin; no CITES issues.",   required: true  },
-  { id: "no_deaccession", label: "Not a deaccessioned museum specimen", desc: "Confirm this was not removed from an existing institutional collection improperly.", required: true  },
+  { id: "no_deaccession", label: "Not an accessioned museum specimen", desc: "Confirm title is free and clear — this specimen has not been formally accessioned into another institutional collection and was not improperly removed from one.", required: true  },
 ];
 
 // ── Acquisition-specific documentation questions ─────────────────────────────
@@ -171,6 +293,14 @@ function getAcquisitionQuestions(acquisitionType) {
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
+function FlyToLocation({ target }) {
+  const map = useMap();
+  useEffect(() => {
+    if (target) map.flyTo([target.lat, target.lng], Math.max(map.getZoom(), 9), { animate: true, duration: 0.8 });
+  }, [target, map]);
+  return null;
+}
+
 function LocationPicker({ location, setLocation }) {
   useMapEvents({
     click(e) { setLocation({ lat: e.latlng.lat, lng: e.latlng.lng }); },
@@ -204,6 +334,7 @@ function CheckItem({ q, checked, onToggle }) {
         <div style={{ fontSize: "12px", fontWeight: checked ? 600 : 400, color: checked ? "var(--cyan)" : "var(--text)", marginBottom: "1px" }}>
           {q.label}
           {q.required && <span style={{ color: "#ffa028", marginLeft: "5px", fontSize: "9px" }}>★ required</span>}
+          {q.recommended && <span style={{ color: "#00c880", marginLeft: "5px", fontSize: "9px" }}>⊕ highly recommended</span>}
         </div>
         <div style={{ fontSize: "10px", color: checked ? "rgba(0,212,255,0.55)" : "var(--text-muted)", lineHeight: 1.4 }}>
           {q.desc}
@@ -312,11 +443,6 @@ function AcquisitionStep({ acquisitionType, setAcquisitionType, acquisitionDetai
         </div>
       )}
 
-      {acquisitionType && acquisitionType !== "unknown" && (
-        <div style={{ padding: "8px 12px", background: "var(--bg-card)", borderRadius: "4px", border: "1px solid var(--border-dim)", fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.5 }}>
-          📋 Chain strength: <strong style={{ color: "var(--text-dim)" }}>{CHAIN_STRENGTH[acquisitionType]?.label}</strong>
-        </div>
-      )}
     </div>
   );
 }
@@ -331,20 +457,49 @@ const BLM_MANG_MAP = {
   TRIB: "tribal", TRIBAL: "tribal",
   STATE: "state",
   PVT: "private", PRVT: "private", PRIVATE: "private",
-  DOD: "unknown",
+  DOD: "dod",
+  OTHF: "unknown", OTHS: "state", LOC: "unknown",
 };
+
+const MILITARY_KEYWORDS = ["air force base", "army base", "naval air station", "naval station", "marine corps base", "military reservation", "army post", "air national guard", "joint base"];
+
+const NPS_KEYWORDS  = ["national park","national monument","national recreation area","national seashore","national lakeshore","national battlefield","national preserve","national historic site","national memorial"];
+const USFS_KEYWORDS = ["national forest","national grassland"];
+
+async function geocodePlace(query) {
+  try {
+    const data = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
+      { headers: { "User-Agent": "PRISM-MineralEval/1.0" } }
+    ).then(r => r.json());
+    if (data?.[0]) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  } catch {}
+  return null;
+}
 
 async function detectMapLocation({ lat, lng, currentCountry, wasCountryAutoDetected, setOriginCountry, setLandType, setIsDetecting, setAutoSource }) {
   setIsDetecting(true);
   const src = {};
   try {
-    const nom = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`,
-      { headers: { "User-Agent": "PRISM-MineralEval/1.0" } }
-    ).then(r => r.json());
+    const NOM_HEADERS = { headers: { "User-Agent": "PRISM-MineralEval/1.0" } };
+    const BASE = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en&extratags=1`;
 
-    const country = nom?.address?.country || "";
-    const cc = (nom?.address?.country_code || "").toUpperCase();
+    // Overpass is_in() — returns ALL OSM area polygons that CONTAIN the clicked point.
+    // This is the same underlying data the base map renders. It reliably finds national parks,
+    // national forests, military reservations, tribal land, etc. by their polygon boundaries.
+    // CORS-safe: overpass-api.de explicitly allows cross-origin requests.
+    const overpassQuery = `[out:json][timeout:12];is_in(${lat},${lng})->.a;.a out tags;`;
+
+    // Run all 3 sources in parallel
+    const [nomFine, nomBroad, overpassData] = await Promise.all([
+      fetch(BASE,              NOM_HEADERS).then(r => r.json()).catch(() => null),
+      fetch(BASE + "&zoom=10", NOM_HEADERS).then(r => r.json()).catch(() => null),
+      fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`)
+        .then(r => r.json()).catch(() => null),
+    ]);
+
+    const country = nomFine?.address?.country || nomBroad?.address?.country || "";
+    const cc = ((nomFine?.address?.country_code || nomBroad?.address?.country_code) ?? "").toUpperCase();
 
     if (country && (!currentCountry || wasCountryAutoDetected)) {
       setOriginCountry(country);
@@ -352,29 +507,110 @@ async function detectMapLocation({ lat, lng, currentCountry, wasCountryAutoDetec
     }
 
     if (cc === "US") {
-      try {
-        const blm = await fetch(
-          `https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA_LimitedUse/MapServer/0/query` +
-          `?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326` +
-          `&spatialRel=esriSpatialRelIntersects&outFields=*&returnGeometry=false&f=json`
-        ).then(r => r.json());
+      // ── TIER 1: Overpass — scan all containing OSM polygons ──────────────────
+      // Collect every land type found, then pick by priority
+      const found = new Set();
+      for (const el of (overpassData?.elements || [])) {
+        const t   = el.tags || {};
+        const bnd = (t.boundary || "").toLowerCase();
+        const use = (t.landuse  || "").toLowerCase();
+        const ops = (t.operator || t.owner || "").toLowerCase();
+        const nm  = (t.name || "").toLowerCase();
+        const mil = t.military || "";
 
-        const attrs = blm?.features?.[0]?.attributes;
-        if (attrs) {
-          const raw = (attrs.Mang_Group || attrs.Mang_Type || attrs.mang_group || attrs.mang_type || "").toUpperCase().trim();
-          const key = BLM_MANG_MAP[raw];
-          if (key) {
-            setLandType(key);
-            src.landType = LAND_TYPES.find(lt => lt.key === key)?.label || raw;
+        if (bnd === "national_park" ||
+            (bnd === "protected_area" && (ops.includes("national park") || ops.includes("nps") || t.protect_class === "2")))
+          { found.add("nps"); }
+
+        if (bnd === "national_forest" || bnd === "national_grassland" ||
+            ops.includes("forest service") || ops.includes("usda forest") ||
+            (bnd === "protected_area" && (ops.includes("forest") || ops.includes("usfs"))))
+          { found.add("usfs"); }
+
+        if (use === "military" || bnd === "military" || mil ||
+            ops.includes("air force") || ops.includes("department of defense") ||
+            ops.includes("u.s. army") || ops.includes("us army") || ops.includes("us navy") ||
+            MILITARY_KEYWORDS.some(kw => nm.includes(kw)))
+          { found.add("dod"); }
+
+        if (t.type === "reservation" || nm.includes("indian reservation") ||
+            ops.includes("tribe") || ops.includes("tribal nation") || ops.includes("band of"))
+          { found.add("tribal"); }
+
+        if ((bnd === "protected_area" || bnd === "administrative") && ops.includes("state"))
+          { found.add("state"); }
+      }
+
+      // Priority: NPS > Tribal > DOD > USFS > State (all except USFS/State are "prohibited")
+      const overpassType = ["nps","tribal","dod","usfs","state"].find(k => found.has(k)) || null;
+
+      if (overpassType) {
+        setLandType(overpassType);
+        src.landType = LAND_TYPES.find(lt => lt.key === overpassType)?.label || overpassType;
+      } else {
+        // ── TIER 2: Nominatim keyword matching ───────────────────────────────
+        const allText = [
+          nomFine?.display_name, nomBroad?.display_name,
+          ...Object.values(nomFine?.address  || {}),
+          ...Object.values(nomBroad?.address || {}),
+          nomFine?.extratags?.boundary, nomBroad?.extratags?.boundary,
+          nomFine?.extratags?.operator, nomBroad?.extratags?.operator,
+          nomFine?.extratags?.military, nomBroad?.extratags?.military,
+          nomFine?.type, nomBroad?.type, nomFine?.class, nomBroad?.class,
+        ].filter(Boolean).join(" ").toLowerCase();
+
+        const boundary = ((nomBroad?.extratags?.boundary || nomFine?.extratags?.boundary) ?? "").toLowerCase();
+        const operator = ((nomBroad?.extratags?.operator || nomFine?.extratags?.operator ||
+                           nomBroad?.extratags?.owner    || nomFine?.extratags?.owner) ?? "").toLowerCase();
+        const nomType  = ((nomBroad?.type  || nomFine?.type)  ?? "").toLowerCase();
+        const nomClass = ((nomBroad?.class || nomFine?.class) ?? "").toLowerCase();
+
+        const isNPS  = boundary === "national_park" || nomType === "national_park" ||
+          operator.includes("national park service") || NPS_KEYWORDS.some(kw => allText.includes(kw));
+        const isUSFS = operator.includes("forest service") || operator.includes("usda forest") ||
+          USFS_KEYWORDS.some(kw => allText.includes(kw));
+        const isDOD  = nomClass === "military" || nomType === "military" ||
+          operator.includes("air force") || operator.includes("department of defense") ||
+          operator.includes("u.s. army") || MILITARY_KEYWORDS.some(kw => allText.includes(kw));
+
+        if      (isNPS)  { setLandType("nps");  src.landType = LAND_TYPES.find(lt => lt.key === "nps")?.label  || "National Park Service"; }
+        else if (isDOD)  { setLandType("dod");  src.landType = LAND_TYPES.find(lt => lt.key === "dod")?.label  || "Military / DOD"; }
+        else if (isUSFS) { setLandType("usfs"); src.landType = LAND_TYPES.find(lt => lt.key === "usfs")?.label || "US Forest Service"; }
+        else {
+          // ── TIER 3: BLM GIS API — handles BLM/State/Private/Tribal in federal dataset ──
+          const d = 0.15;
+          const blmData = await fetch(
+            `https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA/MapServer/identify` +
+            `?geometry=${lng},${lat}&geometryType=esriGeometryPoint&sr=4326` +
+            `&layers=all&tolerance=1&mapExtent=${lng-d},${lat-d},${lng+d},${lat+d}` +
+            `&imageDisplay=400,400,96&returnGeometry=false&f=json`
+          ).then(r => r.json()).catch(() => null);
+
+          const blmAttrs = blmData?.results?.find(r => r?.attributes?.Mang_Type || r?.attributes?.Mang_Group)?.attributes;
+          if (blmAttrs) {
+            const raw = (blmAttrs.Mang_Group || blmAttrs.Mang_Type || "").toUpperCase().trim();
+            const key = BLM_MANG_MAP[raw];
+            if (key) { setLandType(key); src.landType = LAND_TYPES.find(lt => lt.key === key)?.label || raw; }
+          } else {
+            for (const layer of [0, 1]) {
+              const res = await fetch(
+                `https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA/MapServer/${layer}/query` +
+                `?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326` +
+                `&spatialRel=esriSpatialRelIntersects&outFields=Mang_Type,Mang_Group&returnGeometry=false&f=json`
+              ).then(r => r.json()).catch(() => null);
+              const attrs = res?.features?.[0]?.attributes;
+              if (attrs) {
+                const raw = (attrs.Mang_Group || attrs.Mang_Type || attrs.mang_group || attrs.mang_type || "").toUpperCase().trim();
+                const key = BLM_MANG_MAP[raw];
+                if (key) { setLandType(key); src.landType = LAND_TYPES.find(lt => lt.key === key)?.label || raw; break; }
+              }
+            }
           }
         }
-      } catch {
-        // BLM query failed silently — user can manually select
       }
     }
-  } catch {
-    // Nominatim failed silently
-  } finally {
+  } catch {} // Network failure — user selects manually
+  finally {
     setIsDetecting(false);
     setAutoSource(src);
   }
@@ -382,13 +618,27 @@ async function detectMapLocation({ lat, lng, currentCountry, wasCountryAutoDetec
 
 // ── Step 2: Origin & Location ─────────────────────────────────────────────────
 
-function LocationStep({ location, setLocation, landType, setLandType, originCountry, setOriginCountry, acquisitionType }) {
+function LocationStep({ location, setLocation, landType, setLandType, originCountry, setOriginCountry, localityText, setLocalityText, acquisitionType }) {
   const [isDetecting, setIsDetecting] = useState(false);
   const [autoSource, setAutoSource] = useState({});
+  const [searchInput, setSearchInput] = useState("");
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [flyTarget, setFlyTarget] = useState(null);
   const countryRef = useRef(originCountry);
   const autoSourceRef = useRef(autoSource);
   countryRef.current = originCountry;
   autoSourceRef.current = autoSource;
+
+  const handleSearch = async () => {
+    if (!searchInput.trim()) return;
+    setIsGeocoding(true);
+    const coords = await geocodePlace(searchInput.trim());
+    setIsGeocoding(false);
+    if (coords) {
+      setLocation(coords);
+      setFlyTarget({ ...coords, _t: Date.now() });
+    }
+  };
 
   const flag = lookupCountryFlag(originCountry);
   const isSelf = acquisitionType === "self";
@@ -412,9 +662,9 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
           Origin &amp; Collection Location
         </h3>
         <p style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55 }}>
-          {isSelf
-            ? "Click the map to pin the collection site. Country and US land type are auto-detected from the pin. The overlay shows BLM surface management boundaries."
-            : "Enter the country and locality where this specimen was collected. Click the map to pin the site and auto-detect the country."}
+          Click the map or use the search box to pin the site. Country and US land management type
+          are auto-detected from the pin. The colored overlay shows US federal surface management
+          boundaries — most people find this helpful for quickly identifying the land type.
         </p>
       </div>
 
@@ -473,44 +723,112 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
         )}
       </div>
 
+      {/* Location search box */}
+      <div>
+        <div style={{ fontSize: "10px", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
+          Collection Site / Locality
+        </div>
+        <div style={{ display: "flex", gap: "6px", marginBottom: "6px" }}>
+          <input
+            type="text"
+            placeholder="e.g. Crater of Diamonds State Park, Murfreesboro, Arkansas, USA"
+            value={localityText}
+            onChange={e => setLocalityText(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") { setSearchInput(localityText); handleSearch(); } }}
+            style={{ flex: 1 }}
+          />
+          <button
+            onClick={() => { setSearchInput(localityText); handleSearch(); }}
+            disabled={isGeocoding || !localityText.trim()}
+            title="Search this location on the map"
+            style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--bg-card)", color: isGeocoding ? "rgba(0,212,255,0.5)" : "var(--text-dim)", fontSize: "11px", cursor: isGeocoding ? "default" : "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
+            <Search size={12} /> {isGeocoding ? "Searching…" : "Find on map"}
+          </button>
+        </div>
+        <div style={{ fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.4 }}>
+          Type the mine, canyon, or locality name — press <strong>Find on map</strong> to pin it and auto-detect land type. Click the map directly to pin any location.
+        </div>
+      </div>
+
       {/* Map */}
-      <div style={{ height: "240px", borderRadius: "6px", overflow: "hidden", border: "1px solid var(--border)", flexShrink: 0 }}>
+      <div style={{ height: "clamp(320px, 50vh, 520px)", borderRadius: "6px", overflow: "hidden", border: "1px solid var(--border)", flexShrink: 0 }}>
         <MapContainer center={[20, 0]} zoom={2} style={{ height: "100%", width: "100%" }}>
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
             opacity={0.65}
           />
-          {isSelf && (
-            <TileLayer
-              url="https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA_LimitedUse/MapServer/tile/{z}/{y}/{x}"
-              attribution="BLM National GIS"
-              opacity={0.55}
-            />
-          )}
+          <TileLayer
+            url="https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA/MapServer/tile/{z}/{y}/{x}"
+            attribution="BLM National GIS — Surface Management Agency"
+            opacity={0.55}
+          />
+          <FlyToLocation target={flyTarget} />
           <LocationPicker location={location} setLocation={setLocation} />
         </MapContainer>
       </div>
 
-      {isSelf && (
-        <div style={{ padding: "7px 11px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border-dim)" }}>
-          <div style={{ fontSize: "9px", letterSpacing: "0.14em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "5px" }}>Map Legend — US Surface Management</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "4px 12px" }}>
-            <LegendDot color="#f5c842" label="BLM" />
-            <LegendDot color="#52c275" label="US Forest Service" />
-            <LegendDot color="#e06a2a" label="National Park Service" />
-            <LegendDot color="#5580c8" label="Bureau of Reclamation" />
-            <LegendDot color="#60b0b0" label="Fish & Wildlife" />
-            <LegendDot color="#7ab0e0" label="State" />
-          </div>
+      <div style={{ padding: "7px 11px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border-dim)" }}>
+        <div style={{ fontSize: "9px", letterSpacing: "0.14em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "5px" }}>Map Legend — US Federal Surface Management (overlay visible at zoom 8+)</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "4px 12px" }}>
+          <LegendDot color="#f5c842" label="BLM" />
+          <LegendDot color="#52c275" label="US Forest Service" />
+          <LegendDot color="#e06a2a" label="National Park Service" />
+          <LegendDot color="#5580c8" label="Bureau of Reclamation" />
+          <LegendDot color="#60b0b0" label="Fish & Wildlife" />
+          <LegendDot color="#7ab0e0" label="State (fed. dataset)" />
         </div>
-      )}
+        <div style={{ marginTop: "5px", fontSize: "9px", color: "var(--text-muted)", lineHeight: 1.5 }}>
+          Private, county, and some state lands may not appear in the overlay — see detection result below after pinning.
+        </div>
+      </div>
 
       {(location || isDetecting) && (
         <div style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "10px", color: "rgba(0,212,255,0.6)", fontFamily: "var(--mono)" }}>
           <MapPin size={11} />
           {location && `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`}
-          {isDetecting && <span style={{ fontFamily: "sans-serif", fontSize: "9px", color: "rgba(0,212,255,0.5)" }}>⟳ looking up location…</span>}
+          {isDetecting && <span style={{ fontFamily: "sans-serif", fontSize: "9px", color: "rgba(0,212,255,0.5)" }}>⟳ detecting land management type…</span>}
+        </div>
+      )}
+
+      {/* Detection result — shown for ALL acquisition types once detection completes */}
+      {location && !isDetecting && landType && (
+        <div style={{
+          padding: "10px 13px", borderRadius: "6px",
+          background: `${(LAND_TYPES.find(lt => lt.key === landType)?.color || "#607090")}12`,
+          border: `1px solid ${(LAND_TYPES.find(lt => lt.key === landType)?.color || "#607090")}45`,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+            <div style={{ width: 10, height: 10, borderRadius: "2px", background: LAND_TYPES.find(lt => lt.key === landType)?.color, flexShrink: 0 }} />
+            <div style={{ fontSize: "11px", fontWeight: 700, color: LAND_TYPES.find(lt => lt.key === landType)?.color }}>
+              Auto-detected: {LAND_TYPES.find(lt => lt.key === landType)?.label}
+              {autoSource.landType && <span style={{ fontWeight: 400, fontSize: "9px", opacity: 0.8 }}> · via federal land database</span>}
+            </div>
+          </div>
+          <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6 }}>
+            {LAND_TYPES.find(lt => lt.key === landType)?.desc}
+          </div>
+          {legalInfo && (
+            <div style={{ marginTop: "6px", fontSize: "11px", fontWeight: 600, color: legalInfo.color }}>
+              {legalInfo.status === "allowed" ? "✓" : legalInfo.status === "conditional" ? "⚠" : "✗"} {legalInfo.heading}
+            </div>
+          )}
+          {legalInfo?.action && (
+            <div style={{ marginTop: "3px", fontSize: "10px", color: legalInfo.color, lineHeight: 1.5 }}>➜ {legalInfo.action}</div>
+          )}
+          {!isSelf && <div style={{ marginTop: "5px", fontSize: "9px", color: "var(--text-muted)", fontStyle: "italic" }}>This reflects the collection site land type — click map to override.</div>}
+        </div>
+      )}
+
+      {/* Could not detect — US location with no land type found in federal database */}
+      {location && !isDetecting && !landType && originCountry.toLowerCase().includes("united states") && (
+        <div style={{ padding: "10px 13px", borderRadius: "6px", background: "rgba(96,112,144,0.08)", border: "1px solid rgba(96,112,144,0.30)" }}>
+          <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-dim)", marginBottom: "3px" }}>Land type not found in federal database</div>
+          <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.6 }}>
+            This location does not appear in the BLM Surface Management Agency dataset. It is likely
+            private land, county land, or a small state parcel. If self-collected, written landowner
+            permission is required. If purchased, no special action is needed — select the type below if known.
+          </div>
         </div>
       )}
 
@@ -650,8 +968,7 @@ function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploa
           Documentation Checklist
         </h3>
         <p style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55 }}>
-          Check everything that applies. <span style={{ color: "#ffa028" }}>★ required</span> items are
-          typically necessary for museum acquisition consideration.
+          Check everything that applies. <span style={{ color: "#ffa028" }}>★ required</span> items are necessary for museum consideration. <span style={{ color: "#00c880" }}>⊕ highly recommended</span> items significantly strengthen the evaluation.
         </p>
       </div>
 
@@ -742,7 +1059,7 @@ function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploa
 
 // ── Curator export helpers ────────────────────────────────────────────────────
 
-function buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, location, checks, uploads, pct, chainScore, reqPassed, optPassed, required }) {
+function buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location, checks, uploads, pct, chainScore, reqPassed, optPassed, required, attestorName }) {
   const now = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const acqMeta  = ACQUISITION_TYPES.find(a => a.key === acquisitionType);
   const landMeta = LAND_TYPES.find(lt => lt.key === landType);
@@ -794,7 +1111,16 @@ function buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, 
     attached.forEach(([, f]) => lines.push(`  \u2022 ${f.name}  (${(f.size / 1024).toFixed(0)} KB)`));
     lines.push("");
   }
-  lines.push(LINE,
+  lines.push(
+    LINE,
+    "ATTESTATION",
+    `  "To the best of my knowledge, all information provided in this evaluation`,
+    `  is accurate and complete to the best of my ability."`,
+    "",
+    `  Signed: ${attestorName || "_______________________________"}`,
+    `  Date:   ${now}`,
+    "",
+    LINE,
     "PRISM (Precision Rating Index of Specimen Minerals)",
     "This report is for informational purposes and is not legal advice.",
     "Consult the receiving institution for their specific requirements.",
@@ -802,7 +1128,7 @@ function buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, 
   return lines.join("\n");
 }
 
-function buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, location, checks, uploads, pct, chainScore }) {
+function buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location, checks, uploads, pct, chainScore, attestorName }) {
   return JSON.stringify({
     generated: new Date().toISOString(),
     generator: "PRISM Mineral Donation Evaluator v1",
@@ -814,9 +1140,15 @@ function buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, 
     },
     acquisition: { type: acquisitionType, details: acquisitionDetails },
     location: {
+      locality: localityText || null,
       country: originCountry || null,
       landType: landType || null,
       coordinates: location ? { lat: location.lat, lng: location.lng } : null,
+    },
+    attestation: {
+      statement: "To the best of my knowledge, all information provided in this evaluation is accurate and complete to the best of my ability.",
+      signedBy: attestorName || null,
+      date: new Date().toISOString().split("T")[0],
     },
     checks,
     attachments: Object.entries(uploads || {})
@@ -827,8 +1159,9 @@ function buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, 
 
 // ── Step 4: Donation Assessment ───────────────────────────────────────────────
 
-function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, location, originCountry, spec, uploads }) {
+function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, location, originCountry, localityText, spec, uploads, onExported }) {
   const [copied, setCopied] = useState(false);
+  const [attestorName, setAttestorName] = useState("");
   const isSelf = acquisitionType === "self";
   const landQs  = isSelf ? (LAND_QUESTIONS[landType] || []) : [];
   const acqQs   = getAcquisitionQuestions(acquisitionType);
@@ -941,15 +1274,39 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
       )}
 
       {/* Location summary */}
-      {(originCountry || location || spec?.locality) && (
+      {(originCountry || localityText || location || spec?.locality) && (
         <div style={{ padding: "9px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border)" }}>
           <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>Collection Site</div>
-          {spec?.locality && <div style={{ fontSize: "12px", color: "var(--text)", marginBottom: "3px" }}>{spec.locality}</div>}
+          {localityText && <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", marginBottom: "3px" }}>{localityText}</div>}
+          {!localityText && spec?.locality && <div style={{ fontSize: "12px", color: "var(--text)", marginBottom: "3px" }}>{spec.locality}</div>}
           {originCountry && <div style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "3px" }}>Country: <strong>{originCountry}</strong></div>}
           {landMeta && <div style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "3px" }}>Land: <strong style={{ color: landMeta.color }}>{landMeta.label}</strong></div>}
           {location && <div style={{ fontSize: "10px", color: "var(--text-muted)", fontFamily: "var(--mono)" }}>{location.lat.toFixed(5)}°, {location.lng.toFixed(5)}°</div>}
         </div>
       )}
+
+      {/* Attestation */}
+      <div style={{ borderTop: "1px solid var(--border-dim)", paddingTop: "14px" }}>
+        <div style={{ fontSize: "9px", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Attestation</div>
+        <div style={{
+          padding: "12px 14px", background: "rgba(0,212,255,0.03)",
+          border: "1px solid rgba(0,212,255,0.15)", borderRadius: "6px",
+          fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.65,
+          fontStyle: "italic", marginBottom: "10px",
+        }}>
+          "To the best of my knowledge, all information provided in this evaluation is accurate and complete to the best of my ability."
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <label style={{ fontSize: "10px", color: "var(--text-muted)", whiteSpace: "nowrap", letterSpacing: "0.1em", textTransform: "uppercase" }}>Signed by</label>
+          <input
+            type="text"
+            placeholder="Your full name"
+            value={attestorName}
+            onChange={e => setAttestorName(e.target.value)}
+            style={{ flex: 1 }}
+          />
+        </div>
+      </div>
 
       {/* Share with curator */}
       <div style={{ borderTop: "1px solid var(--border-dim)", paddingTop: "14px" }}>
@@ -959,9 +1316,9 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px" }}>
           <button
             onClick={() => {
-              const txt = buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, location, checks, uploads, pct, chainScore, reqPassed, optPassed, required });
+              const txt = buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location, checks, uploads, pct, chainScore, reqPassed, optPassed, required, attestorName });
               navigator.clipboard.writeText(txt)
-                .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); })
+                .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); onExported?.(); })
                 .catch(() => {});
             }}
             style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", padding: "7px 10px", borderRadius: "5px", fontSize: "10px", fontWeight: 500, cursor: "pointer", background: copied ? "rgba(0,200,128,0.09)" : "var(--bg-card)", border: `1px solid ${copied ? "rgba(0,200,128,0.4)" : "var(--border)"}`, color: copied ? "#00c880" : "var(--text-dim)", transition: "all 0.2s" }}
@@ -971,7 +1328,7 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
           </button>
           <button
             onClick={() => {
-              const json = buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, location, checks, uploads, pct, chainScore });
+              const json = buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location, checks, uploads, pct, chainScore, attestorName });
               const blob = new Blob([json], { type: "application/json" });
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
@@ -979,13 +1336,14 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
               a.download = `prism-donation-eval-${Date.now()}.json`;
               a.click();
               URL.revokeObjectURL(url);
+              onExported?.();
             }}
             style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", padding: "7px 10px", borderRadius: "5px", fontSize: "10px", fontWeight: 500, cursor: "pointer", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-dim)" }}
           >
             <Download size={12} /> Download JSON
           </button>
           <button
-            onClick={() => window.print()}
+            onClick={() => { window.print(); onExported?.(); }}
             style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", padding: "7px 10px", borderRadius: "5px", fontSize: "10px", fontWeight: 500, cursor: "pointer", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-dim)" }}
           >
             <Printer size={12} /> Print
@@ -1005,15 +1363,46 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
 
 const STEPS = ["Acquisition", "Origin & Location", "Documentation", "Assessment"];
 
-export default function DonationEval({ scores, spec, onClose }) {
+export default function DonationEval({ scores: initScores, spec: initSpec, records = [], onClose }) {
+  const [showPicker, setShowPicker]           = useState(true);
+  const [workingScores, setWorkingScores]     = useState(initScores);
+  const [workingSpec, setWorkingSpec]         = useState(initSpec);
   const [step, setStep]                       = useState(0);
   const [acquisitionType, setAcquisitionType] = useState(null);
   const [acquisitionDetails, setAcquisitionDetails] = useState({});
   const [originCountry, setOriginCountry]     = useState("");
+  const [localityText, setLocalityText]       = useState("");
   const [location, setLocation]               = useState(null);
   const [landType, setLandType]               = useState(null);
   const [checks, setChecks]                   = useState({});
   const [uploads, setUploads]                 = useState({});
+  const [exported, setExported]               = useState(false);
+  const [showLeaveWarning, setShowLeaveWarning] = useState(false);
+
+  const handlePickerSelect = (scores, spec) => {
+    setWorkingScores(scores);
+    setWorkingSpec(spec);
+    setShowPicker(false);
+  };
+
+  if (showPicker) {
+    return (
+      <DonationPickerScreen
+        initScores={initScores} initSpec={initSpec}
+        records={records}
+        onSelect={handlePickerSelect}
+        onClose={onClose}
+      />
+    );
+  }
+
+  const scores = workingScores;
+  const spec   = workingSpec;
+
+  const guardedClose = () => {
+    if (step === STEPS.length - 1 && !exported) { setShowLeaveWarning(true); }
+    else { onClose(); }
+  };
 
   const canAdvance = () => {
     if (step === 0) return !!acquisitionType;
@@ -1056,7 +1445,7 @@ export default function DonationEval({ scores, spec, onClose }) {
               </div>
             )}
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", padding: "4px", display: "flex" }}>
+          <button onClick={guardedClose} style={{ background: "none", border: "none", color: "var(--text-muted)", padding: "4px", display: "flex" }}>
             <X size={16} />
           </button>
         </div>
@@ -1078,7 +1467,7 @@ export default function DonationEval({ scores, spec, onClose }) {
         </div>
 
         {/* Scrollable content */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "22px 24px" }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "22px 24px" }}>
           {step === 0 && (
             <AcquisitionStep
               acquisitionType={acquisitionType} setAcquisitionType={setAcquisitionType}
@@ -1090,6 +1479,7 @@ export default function DonationEval({ scores, spec, onClose }) {
               location={location} setLocation={setLocation}
               landType={landType} setLandType={setLandType}
               originCountry={originCountry} setOriginCountry={setOriginCountry}
+              localityText={localityText} setLocalityText={setLocalityText}
               acquisitionType={acquisitionType}
             />
           )}
@@ -1104,11 +1494,35 @@ export default function DonationEval({ scores, spec, onClose }) {
             <SummaryStep
               acquisitionType={acquisitionType} acquisitionDetails={acquisitionDetails}
               landType={landType} checks={checks}
-              location={location} originCountry={originCountry} spec={spec}
-              uploads={uploads}
+              location={location} originCountry={originCountry} localityText={localityText} spec={spec}
+              uploads={uploads} onExported={() => { setExported(true); setShowLeaveWarning(false); }}
             />
           )}
         </div>
+
+        {/* Unsaved warning banner */}
+        {showLeaveWarning && (
+          <div style={{
+            padding: "10px 18px", background: "rgba(255,160,40,0.09)",
+            borderTop: "1px solid rgba(255,160,40,0.35)",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+            flexShrink: 0,
+          }}>
+            <div style={{ fontSize: "11px", color: "#ffa028", lineHeight: 1.4 }}>
+              ⚠️ <strong>Assessment not saved.</strong> Copy, download, or print the report before closing so it isn't lost.
+            </div>
+            <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+              <button
+                onClick={() => setShowLeaveWarning(false)}
+                style={{ padding: "4px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: 500, cursor: "pointer", background: "rgba(255,160,40,0.1)", border: "1px solid rgba(255,160,40,0.4)", color: "#ffa028" }}
+              >Go back</button>
+              <button
+                onClick={onClose}
+                style={{ padding: "4px 10px", borderRadius: "4px", fontSize: "10px", cursor: "pointer", background: "none", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+              >Close anyway</button>
+            </div>
+          </div>
+        )}
 
         {/* Footer nav */}
         <div style={{
@@ -1117,7 +1531,7 @@ export default function DonationEval({ scores, spec, onClose }) {
           flexShrink: 0, background: "var(--bg-panel)",
         }}>
           <button
-            onClick={() => step > 0 ? setStep(s => s - 1) : onClose()}
+            onClick={() => step > 0 ? setStep(s => s - 1) : setShowPicker(true)}
             style={{
               display: "flex", alignItems: "center", gap: "5px",
               padding: "7px 14px", background: "none",
@@ -1126,7 +1540,7 @@ export default function DonationEval({ scores, spec, onClose }) {
             }}
           >
             <ChevronLeft size={13} />
-            {step === 0 ? "Cancel" : "Back"}
+            {step === 0 ? "Change Specimen" : "Back"}
           </button>
 
           {step < STEPS.length - 1 ? (
@@ -1147,17 +1561,17 @@ export default function DonationEval({ scores, spec, onClose }) {
             </button>
           ) : (
             <button
-              onClick={onClose}
+              onClick={guardedClose}
               style={{
                 padding: "7px 20px",
-                background: "rgba(0,200,128,0.09)",
-                border: "1px solid rgba(0,200,128,0.4)",
+                background: exported ? "rgba(0,200,128,0.09)" : "rgba(255,160,40,0.07)",
+                border: `1px solid ${exported ? "rgba(0,200,128,0.4)" : "rgba(255,160,40,0.4)"}`,
                 borderRadius: "4px",
-                color: "#00c880",
+                color: exported ? "#00c880" : "#ffa028",
                 fontSize: "11px", fontWeight: 600, cursor: "pointer",
               }}
             >
-              Done
+              Done{!exported ? " ⚠︎" : ""}
             </button>
           )}
         </div>
