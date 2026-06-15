@@ -107,6 +107,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
   const [step, setStep] = useState(initialStep);
   const [showTip, setShowTip] = useState(null);
   const [saveFlash, setSaveFlash] = useState(false);
+  const [autoAdvance, setAutoAdvance] = useState(() => localStorage.getItem('prism_autoAdvance') === 'true');
 
   // step 0 = choose context
   // step 1 = specimen info
@@ -126,6 +127,9 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
 
   const pickAnchor = (dimKey, value) => {
     setScores(s => ({ ...s, [dimKey]: value }));
+    if (autoAdvance && step < TOTAL_STEPS - 1) {
+      setTimeout(() => setStep(s => Math.min(s + 1, TOTAL_STEPS - 1)), 380);
+    }
   };
 
   const isLastStep = step === TOTAL_STEPS - 1;
@@ -557,19 +561,30 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
             <ChevronLeft size={14} /> Back
           </button>
 
-          <div style={{ display: "flex", gap: "5px" }}>
-            {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-              <div
-                key={i}
-                style={{
-                  width: i === step ? "16px" : "5px",
-                  height: "5px",
-                  borderRadius: "3px",
-                  background: i <= step ? "var(--cyan)" : "var(--border)",
-                  transition: "all 0.25s",
-                }}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "7px" }}>
+            <div style={{ display: "flex", gap: "5px" }}>
+              {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: i === step ? "16px" : "5px",
+                    height: "5px",
+                    borderRadius: "3px",
+                    background: i <= step ? "var(--cyan)" : "var(--border)",
+                    transition: "all 0.25s",
+                  }}
+                />
+              ))}
+            </div>
+            <label style={{ display: "flex", alignItems: "center", gap: "5px", cursor: "pointer", userSelect: "none" }}>
+              <input
+                type="checkbox"
+                checked={autoAdvance}
+                onChange={e => { const v = e.target.checked; setAutoAdvance(v); localStorage.setItem('prism_autoAdvance', v); }}
+                style={{ cursor: "pointer", accentColor: "var(--cyan)", width: "11px", height: "11px" }}
               />
-            ))}
+              <span style={{ fontSize: "9px", color: autoAdvance ? "var(--cyan)" : "var(--text-muted)", letterSpacing: "0.07em", textTransform: "uppercase" }}>Auto-advance</span>
+            </label>
           </div>
 
           {!isLastStep ? (

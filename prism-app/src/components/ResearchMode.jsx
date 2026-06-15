@@ -99,7 +99,7 @@ const DIM_DISPLAY = [
   { key: "scientific",     label: "Scientific", icon: "🔬" },
 ];
 
-const EMPTY_FORM = { species: "", locality: "", sourceUrl: "", sizeClass: "miniature", condition: "excellent", askingPrice: "", source: "", notes: "", photo: null };
+const EMPTY_FORM = { species: "", locality: "", sourceUrl: "", sizeClass: "miniature", condition: "excellent", askingPrice: "", source: "", notes: "", photo: null, photoUrl: "" };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -380,8 +380,10 @@ function parseCSV(text) {
 
 // ── PhotoCapture ─────────────────────────────────────────────────────────────
 
-function PhotoCapture({ value, onChange }) {
+function PhotoCapture({ value, onChange, urlValue, onUrlChange }) {
   const ref = useRef();
+  const [urlInput, setUrlInput] = useState(urlValue || "");
+  const [imgError, setImgError] = useState(false);
   const handleFile = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -389,27 +391,58 @@ function PhotoCapture({ value, onChange }) {
     reader.onload = async (ev) => {
       const compressed = await compressImage(ev.target.result);
       onChange(compressed);
+      onUrlChange("");
+      setUrlInput("");
     };
     reader.readAsDataURL(file);
   };
+  const handleUrlCommit = () => {
+    const trimmed = urlInput.trim();
+    onUrlChange(trimmed);
+    if (trimmed) { onChange(null); setImgError(false); }
+  };
+  const activeImg = value || (urlValue || "");
   return (
     <div>
       <input ref={ref} type="file" accept="image/*" capture="environment" onChange={handleFile} style={{ display: "none" }} />
-      {value ? (
+      {activeImg && !imgError ? (
         <div style={{ position: "relative", borderRadius: "5px", overflow: "hidden" }}>
-          <img src={value} alt="specimen" style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
-          <button onClick={() => onChange(null)}
+          <img src={activeImg} alt="specimen" style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }}
+            onError={() => setImgError(true)} />
+          {!value && urlValue && (
+            <div style={{ position: "absolute", bottom: "5px", right: "6px", fontSize: "8px", background: "rgba(0,0,0,0.55)", color: "#aac", padding: "2px 5px", borderRadius: "3px", letterSpacing: "0.06em" }}>web photo</div>
+          )}
+          <button onClick={() => { onChange(null); onUrlChange(""); setUrlInput(""); setImgError(false); }}
             style={{ position: "absolute", top: "6px", right: "6px", display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", borderRadius: "50%", background: "rgba(0,0,0,0.55)", border: "none", color: "#fff", cursor: "pointer" }}>
             <X size={12} />
           </button>
         </div>
+      ) : activeImg && imgError ? (
+        <div style={{ height: "52px", border: "1px dashed rgba(255,100,100,0.35)", borderRadius: "5px", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 10px", gap: "8px" }}>
+          <span style={{ fontSize: "10px", color: "var(--text-muted)" }}>Photo URL could not load</span>
+          <button onClick={() => { onChange(null); onUrlChange(""); setUrlInput(""); setImgError(false); }}
+            style={{ display: "flex", alignItems: "center", gap: "4px", padding: "3px 8px", background: "none", border: "1px solid rgba(255,100,100,0.35)", borderRadius: "3px", color: "rgba(255,100,100,0.7)", fontSize: "10px", cursor: "pointer" }}>
+            <X size={10} /> Clear
+          </button>
+        </div>
       ) : (
-        <div onClick={() => ref.current?.click()}
-          style={{ height: "72px", border: "1px dashed var(--border)", borderRadius: "5px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", cursor: "pointer", color: "var(--text-muted)", fontSize: "11px", transition: "border-color 0.15s" }}
-          onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.35)"}
-          onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
-        >
-          <Camera size={15} /> Add photo
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <div onClick={() => ref.current?.click()}
+            style={{ height: "52px", border: "1px dashed var(--border)", borderRadius: "5px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", cursor: "pointer", color: "var(--text-muted)", fontSize: "11px", transition: "border-color 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.35)"}
+            onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+          >
+            <Camera size={15} /> Upload file
+          </div>
+          <input
+            type="url"
+            value={urlInput}
+            onChange={e => setUrlInput(e.target.value)}
+            onBlur={handleUrlCommit}
+            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleUrlCommit(); } }}
+            placeholder="or paste photo URL…"
+            style={{ padding: "6px 9px", background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text)", fontSize: "11px", fontFamily: "var(--sans)", width: "100%", boxSizing: "border-box" }}
+          />
         </div>
       )}
     </div>
@@ -588,7 +621,7 @@ function CompForm({ initial = EMPTY_FORM, onSave, onCancel }) {
         </div>
         <div>
           <label style={{ display: "block", fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "5px" }}>Photo (optional)</label>
-          <PhotoCapture value={form.photo} onChange={v => set("photo", v)} />
+          <PhotoCapture value={form.photo} onChange={v => set("photo", v)} urlValue={form.photoUrl} onUrlChange={v => set("photoUrl", v)} />
         </div>
       </div>
 
@@ -625,7 +658,7 @@ function CompCard({ comp, onScore, onEdit, onDelete }) {
 
       {(comp.photo || comp.photoUrl) && (
         <div style={{ margin: "-16px -18px 4px", position: "relative" }}>
-          <img src={comp.photo || comp.photoUrl} alt={comp.species} style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
+          <img src={comp.photo || comp.photoUrl} alt={comp.species} style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} onError={e => { e.currentTarget.parentElement.style.display = "none"; }} />
           {!comp.photo && comp.photoUrl && (
             <div style={{ position: "absolute", bottom: "5px", right: "6px", fontSize: "8px", background: "rgba(0,0,0,0.55)", color: "#aac", padding: "2px 5px", borderRadius: "3px", letterSpacing: "0.06em" }}>web photo</div>
           )}
@@ -738,6 +771,8 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
   const [editingComp, setEditing]   = useState(null);
   const [showAIPrompt, setShowAIPrompt] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
+  const [photoFetchStatus, setPhotoFetchStatus] = useState(null); // null | { done, total }
+  const [showImportMenu, setShowImportMenu] = useState(false);
 
   const speciesList = useMemo(() => {
     const seen = new Map();
@@ -804,13 +839,39 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
         const parsed = JSON.parse(ev.target.result);
         const { data, error, warning } = unwrapFromFile(parsed, "prism-research", COMPS_SCHEMA);
         if (error) { alert(error); return; }
         if (warning && !window.confirm(warning + "\n\nOpen anyway?")) return;
-        onImport(data.map(migrateComp).filter(Boolean));
+        const migrated = data.map(migrateComp).filter(Boolean);
+        onImport(migrated);
+
+        const needPhotos = migrated.filter(c => c.photoUrl && !c.photo);
+        if (needPhotos.length > 0) {
+          setPhotoFetchStatus({ done: 0, total: needPhotos.length });
+          let done = 0;
+          await Promise.all(needPhotos.map(async (comp) => {
+            try {
+              const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(comp.photoUrl)}`;
+              const resp = await fetch(proxy, { signal: AbortSignal.timeout(10000) });
+              if (!resp.ok) return;
+              const blob = await resp.blob();
+              if (!blob.type.startsWith("image/") || blob.size < 5000) return;
+              const dataUrl = await new Promise(resolve => {
+                const r = new FileReader();
+                r.onload = ev2 => resolve(ev2.target.result);
+                r.readAsDataURL(blob);
+              });
+              const compressed = await compressImage(dataUrl);
+              onUpdate(comp.id, { photo: compressed });
+            } catch {}
+            done++;
+            setPhotoFetchStatus({ done, total: needPhotos.length });
+          }));
+          setTimeout(() => setPhotoFetchStatus(null), 2000);
+        }
       } catch { alert("Could not read file — make sure it is a valid PRISM Research JSON."); }
       e.target.value = "";
     };
@@ -892,37 +953,68 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
           <Plus size={13} /> Add Listing
         </button>
         {comps.length > 0 && (
-          <>
-            <button onClick={handleSave} title="Save database to device"
-              style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
-              <Download size={13} /> Save
-            </button>
-            <button onClick={handleClearAll} title="Clear all listings"
-              style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: "none", border: "1px solid rgba(255,100,100,0.3)", borderRadius: "4px", color: "rgba(255,100,100,0.7)", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,100,100,0.08)"; e.currentTarget.style.borderColor = "rgba(255,100,100,0.55)"; e.currentTarget.style.color = "#ff6464"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.borderColor = "rgba(255,100,100,0.3)"; e.currentTarget.style.color = "rgba(255,100,100,0.7)"; }}>
-              🗑 Clear All
-            </button>
-          </>
+          <button onClick={handleSave} title="Save database to device"
+            style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
+            <Download size={13} /> Save
+          </button>
         )}
-        <button onClick={() => openInputRef.current?.click()} title="Open a saved database file"
-          style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
-          <FolderOpen size={13} /> Open
-        </button>
+        {/* Import dropdown */}
         <input ref={openInputRef} type="file" accept=".json,application/json" onChange={handleOpen} style={{ display: "none" }} />
-        <button onClick={() => csvImportRef.current?.click()} title="Import listings from a CSV spreadsheet"
-          style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
-          <Upload size={13} /> CSV
-        </button>
         <input ref={csvImportRef} type="file" accept=".csv,text/csv" onChange={handleCSVImport} style={{ display: "none" }} />
-        <button onClick={() => setShowAIPrompt(true)} title="Get AI data collection prompt"
-          style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: "rgba(124,92,252,0.08)", border: "1px solid rgba(124,92,252,0.35)", borderRadius: "4px", color: "#a07cfc", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
-          <Bot size={13} /> AI Prompt
-        </button>
+        {showImportMenu && <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={() => setShowImportMenu(false)} />}
+        <div style={{ position: "relative", zIndex: 100 }}>
+          <button onClick={() => setShowImportMenu(v => !v)}
+            style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: showImportMenu ? "rgba(0,212,255,0.06)" : "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
+            <Upload size={13} /> Import ▾
+          </button>
+          {showImportMenu && (
+            <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, minWidth: "160px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", boxShadow: "0 8px 24px rgba(0,0,0,0.4)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+              {[{
+                icon: <FolderOpen size={13} />, label: "Open JSON",
+                action: () => { setShowImportMenu(false); openInputRef.current?.click(); }
+              }, {
+                icon: <Upload size={13} />, label: "Import CSV",
+                action: () => { setShowImportMenu(false); csvImportRef.current?.click(); }
+              }, {
+                icon: <Bot size={13} />, label: "AI Prompt", color: "#a07cfc",
+                action: () => { setShowImportMenu(false); setShowAIPrompt(true); }
+              }].map(({ icon, label, action, color }) => (
+                <button key={label} onClick={action} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 14px", background: "none", border: "none", color: color || "var(--text-dim)", fontSize: "11px", cursor: "pointer", textAlign: "left", transition: "background 0.1s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                  {icon}{label}
+                </button>
+              ))}
+              {comps.length > 0 && (
+                <>
+                  <div style={{ height: "1px", background: "var(--border)", margin: "2px 0" }} />
+                  <button onClick={() => { setShowImportMenu(false); handleClearAll(); }} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 14px", background: "none", border: "none", color: "rgba(255,100,100,0.7)", fontSize: "11px", cursor: "pointer", textAlign: "left", transition: "background 0.1s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,100,100,0.06)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                    <Trash2 size={13} /> Clear All
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "8px", opacity: 0.7 }}>
         💡 Saves to this device only — store the file in iCloud Drive, Google Drive, or Dropbox to access on any device
       </div>
+
+      {photoFetchStatus && (
+        <div style={{ padding: "9px 13px", borderRadius: "5px", border: "1px solid rgba(124,92,252,0.35)", background: "rgba(124,92,252,0.06)", marginBottom: "12px", display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ flex: 1, height: "4px", background: "var(--border-dim)", borderRadius: "2px", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${Math.round((photoFetchStatus.done / photoFetchStatus.total) * 100)}%`, background: "#a07cfc", borderRadius: "2px", transition: "width 0.3s" }} />
+          </div>
+          <div style={{ fontSize: "11px", color: "#a07cfc", whiteSpace: "nowrap" }}>
+            {photoFetchStatus.done < photoFetchStatus.total
+              ? `Fetching photos ${photoFetchStatus.done}/${photoFetchStatus.total}...`
+              : `Photos ready (${photoFetchStatus.total})`}
+          </div>
+        </div>
+      )}
 
       {showStorageWarning && (
         <div style={{ padding: "9px 13px", borderRadius: "5px", border: "1px solid rgba(255,160,40,0.35)", background: "rgba(255,160,40,0.06)", marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
@@ -942,11 +1034,13 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
 Search for: [SPECIES] specimens for sale
 Optional filters: [LOCALITY], [SIZE], [PRICE RANGE]
 
+Important: search across multiple vendors and platforms. For each vendor you find, collect AT LEAST 3 listings — this gives enough data to calculate a meaningful average price per source. Aim for 15–25 total listings across at least 5 different vendors.
+
 For each listing you find, extract the following fields and return them in this exact JSON format:
 
 [
   {
-    "species": "exact mineral species name",
+    "species": "primary mineral species name ONLY — e.g. 'Wulfenite', never 'Wulfenite on Baryte' or 'Wulfenite with Calcite'. Matrix or associated minerals go in notes.",
     "locality": "Mine name, Region, Country (as specific as possible)",
     "sizeClass": "one of: thumbnail | miniature | small_cab | cabinet | large_cab | museum",
     "condition": "one of: pristine | excellent | good | repaired | damaged",
@@ -954,7 +1048,7 @@ For each listing you find, extract the following fields and return them in this 
     "soldPrice": null,
     "source": "Vendor or platform name (e.g. iRocks, eBay, Heritage Auctions)",
     "sourceUrl": "https://direct-link-to-this-specific-listing",
-    "notes": "Brief description: crystal habit, color, size in cm, any damage or notable features",
+    "notes": "Brief description including matrix/association (e.g. 'on Baryte matrix'), crystal habit, color, size in cm, any damage or notable features",
     "photoUrl": "https://direct-link-to-the-main-photo-of-this-specimen"
   }
 ]
@@ -974,10 +1068,17 @@ Condition guide:
 - repaired  = restored, glued, or repaired damage
 - damaged   = significant breakage
 
+Photo instructions:
+For EVERY listing you must try to find the photoUrl. To locate it:
+1. Visit the individual listing page.
+2. Right-click the main specimen image and copy the image address, OR find the og:image URL in the page source.
+3. The URL usually ends in .jpg, .jpeg, .png, or .webp.
+4. Include the full direct image URL in photoUrl — do NOT leave it null unless you truly cannot find any image after checking.
+
 Rules:
 - Only include listings with a visible asking price.
 - Include a direct URL to the individual specimen page (not a category page).
-- Include a direct URL to the main specimen photo if visible.
+- photoUrl is required — skip a listing only as a last resort if no image exists at all.
 - Do not include duplicate listings.
 - Return ONLY the raw JSON array — no explanation, no markdown fences, no extra text.
 - If a field is unknown, use null for numbers or "" for strings.
@@ -1034,7 +1135,7 @@ Rules:
       {/* Edit form */}
       {editingComp && (
         <CompForm
-          initial={{ species: editingComp.species, locality: editingComp.locality, sourceUrl: editingComp.sourceUrl || "", sizeClass: editingComp.sizeClass, condition: editingComp.condition, askingPrice: editingComp.askingPrice, source: editingComp.source, notes: editingComp.notes, photo: editingComp.photo }}
+          initial={{ species: editingComp.species, locality: editingComp.locality, sourceUrl: editingComp.sourceUrl || "", sizeClass: editingComp.sizeClass, condition: editingComp.condition, askingPrice: editingComp.askingPrice, source: editingComp.source, notes: editingComp.notes, photo: editingComp.photo, photoUrl: editingComp.photoUrl || "" }}
           onSave={handleFormSave}
           onCancel={handleCancel}
         />

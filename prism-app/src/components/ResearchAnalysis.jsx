@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { X, ExternalLink } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
   ScatterChart, Scatter, CartesianGrid,
@@ -41,7 +42,7 @@ function logLinearRegression(points) {
 
 const fmt  = (n) => n != null ? "$" + Number(n).toLocaleString() : "—";
 const fmtK = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)}`;
-const normKey  = s => (s || "Unknown").trim().toLowerCase();
+const normKey  = s => (s || "Unknown").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const capFirst = s => { const t = (s || "Unknown").trim(); return t ? t.charAt(0).toUpperCase() + t.slice(1) : "Unknown"; };
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
@@ -104,6 +105,7 @@ export default function ResearchAnalysis({ comps }) {
   const [driversSpecies, setDriversSpecies] = useState("all");
   const [colorBy, setColorBy] = useState("auto");
   const [priceScale, setPriceScale] = useState("log");
+  const [selectedComp, setSelectedComp] = useState(null);
   const analysis = useMemo(() => {
     const priced  = comps.filter(c => Number(c.askingPrice) > 0);
     const scored  = comps.filter(c => c.prismScore != null);
@@ -140,6 +142,27 @@ export default function ResearchAnalysis({ comps }) {
     const bySize = SIZE_ORDER
       .filter(k => sizeMap[k]?.length)
       .map(k => ({ size: SIZE_LABELS[k] || k, avg: Math.round(mean(sizeMap[k])), count: sizeMap[k].length }));
+
+    // ── By locality (avg price) ──────────────────────────────────────────────
+    const shortLocality = (str) => {
+      if (!str) return "";
+      const parts = str.split(",").map(p => p.trim()).filter(Boolean);
+      if (parts.length === 0) return str;
+      const label = parts[0] || (parts.length > 2 ? parts[parts.length - 2] : parts[parts.length - 1]);
+      return label.replace(/\s+mine\b.*/i, "").trim();
+    };
+    const localityAvgMap = {};
+    priced.forEach(c => {
+      const short = shortLocality(c.locality);
+      const key = normKey(short);
+      if (!key || key === "unknown") return;
+      if (!localityAvgMap[key]) localityAvgMap[key] = { display: short, prices: [] };
+      localityAvgMap[key].prices.push(Number(c.askingPrice));
+    });
+    const byLocalityAvg = Object.values(localityAvgMap)
+      .map(({ display, prices: ps }) => ({ locality: display, short: display, avg: Math.round(mean(ps)), median: Math.round(median(ps)), count: ps.length }))
+      .sort((a, b) => b.avg - a.avg)
+      .slice(0, 10);
 
     // ── By source ─────────────────────────────────────────────────────────────
     const sourceMap = {};
@@ -227,7 +250,7 @@ export default function ResearchAnalysis({ comps }) {
       .sort((a, b) => a.avgPremium - b.avgPremium);
 
     return { priced, scored, pricedAndScored, avgPrice, medPrice, minPrice, maxPrice,
-             bySpecies, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg,
+             bySpecies, byLocalityAvg, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg,
              speciesRegs, hasSpeciesCurves, byLocality };
   }, [comps]);
 
@@ -287,7 +310,7 @@ export default function ResearchAnalysis({ comps }) {
   }, [comps, driversSpecies, colorBy]);
 
   const { priced, scored, pricedAndScored, avgPrice, medPrice, minPrice, maxPrice,
-          bySpecies, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg,
+          bySpecies, byLocalityAvg, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg,
           speciesRegs, hasSpeciesCurves, byLocality } = analysis;
 
   if (!comps.length) {
@@ -311,56 +334,24 @@ export default function ResearchAnalysis({ comps }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: "10px" }}>
             <StatCard label="Avg Price"   value={fmtK(avgPrice)}                                color="var(--cyan)" />
             <StatCard label="Median"      value={fmtK(medPrice)}                                color="var(--cyan)" />
-            <StatCard label="Scored"      value={scored.length}   sub={`of ${comps.length} total`} color={scored.length ? "#00c880" : "var(--text-muted)"} />
-            {avgScore != null && <StatCard label="Avg PRISM" value={avgScore} sub="out of 100" color="#7c5cfc" />}
-            <div style={{ gridColumn: "1 / -1", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "8px", padding: "14px 16px" }}>
-              <div style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "14px" }}>Price Range</div>
+            <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "8px", padding: "14px 16px", display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase" }}>Range</div>
+              <div style={{ fontSize: "15px", fontWeight: 700, fontFamily: "var(--mono)", color: "#a0b4cc" }}>{fmtK(minPrice)}</div>
               {maxPrice > minPrice ? (
-                <div style={{ position: "relative", paddingBottom: "30px", margin: "0 4px" }}>
-                  <div style={{ height: "6px", background: "var(--border-dim)", borderRadius: "3px", position: "relative" }}>
-                    <div style={{ position: "absolute", inset: 0, background: "rgba(0,212,255,0.12)", borderRadius: "3px" }} />
-                    {avgPrice != null && (() => {
-                      const pct = ((avgPrice - minPrice) / (maxPrice - minPrice)) * 100;
-                      return <div style={{ position: "absolute", left: `${pct}%`, top: "-5px", transform: "translateX(-50%)", width: "2px", height: "16px", background: "var(--cyan)", borderRadius: "1px" }} />;
-                    })()}
-                    {medPrice != null && (() => {
-                      const pct = ((medPrice - minPrice) / (maxPrice - minPrice)) * 100;
-                      return <div style={{ position: "absolute", left: `${pct}%`, top: "-5px", transform: "translateX(-50%)", width: "2px", height: "16px", background: "#a0b4cc", borderRadius: "1px" }} />;
-                    })()}
+                <>
+                  <div style={{ height: "4px", background: "var(--border-dim)", borderRadius: "2px", position: "relative", margin: "2px 0" }}>
+                    <div style={{ position: "absolute", inset: 0, background: "rgba(160,180,204,0.15)", borderRadius: "2px" }} />
+                    {avgPrice != null && <div style={{ position: "absolute", left: `${((avgPrice - minPrice) / (maxPrice - minPrice)) * 100}%`, top: "-2px", transform: "translateX(-50%)", width: "2px", height: "8px", background: "var(--cyan)", borderRadius: "1px" }} />}
+                    {medPrice != null && <div style={{ position: "absolute", left: `${((medPrice - minPrice) / (maxPrice - minPrice)) * 100}%`, top: "-2px", transform: "translateX(-50%)", width: "2px", height: "8px", background: "#a0b4cc", borderRadius: "1px" }} />}
                   </div>
-                  <div style={{ position: "absolute", left: 0, top: "12px", textAlign: "left" }}>
-                    <div style={{ fontSize: "10px", fontFamily: "var(--mono)", color: "var(--text-dim)" }}>{fmtK(minPrice)}</div>
-                    <div style={{ fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.06em" }}>min</div>
-                  </div>
-                  {avgPrice != null && (() => {
-                    const pct = ((avgPrice - minPrice) / (maxPrice - minPrice)) * 100;
-                    return (
-                      <div style={{ position: "absolute", left: `${pct}%`, top: "12px", transform: "translateX(-50%)", textAlign: "center" }}>
-                        <div style={{ fontSize: "10px", fontFamily: "var(--mono)", color: "var(--cyan)" }}>{fmtK(avgPrice)}</div>
-                        <div style={{ fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.06em" }}>avg</div>
-                      </div>
-                    );
-                  })()}
-                  {medPrice != null && (() => {
-                    const pct = ((medPrice - minPrice) / (maxPrice - minPrice)) * 100;
-                    return (
-                      <div style={{ position: "absolute", left: `${pct}%`, top: "12px", transform: "translateX(-50%)", textAlign: "center" }}>
-                        <div style={{ fontSize: "10px", fontFamily: "var(--mono)", color: "#a0b4cc" }}>{fmtK(medPrice)}</div>
-                        <div style={{ fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.06em" }}>med</div>
-                      </div>
-                    );
-                  })()}
-                  <div style={{ position: "absolute", right: 0, top: "12px", textAlign: "right" }}>
-                    <div style={{ fontSize: "10px", fontFamily: "var(--mono)", color: "var(--text-dim)" }}>{fmtK(maxPrice)}</div>
-                    <div style={{ fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.06em" }}>max</div>
-                  </div>
-                </div>
+                  <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>to {fmtK(maxPrice)}</div>
+                </>
               ) : (
-                <div style={{ fontSize: "12px", fontFamily: "var(--mono)", color: "var(--text-dim)" }}>
-                  {fmtK(minPrice)} <span style={{ color: "var(--text-muted)", fontSize: "10px" }}>(single price point)</span>
-                </div>
+                <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>single price</div>
               )}
             </div>
+            <StatCard label="Scored"      value={scored.length}   sub={`of ${comps.length} total`} color={scored.length ? "#00c880" : "var(--text-muted)"} />
+            {avgScore != null && <StatCard label="Avg PRISM" value={avgScore} sub="out of 100" color="#7c5cfc" />}
           </div>
         )}
       </div>
@@ -392,6 +383,40 @@ export default function ResearchAnalysis({ comps }) {
               <Bar dataKey="avg" radius={[0, 3, 3, 0]}>
                 {bySpecies.map((_, i) => (
                   <Cell key={i} fill={i === 0 ? "#00d4ff" : `rgba(0,212,255,${0.65 - i * 0.05})`} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* ── By locality (avg price) ───────────────────────────────────── */}
+      {byLocalityAvg.length >= 2 && (
+        <div>
+          <SectionTitle>Avg Price by Locality (top {byLocalityAvg.length})</SectionTitle>
+          <ResponsiveContainer width="100%" height={Math.max(140, byLocalityAvg.length * 34)}>
+            <BarChart data={byLocalityAvg} layout="vertical" margin={{ left: 8, right: 40, top: 0, bottom: 0 }}>
+              <CartesianGrid horizontal={false} stroke="#1e2d3d" />
+              <XAxis type="number" dataKey="avg" tickFormatter={fmtK} tick={{ fill: "#6a7f94", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="short" width={110} tick={{ fill: "#8899aa", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                cursor={{ fill: "rgba(0,212,255,0.04)" }}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0].payload;
+                  return (
+                    <div style={CUSTOM_TOOLTIP_STYLE}>
+                      <div style={{ fontWeight: 600, marginBottom: "4px" }}>{d.locality}</div>
+                      <div>Avg: <strong>{fmt(d.avg)}</strong></div>
+                      <div>Median: {fmt(d.median)}</div>
+                      <div style={{ color: "#6a7f94" }}>{d.count} listing{d.count !== 1 ? "s" : ""}</div>
+                    </div>
+                  );
+                }}
+              />
+              <Bar dataKey="avg" radius={[0, 3, 3, 0]}>
+                {byLocalityAvg.map((_, i) => (
+                  <Cell key={i} fill={i === 0 ? "#7c5cfc" : `rgba(124,92,252,${0.75 - i * 0.05})`} />
                 ))}
               </Bar>
             </BarChart>
@@ -535,12 +560,14 @@ export default function ResearchAnalysis({ comps }) {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {marketPosition.map(c => (
-              <div key={c.id} style={{
+              <div key={c.id} onClick={() => setSelectedComp(c)} style={{
                 display: "grid", gridTemplateColumns: "1fr 72px 72px 72px 80px", gap: "8px",
                 alignItems: "center", padding: "8px 12px",
                 background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px",
-                fontSize: "11px",
-              }}>
+                fontSize: "11px", cursor: "pointer", transition: "border-color 0.15s",
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.35)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
                 <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   <span style={{ color: "var(--text)", fontWeight: 600 }}>{c.species || "Unknown"}</span>
                   {c.locality && <span style={{ color: "var(--text-muted)", marginLeft: "6px" }}>{c.locality}</span>}
@@ -646,6 +673,12 @@ export default function ResearchAnalysis({ comps }) {
                 <span>Listing share</span>
               </div>
             </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "4px" }}>
+              <div style={{ width: "110px", flexShrink: 0 }} />
+              <div style={{ flex: 1 }} />
+              <div style={{ width: "28px", textAlign: "right" }}>n</div>
+              <div style={{ width: "56px", textAlign: "right" }}>avg</div>
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
               {sorted.map(s => {
                 const avgPct = Math.round((s.avg / maxAvg) * 100);
@@ -658,7 +691,7 @@ export default function ResearchAnalysis({ comps }) {
                       <div style={{ position: "absolute", top: "2px", left: 0, height: "4px", width: `${countPct}%`, background: "rgba(0,212,255,0.2)", borderRadius: "2px" }} />
                     </div>
                     <div style={{ width: "28px", textAlign: "right", color: "var(--text-muted)", fontSize: "10px", fontFamily: "var(--mono)" }}>{s.count}</div>
-                    <div style={{ width: "56px", textAlign: "right", color: "var(--text-muted)", fontSize: "10px", fontFamily: "var(--mono)" }}>{fmtK(s.avg)} avg</div>
+                    <div style={{ width: "56px", textAlign: "right", color: "var(--text-muted)", fontSize: "10px", fontFamily: "var(--mono)" }}>{fmtK(s.avg)}</div>
                   </div>
                 );
               })}
@@ -770,6 +803,88 @@ export default function ResearchAnalysis({ comps }) {
             })}
           </div>
         </div>
+      )}
+
+      {/* ── Listing card modal ─────────────────────────────────────────── */}
+      {selectedComp && (
+        <>
+          <div onClick={() => setSelectedComp(null)}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 200 }} />
+          <div style={{
+            position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+            zIndex: 201, width: "min(480px, 92vw)",
+            background: "var(--bg-panel)", border: "1px solid var(--border)",
+            borderRadius: "10px", overflow: "hidden", boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
+          }}>
+            {(selectedComp.photo || selectedComp.photoUrl) && (
+              <div style={{ position: "relative", height: "200px", background: "#0a111c" }}>
+                <img src={selectedComp.photo || selectedComp.photoUrl} alt="specimen"
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  onError={e => { e.currentTarget.parentElement.style.display = "none"; }} />
+                {selectedComp.photoUrl && !selectedComp.photo && (
+                  <div style={{ position: "absolute", bottom: "6px", right: "8px", fontSize: "8px", background: "rgba(0,0,0,0.55)", color: "#aac", padding: "2px 5px", borderRadius: "3px" }}>web photo</div>
+                )}
+              </div>
+            )}
+            <div style={{ padding: "16px 18px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                <div>
+                  <div style={{ fontSize: "17px", fontWeight: 700, color: "var(--text)", marginBottom: "2px" }}>{selectedComp.species || "Unknown"}</div>
+                  {selectedComp.locality && <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{selectedComp.locality}</div>}
+                </div>
+                <button onClick={() => setSelectedComp(null)}
+                  style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "2px", flexShrink: 0 }}>
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginBottom: "12px" }}>
+                {[
+                  ["Asking Price", fmt(selectedComp.askingPrice), "var(--cyan)"],
+                  ["PRISM Score",  selectedComp.prismScore != null ? `${selectedComp.prismScore} / 100` : "—", "#7c5cfc"],
+                  ["Expected",     selectedComp.expectedPrice ? fmt(selectedComp.expectedPrice) : "—",
+                    selectedComp.pct < -10 ? "#00c880" : selectedComp.pct > 10 ? "#ff8060" : "var(--text-dim)"],
+                ].map(([label, value, color]) => (
+                  <div key={label} style={{ background: "rgba(0,0,0,0.25)", border: "1px solid var(--border)", borderRadius: "6px", padding: "8px 10px" }}>
+                    <div style={{ fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "3px" }}>{label}</div>
+                    <div style={{ fontSize: "14px", fontWeight: 700, fontFamily: "var(--mono)", color }}>{value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {selectedComp.pct != null && (
+                <div style={{ marginBottom: "10px" }}>
+                  <span style={{
+                    padding: "3px 9px", borderRadius: "4px", fontSize: "10px", fontFamily: "var(--mono)", fontWeight: 600,
+                    background: selectedComp.pct < -10 ? "rgba(0,200,128,0.12)" : selectedComp.pct > 10 ? "rgba(255,128,96,0.12)" : "rgba(170,170,170,0.08)",
+                    color:      selectedComp.pct < -10 ? "#00c880"              : selectedComp.pct > 10 ? "#ff8060"              : "#8899aa",
+                    border:     `1px solid ${selectedComp.pct < -10 ? "rgba(0,200,128,0.3)" : selectedComp.pct > 10 ? "rgba(255,128,96,0.3)" : "var(--border)"}`,
+                  }}>
+                    {selectedComp.pct > 0 ? "+" : ""}{selectedComp.pct}% vs expected
+                  </span>
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" }}>
+                {selectedComp.sizeClass && <span style={{ fontSize: "10px", padding: "2px 7px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: "3px", color: "var(--text-muted)" }}>{selectedComp.sizeClass.replace("_"," ")}</span>}
+                {selectedComp.condition  && <span style={{ fontSize: "10px", padding: "2px 7px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: "3px", color: "var(--text-muted)" }}>{selectedComp.condition}</span>}
+                {selectedComp.source     && <span style={{ fontSize: "10px", padding: "2px 7px", background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.2)", borderRadius: "3px", color: "var(--cyan)" }}>{selectedComp.source}</span>}
+                {selectedComp.gradeEmoji && <span style={{ fontSize: "10px", padding: "2px 7px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: "3px", color: "var(--text-muted)" }}>{selectedComp.gradeEmoji} {selectedComp.grade}</span>}
+              </div>
+
+              {selectedComp.notes && (
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.5, marginBottom: "10px" }}>{selectedComp.notes}</div>
+              )}
+
+              {selectedComp.sourceUrl && (
+                <a href={selectedComp.sourceUrl} target="_blank" rel="noopener noreferrer"
+                  style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "rgba(0,212,255,0.7)", textDecoration: "none" }}>
+                  <ExternalLink size={11} /> View original listing
+                </a>
+              )}
+            </div>
+          </div>
+        </>
       )}
 
     </div>
