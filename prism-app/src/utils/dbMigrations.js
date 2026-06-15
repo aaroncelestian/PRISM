@@ -18,6 +18,7 @@ export function migrateComp(raw) {
     source:      raw.source      || "",
     notes:       raw.notes       || "",
     photo:       raw.photo       || null,
+    photoUrl:    raw.photoUrl    || null,
     soldPrice:   raw.soldPrice   ?? null,
     sourceUrl:   raw.sourceUrl   || "",
     scores:      raw.scores      || null,

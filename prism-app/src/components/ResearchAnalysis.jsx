@@ -311,9 +311,56 @@ export default function ResearchAnalysis({ comps }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: "10px" }}>
             <StatCard label="Avg Price"   value={fmtK(avgPrice)}                                color="var(--cyan)" />
             <StatCard label="Median"      value={fmtK(medPrice)}                                color="var(--cyan)" />
-            <StatCard label="Range"       value={fmtK(minPrice)}  sub={`to ${fmtK(maxPrice)}`} color="#a0b4cc" />
             <StatCard label="Scored"      value={scored.length}   sub={`of ${comps.length} total`} color={scored.length ? "#00c880" : "var(--text-muted)"} />
             {avgScore != null && <StatCard label="Avg PRISM" value={avgScore} sub="out of 100" color="#7c5cfc" />}
+            <div style={{ gridColumn: "1 / -1", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "8px", padding: "14px 16px" }}>
+              <div style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "14px" }}>Price Range</div>
+              {maxPrice > minPrice ? (
+                <div style={{ position: "relative", paddingBottom: "30px", margin: "0 4px" }}>
+                  <div style={{ height: "6px", background: "var(--border-dim)", borderRadius: "3px", position: "relative" }}>
+                    <div style={{ position: "absolute", inset: 0, background: "rgba(0,212,255,0.12)", borderRadius: "3px" }} />
+                    {avgPrice != null && (() => {
+                      const pct = ((avgPrice - minPrice) / (maxPrice - minPrice)) * 100;
+                      return <div style={{ position: "absolute", left: `${pct}%`, top: "-5px", transform: "translateX(-50%)", width: "2px", height: "16px", background: "var(--cyan)", borderRadius: "1px" }} />;
+                    })()}
+                    {medPrice != null && (() => {
+                      const pct = ((medPrice - minPrice) / (maxPrice - minPrice)) * 100;
+                      return <div style={{ position: "absolute", left: `${pct}%`, top: "-5px", transform: "translateX(-50%)", width: "2px", height: "16px", background: "#a0b4cc", borderRadius: "1px" }} />;
+                    })()}
+                  </div>
+                  <div style={{ position: "absolute", left: 0, top: "12px", textAlign: "left" }}>
+                    <div style={{ fontSize: "10px", fontFamily: "var(--mono)", color: "var(--text-dim)" }}>{fmtK(minPrice)}</div>
+                    <div style={{ fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.06em" }}>min</div>
+                  </div>
+                  {avgPrice != null && (() => {
+                    const pct = ((avgPrice - minPrice) / (maxPrice - minPrice)) * 100;
+                    return (
+                      <div style={{ position: "absolute", left: `${pct}%`, top: "12px", transform: "translateX(-50%)", textAlign: "center" }}>
+                        <div style={{ fontSize: "10px", fontFamily: "var(--mono)", color: "var(--cyan)" }}>{fmtK(avgPrice)}</div>
+                        <div style={{ fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.06em" }}>avg</div>
+                      </div>
+                    );
+                  })()}
+                  {medPrice != null && (() => {
+                    const pct = ((medPrice - minPrice) / (maxPrice - minPrice)) * 100;
+                    return (
+                      <div style={{ position: "absolute", left: `${pct}%`, top: "12px", transform: "translateX(-50%)", textAlign: "center" }}>
+                        <div style={{ fontSize: "10px", fontFamily: "var(--mono)", color: "#a0b4cc" }}>{fmtK(medPrice)}</div>
+                        <div style={{ fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.06em" }}>med</div>
+                      </div>
+                    );
+                  })()}
+                  <div style={{ position: "absolute", right: 0, top: "12px", textAlign: "right" }}>
+                    <div style={{ fontSize: "10px", fontFamily: "var(--mono)", color: "var(--text-dim)" }}>{fmtK(maxPrice)}</div>
+                    <div style={{ fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.06em" }}>max</div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: "12px", fontFamily: "var(--mono)", color: "var(--text-dim)" }}>
+                  {fmtK(minPrice)} <span style={{ color: "var(--text-muted)", fontSize: "10px" }}>(single price point)</span>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -589,6 +636,16 @@ export default function ResearchAnalysis({ comps }) {
         return (
           <div>
             <SectionTitle>By Source</SectionTitle>
+            <div style={{ display: "flex", gap: "14px", marginBottom: "8px", fontSize: "10px", color: "var(--text-muted)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                <div style={{ width: "18px", height: "8px", background: "rgba(0,212,255,0.5)", borderRadius: "2px" }} />
+                <span>Avg price (relative)</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                <div style={{ width: "18px", height: "4px", background: "rgba(0,212,255,0.2)", borderRadius: "2px" }} />
+                <span>Listing share</span>
+              </div>
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
               {sorted.map(s => {
                 const avgPct = Math.round((s.avg / maxAvg) * 100);

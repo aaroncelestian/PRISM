@@ -623,9 +623,12 @@ function CompCard({ comp, onScore, onEdit, onDelete }) {
       transition: "border-color 0.2s",
     }}>
 
-      {comp.photo && (
-        <div style={{ margin: "-16px -18px 4px" }}>
-          <img src={comp.photo} alt={comp.species} style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
+      {(comp.photo || comp.photoUrl) && (
+        <div style={{ margin: "-16px -18px 4px", position: "relative" }}>
+          <img src={comp.photo || comp.photoUrl} alt={comp.species} style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
+          {!comp.photo && comp.photoUrl && (
+            <div style={{ position: "absolute", bottom: "5px", right: "6px", fontSize: "8px", background: "rgba(0,0,0,0.55)", color: "#aac", padding: "2px 5px", borderRadius: "3px", letterSpacing: "0.06em" }}>web photo</div>
+          )}
         </div>
       )}
 
