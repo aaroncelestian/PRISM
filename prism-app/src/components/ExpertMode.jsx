@@ -6,7 +6,8 @@ import ScorePanel from "./ScorePanel.jsx";
 import TierSelector from "./TierSelector.jsx";
 import CriteriaChecklist from "./CriteriaChecklist.jsx";
 
-const EXPERT_SPECTRUM = ["#ff5555", "#ffaa00", "#00dd88", "#0088ff", "#aa55ff"];
+// Match PRISM spectrum bar colors exactly (same array, museum hidden so red=index 0 = exhibition)
+const EXPERT_SPECTRUM = ["#ff0000", "#ff7f00", "#ffff00", "#00ff00", "#0000ff", "#4b0082", "#9400d3"];
 
 function AestheticsSubSliders({ subScores, onChange }) {
   const vals = Object.values(subScores);
@@ -202,7 +203,7 @@ function DimRow({ dim, score, weight, onChange, criteriaValues, onCriteriaChange
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
           <div style={{ display: "flex", gap: "2px", alignItems: "flex-end", height: "18px" }} title="Context weights">
-            {CONTEXTS.map((c, i) => {
+            {CONTEXTS.filter(c => !c.hidden).map((c, i) => {
               const w = WEIGHTS[c.key][dim.key];
               return (
                 <div key={c.key} style={{
@@ -236,7 +237,7 @@ function DimRow({ dim, score, weight, onChange, criteriaValues, onCriteriaChange
           {dim.detail}
           <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid var(--border-dim)" }}>
             <div style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "6px" }}>Context Weights</div>
-            {CONTEXTS.map((c, i) => {
+            {CONTEXTS.filter(c => !c.hidden).map((c, i) => {
               const w = WEIGHTS[c.key][dim.key];
               return (
                 <div key={c.key} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
