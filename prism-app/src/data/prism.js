@@ -592,9 +592,9 @@ export const DIMS = [
     short: "Cultural",
     icon: "🏺",
     desc: "Does this specimen have documented cultural, historical, or heritage significance?",
-    detail: "Cultural and historical significance reflects a specimen's place in human history beyond its mineralogy. A postage stamp appearance, named-collection provenance, or major show award represents measurable institutional recognition — and real market premium — that raw quality and rarity alone cannot command. Each criterion that applies adds 20 points.",
+    detail: "Cultural and historical significance reflects a specimen's place in human history beyond its mineralogy. Public media recognition, named-collection provenance, or a major show award represents measurable institutional recognition — and real market premium — that raw quality and rarity alone cannot command. Each criterion that applies adds 20 points.",
     criteria: [
-      { key: "stamp",           label: "Postage stamp / official media",             desc: "Featured on a postage stamp, coin, banknote, or official government publication (any country)" },
+      { key: "stamp",           label: "Featured in media or public exhibition",     desc: "Displayed in a museum exhibit, featured in a documentary, magazine, major online publication, or other widely distributed public media" },
       { key: "namedCollection", label: "Named historical collection",                desc: "From a documented named collection (Pinch, Vaux, Canfield, Bement, Faber, Krantz, or equivalent) with attribution" },
       { key: "published",       label: "Major publication reference",               desc: "Pictured or cited as a key specimen in a book, exhibition catalog, auction catalog, or peer-reviewed journal" },
       { key: "showAward",       label: "Major show award",                          desc: "Won first place or Best-of-Show at a recognized international show (Tucson, Denver, Munich, Sainte-Marie, Hamburg)" },
