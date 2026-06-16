@@ -18,7 +18,6 @@ PRISM addresses the fundamental information asymmetry problem in mineral specime
 
 ### Evaluation Modes
 
-- **Wizard Mode**: Guided step-by-step evaluation for beginners
 - **Expert Mode**: Advanced interface for experienced collectors
 - **Research Mode**: Comparative market analysis and pricing research
 
@@ -153,7 +152,6 @@ PRISM/
 │   ├── src/
 │   │   ├── components/  # UI components
 │   │   │   ├── PRISM.jsx           # Main application component
-│   │   │   ├── WizardMode.jsx      # Guided evaluation
 │   │   │   ├── ExpertMode.jsx      # Advanced interface
 │   │   │   ├── ResearchMode.jsx    # Market analysis
 │   │   │   ├── PricingTool.jsx     # Price benchmarking
