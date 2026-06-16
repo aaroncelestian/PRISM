@@ -249,9 +249,9 @@ const LAND_QUESTIONS = {
 };
 
 const PROVENANCE_QUESTIONS = [
-  { id: "field_label",   label: "Original field label exists",        desc: "A label written at or near the time of collection accompanies the specimen. Significantly strengthens institutional confidence.",          required: true, recommended: true  },
+  { id: "field_label",   label: "Original field label exists",        desc: "A label written at or near the time of collection accompanies the specimen. Significantly strengthens institutional confidence.",          required: false, recommended: true  },
   { id: "gps_coords",    label: "GPS / precise location recorded",    desc: "GPS coordinates, UTM grid, or a detailed locality description was documented.",        required: true  },
-  { id: "date_known",    label: "Collection date documented",         desc: "The year (at minimum) the specimen was collected is known and recorded. Undated specimens are often declined by institutions.",              required: true, recommended: true  },
+  { id: "date_known",    label: "Collection date documented",         desc: "The year (at minimum) the specimen was collected is known and recorded. Undated specimens are often declined by institutions.",              required: false, recommended: true  },
   { id: "chain_doc",     label: "Full chain of custody documented",   desc: "All owners since original collection can be accounted for with records.",              required: false },
   { id: "no_cites",      label: "No international export restrictions", desc: "Specimen was not illegally exported from its country of origin; no CITES issues.",   required: true  },
   { id: "no_deaccession", label: "Not an accessioned museum specimen", desc: "Confirm title is free and clear — this specimen has not been formally accessioned into another institutional collection and was not improperly removed from one.", required: true  },
@@ -450,17 +450,49 @@ function AcquisitionStep({ acquisitionType, setAcquisitionType, acquisitionDetai
 
 // ── Reverse-geocoding helpers ─────────────────────────────────────────────────
 
-const BLM_MANG_MAP = {
-  BLM: "blm",
-  USFS: "usfs", FS: "usfs",
-  NPS: "nps", FWS: "nps", USFWS: "nps",
-  BOR: "blm",
-  TRIB: "tribal", TRIBAL: "tribal",
-  STATE: "state",
-  PVT: "private", PRVT: "private", PRIVATE: "private",
-  DOD: "dod",
-  OTHF: "unknown", OTHS: "state", LOC: "unknown",
+// Maps ADMIN_DEPT_CODE and ADMIN_AGENCY_CODE from BLM_Natl_SMA_LimitedScale to internal land type keys.
+// DEPT takes precedence; AGENCY is checked as a fallback for disambiguation.
+const BLM_DEPT_MAP = {
+  DOD: "dod",           // All DoD branches (USAF, ARMY, NAVY, USMC, USACE, DOD)
+  NTVALL: "tribal",     // Native American / All Tribes
+  NTVPIC: "tribal",     // Native American / Tribal
+  PVT: "private",       // Private
+  LG: "state",          // Local Government
+  ST: "state",          // State
 };
+const BLM_AGENCY_MAP = {
+  BLM: "blm",
+  NPS: "nps",
+  USFS: "usfs",
+  FWS: "nps",           // Fish & Wildlife — treat as protected/NPS tier
+  USBR: "blm",          // Bureau of Reclamation — federal, BLM-comparable
+  BIA: "tribal",        // Bureau of Indian Affairs
+  USAF: "dod",
+  ARMY: "dod",
+  NAVY: "dod",
+  USMC: "dod",
+  USACE: "dod",
+  USCG: "dod",          // Coast Guard
+  VA: "unknown",
+  DOE: "unknown",
+  BPA: "unknown",
+  FAA: "unknown",
+  NOAA: "unknown",
+  GSA: "unknown",
+  HHS: "unknown",
+  USPS: "unknown",
+  BOP: "unknown",
+  DOT: "unknown",
+  FHA: "unknown",
+  OTHFE: "unknown",
+  UND: "unknown",
+};
+
+function blmSmaKey(deptCode, agencyCode) {
+  const dept   = (deptCode   || "").toUpperCase().trim();
+  const agency = (agencyCode || "").toUpperCase().trim();
+  return BLM_DEPT_MAP[dept] ?? BLM_AGENCY_MAP[agency] ?? null;
+}
 
 const MILITARY_KEYWORDS = ["air force base", "army base", "naval air station", "naval station", "marine corps base", "military reservation", "army post", "air national guard", "joint base"];
 
@@ -491,12 +523,21 @@ async function detectMapLocation({ lat, lng, currentCountry, wasCountryAutoDetec
     // CORS-safe: overpass-api.de explicitly allows cross-origin requests.
     const overpassQuery = `[out:json][timeout:12];is_in(${lat},${lng})->.a;.a out tags;`;
 
-    // Run all 3 sources in parallel
-    const [nomFine, nomBroad, overpassData] = await Promise.all([
+    // BLM GIS API — authoritative federal surface management dataset (same source as the map overlay).
+    // Queried in parallel with Overpass so it can cross-check ambiguous military/range polygons.
+    // Service: BLM_Natl_SMA_LimitedScale layer 1 (queryable; uses ADMIN_DEPT_CODE / ADMIN_AGENCY_CODE).
+    const blmLayerUrl =
+      `https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA_LimitedScale/MapServer/1/query` +
+      `?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326` +
+      `&spatialRel=esriSpatialRelIntersects&outFields=ADMIN_DEPT_CODE,ADMIN_AGENCY_CODE,ADMIN_UNIT_NAME&returnGeometry=false&f=json`;
+
+    // Run all sources in parallel — BLM GIS is no longer a last resort
+    const [nomFine, nomBroad, overpassData, blmResult] = await Promise.all([
       fetch(BASE,              NOM_HEADERS).then(r => r.json()).catch(() => null),
       fetch(BASE + "&zoom=10", NOM_HEADERS).then(r => r.json()).catch(() => null),
       fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`)
         .then(r => r.json()).catch(() => null),
+      fetch(blmLayerUrl).then(r => r.json()).catch(() => null),
     ]);
 
     const country = nomFine?.address?.country || nomBroad?.address?.country || "";
@@ -508,16 +549,30 @@ async function detectMapLocation({ lat, lng, currentCountry, wasCountryAutoDetec
     }
 
     if (cc === "US") {
+      // ── Resolve BLM GIS result first (authoritative federal surface dataset) ──
+      // This is the same data the map overlay tiles render, so it's ground-truth for
+      // BLM, NPS, USFS, DOD, State, Tribal, and Private managed lands.
+      let blmGisKey = null;
+      const blmAttrs = blmResult?.features?.[0]?.attributes;
+      if (blmAttrs) {
+        blmGisKey = blmSmaKey(blmAttrs.ADMIN_DEPT_CODE, blmAttrs.ADMIN_AGENCY_CODE);
+      }
+
       // ── TIER 1: Overpass — scan all containing OSM polygons ──────────────────
-      // Collect every land type found, then pick by priority
+      // Collect every land type found AND classify the DOD signal strength.
+      // "Strong" DOD = boundary=military OR confirmed DOD operator (actual installation).
+      // "Weak"  DOD = landuse=military OR military=* tag WITHOUT operator confirmation
+      //               (catches training ranges, restricted airspace, etc. that overlap BLM).
       const found = new Set();
+      let dodSignalStrong = false;
+
       for (const el of (overpassData?.elements || [])) {
         const t   = el.tags || {};
         const bnd = (t.boundary || "").toLowerCase();
         const use = (t.landuse  || "").toLowerCase();
         const ops = (t.operator || t.owner || "").toLowerCase();
         const nm  = (t.name || "").toLowerCase();
-        const mil = t.military || "";
+        const milTag = (t.military || "").toLowerCase();
 
         if (bnd === "national_park" ||
             (bnd === "protected_area" && (ops.includes("national park") || ops.includes("nps") || t.protect_class === "2")))
@@ -528,11 +583,28 @@ async function detectMapLocation({ lat, lng, currentCountry, wasCountryAutoDetec
             (bnd === "protected_area" && (ops.includes("forest") || ops.includes("usfs"))))
           { found.add("usfs"); }
 
-        if (use === "military" || bnd === "military" || mil ||
-            ops.includes("air force") || ops.includes("department of defense") ||
-            ops.includes("u.s. army") || ops.includes("us army") || ops.includes("us navy") ||
-            MILITARY_KEYWORDS.some(kw => nm.includes(kw)))
-          { found.add("dod"); }
+        // BLM in Overpass (operator-based; BLM GIS is more authoritative but this helps triage)
+        if (ops.includes("bureau of land management") || ops.includes("u.s. bureau of land management"))
+          { found.add("blm"); }
+
+        // Distinguish strong vs weak military signal
+        const hasDodOperator = ops.includes("air force") || ops.includes("department of defense") ||
+          ops.includes("u.s. army") || ops.includes("us army") || ops.includes("us navy") ||
+          ops.includes("u.s. marine") || ops.includes("us marine") || ops.includes("space force");
+        const hasMilitaryBoundary = bnd === "military";
+        const hasMilitaryLanduse  = use === "military";
+        // military=airfield / airbase / base / barracks = actual installation; range/danger_area = may be BLM
+        const isInstallationMilTag = ["airfield","airbase","base","barracks","naval_base","checkpoint"].includes(milTag);
+        const isRangeMilTag        = ["range","danger_area","training_area","restricted_area"].includes(milTag);
+
+        if (hasMilitaryBoundary || hasDodOperator || isInstallationMilTag ||
+            MILITARY_KEYWORDS.some(kw => nm.includes(kw))) {
+          found.add("dod");
+          if (hasMilitaryBoundary || hasDodOperator || isInstallationMilTag) dodSignalStrong = true;
+        } else if (hasMilitaryLanduse || isRangeMilTag) {
+          // Weak signal — mark found but do NOT set dodSignalStrong
+          found.add("dod");
+        }
 
         if (t.type === "reservation" || nm.includes("indian reservation") ||
             ops.includes("tribe") || ops.includes("tribal nation") || ops.includes("band of"))
@@ -542,14 +614,30 @@ async function detectMapLocation({ lat, lng, currentCountry, wasCountryAutoDetec
           { found.add("state"); }
       }
 
-      // Priority: NPS > Tribal > DOD > USFS > State (all except USFS/State are "prohibited")
-      const overpassType = ["nps","tribal","dod","usfs","state"].find(k => found.has(k)) || null;
+      // ── Resolve: merge Overpass + BLM GIS with conflict handling ─────────────
+      // Rule: if Overpass says DOD but the signal is weak (range/landuse only)
+      //       AND BLM GIS returns a non-DOD type, trust BLM GIS — it is the
+      //       authoritative surface management dataset and correctly shows whether
+      //       the surface is administered by BLM even inside a military range polygon.
+      if (found.has("dod") && !dodSignalStrong && blmGisKey && blmGisKey !== "dod") {
+        found.delete("dod");
+      }
+
+      // Also add BLM GIS result to found set so it participates in priority resolution
+      if (blmGisKey) found.add(blmGisKey);
+
+      // Priority: NPS > Tribal > DOD (strong only at this point) > USFS > BLM > State
+      const overpassType = ["nps","tribal","dod","usfs","blm","state"].find(k => found.has(k)) || null;
 
       if (overpassType) {
         setLandType(overpassType);
         src.landType = LAND_TYPES.find(lt => lt.key === overpassType)?.label || overpassType;
+      } else if (blmGisKey) {
+        // BLM GIS returned something but Overpass found nothing — use BLM GIS directly
+        setLandType(blmGisKey);
+        src.landType = LAND_TYPES.find(lt => lt.key === blmGisKey)?.label || blmGisKey;
       } else {
-        // ── TIER 2: Nominatim keyword matching ───────────────────────────────
+        // ── TIER 2: Nominatim keyword matching (fallback when both Overpass and BLM GIS miss) ──
         const allText = [
           nomFine?.display_name, nomBroad?.display_name,
           ...Object.values(nomFine?.address  || {}),
@@ -577,37 +665,6 @@ async function detectMapLocation({ lat, lng, currentCountry, wasCountryAutoDetec
         if      (isNPS)  { setLandType("nps");  src.landType = LAND_TYPES.find(lt => lt.key === "nps")?.label  || "National Park Service"; }
         else if (isDOD)  { setLandType("dod");  src.landType = LAND_TYPES.find(lt => lt.key === "dod")?.label  || "Military / DOD"; }
         else if (isUSFS) { setLandType("usfs"); src.landType = LAND_TYPES.find(lt => lt.key === "usfs")?.label || "US Forest Service"; }
-        else {
-          // ── TIER 3: BLM GIS API — handles BLM/State/Private/Tribal in federal dataset ──
-          const d = 0.15;
-          const blmData = await fetch(
-            `https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA/MapServer/identify` +
-            `?geometry=${lng},${lat}&geometryType=esriGeometryPoint&sr=4326` +
-            `&layers=all&tolerance=1&mapExtent=${lng-d},${lat-d},${lng+d},${lat+d}` +
-            `&imageDisplay=400,400,96&returnGeometry=false&f=json`
-          ).then(r => r.json()).catch(() => null);
-
-          const blmAttrs = blmData?.results?.find(r => r?.attributes?.Mang_Type || r?.attributes?.Mang_Group)?.attributes;
-          if (blmAttrs) {
-            const raw = (blmAttrs.Mang_Group || blmAttrs.Mang_Type || "").toUpperCase().trim();
-            const key = BLM_MANG_MAP[raw];
-            if (key) { setLandType(key); src.landType = LAND_TYPES.find(lt => lt.key === key)?.label || raw; }
-          } else {
-            for (const layer of [0, 1]) {
-              const res = await fetch(
-                `https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA/MapServer/${layer}/query` +
-                `?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326` +
-                `&spatialRel=esriSpatialRelIntersects&outFields=Mang_Type,Mang_Group&returnGeometry=false&f=json`
-              ).then(r => r.json()).catch(() => null);
-              const attrs = res?.features?.[0]?.attributes;
-              if (attrs) {
-                const raw = (attrs.Mang_Group || attrs.Mang_Type || attrs.mang_group || attrs.mang_type || "").toUpperCase().trim();
-                const key = BLM_MANG_MAP[raw];
-                if (key) { setLandType(key); src.landType = LAND_TYPES.find(lt => lt.key === key)?.label || raw; break; }
-              }
-            }
-          }
-        }
       }
     }
   } catch {} // Network failure — user selects manually
@@ -724,114 +781,132 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
         )}
       </div>
 
-      {/* Location search box */}
-      <div>
-        <div style={{ fontSize: "10px", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
-          Collection Site / Locality
-        </div>
-        <div style={{ display: "flex", gap: "6px", marginBottom: "6px" }}>
-          <input
-            type="text"
-            placeholder="e.g. Crater of Diamonds State Park, Murfreesboro, Arkansas, USA"
-            value={localityText}
-            onChange={e => setLocalityText(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") { setSearchInput(localityText); handleSearch(); } }}
-            style={{ flex: 1 }}
-          />
-          <button
-            onClick={() => { setSearchInput(localityText); handleSearch(); }}
-            disabled={isGeocoding || !localityText.trim()}
-            title="Search this location on the map"
-            style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--bg-card)", color: isGeocoding ? "rgba(0,212,255,0.5)" : "var(--text-dim)", fontSize: "11px", cursor: isGeocoding ? "default" : "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
-            <Search size={12} /> {isGeocoding ? "Searching…" : "Find on map"}
-          </button>
-        </div>
-        <div style={{ fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.4 }}>
-          Type the mine, canyon, or locality name — press <strong>Find on map</strong> to pin it and auto-detect land type. Click the map directly to pin any location.
-        </div>
-      </div>
+      {/* Map + right panel — two-column layout */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "10px", alignItems: "start" }}>
 
-      {/* Map */}
-      <div style={{ height: "clamp(320px, 50vh, 520px)", borderRadius: "6px", overflow: "hidden", border: "1px solid var(--border)", flexShrink: 0 }}>
-        <MapContainer center={[20, 0]} zoom={2} style={{ height: "100%", width: "100%" }}>
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
-            opacity={0.65}
-          />
-          <TileLayer
-            url="https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA/MapServer/tile/{z}/{y}/{x}"
-            attribution="BLM National GIS — Surface Management Agency"
-            opacity={0.55}
-          />
-          <FlyToLocation target={flyTarget} />
-          <LocationPicker location={location} setLocation={setLocation} />
-        </MapContainer>
-      </div>
-
-      <div style={{ padding: "7px 11px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border-dim)" }}>
-        <div style={{ fontSize: "9px", letterSpacing: "0.14em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "5px" }}>Map Legend — US Federal Surface Management (overlay visible at zoom 8+)</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "4px 12px" }}>
-          <LegendDot color="#f5c842" label="BLM" />
-          <LegendDot color="#52c275" label="US Forest Service" />
-          <LegendDot color="#e06a2a" label="National Park Service" />
-          <LegendDot color="#5580c8" label="Bureau of Reclamation" />
-          <LegendDot color="#60b0b0" label="Fish & Wildlife" />
-          <LegendDot color="#7ab0e0" label="State (fed. dataset)" />
+        {/* Left: map */}
+        <div style={{ borderRadius: "6px", overflow: "hidden", border: "1px solid var(--border)", height: "420px" }}>
+          <MapContainer center={[20, 0]} zoom={2} style={{ height: "100%", width: "100%" }}>
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+              opacity={0.65}
+            />
+            <TileLayer
+              url="https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA_Cached_with_PriUnk/MapServer/tile/{z}/{y}/{x}"
+              attribution="BLM National GIS — Surface Management Agency"
+              opacity={0.55}
+            />
+            <FlyToLocation target={flyTarget} />
+            <LocationPicker location={location} setLocation={setLocation} />
+          </MapContainer>
         </div>
-        <div style={{ marginTop: "5px", fontSize: "9px", color: "var(--text-muted)", lineHeight: 1.5 }}>
-          Private, county, and some state lands may not appear in the overlay — see detection result below after pinning.
-        </div>
-      </div>
 
-      {(location || isDetecting) && (
-        <div style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "10px", color: "rgba(0,212,255,0.6)", fontFamily: "var(--mono)" }}>
-          <MapPin size={11} />
-          {location && `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`}
-          {isDetecting && <span style={{ fontFamily: "sans-serif", fontSize: "9px", color: "rgba(0,212,255,0.5)" }}>⟳ detecting land management type…</span>}
-        </div>
-      )}
+        {/* Right: search + result + legend */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", height: "420px", overflowY: "auto" }}>
 
-      {/* Detection result — shown for ALL acquisition types once detection completes */}
-      {location && !isDetecting && landType && (
-        <div style={{
-          padding: "10px 13px", borderRadius: "6px",
-          background: `${(LAND_TYPES.find(lt => lt.key === landType)?.color || "#607090")}12`,
-          border: `1px solid ${(LAND_TYPES.find(lt => lt.key === landType)?.color || "#607090")}45`,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-            <div style={{ width: 10, height: 10, borderRadius: "2px", background: LAND_TYPES.find(lt => lt.key === landType)?.color, flexShrink: 0 }} />
-            <div style={{ fontSize: "11px", fontWeight: 700, color: LAND_TYPES.find(lt => lt.key === landType)?.color }}>
-              Auto-detected: {LAND_TYPES.find(lt => lt.key === landType)?.label}
-              {autoSource.landType && <span style={{ fontWeight: 400, fontSize: "9px", opacity: 0.8 }}> · via federal land database</span>}
+          {/* Search box */}
+          <div>
+            <div style={{ fontSize: "10px", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "5px" }}>
+              Collection Site / Locality
+            </div>
+            <div style={{ display: "flex", gap: "5px", marginBottom: "4px" }}>
+              <input
+                type="text"
+                placeholder="Mine, canyon, or place name…"
+                value={localityText}
+                onChange={e => setLocalityText(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") { setSearchInput(localityText); handleSearch(); } }}
+                style={{ flex: 1, fontSize: "11px" }}
+              />
+              <button
+                onClick={() => { setSearchInput(localityText); handleSearch(); }}
+                disabled={isGeocoding || !localityText.trim()}
+                title="Search this location on the map"
+                style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 10px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--bg-card)", color: isGeocoding ? "rgba(0,212,255,0.5)" : "var(--text-dim)", fontSize: "11px", cursor: isGeocoding ? "default" : "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
+                <Search size={11} /> {isGeocoding ? "…" : "Find"}
+              </button>
+            </div>
+            <div style={{ fontSize: "9px", color: "var(--text-muted)", lineHeight: 1.4 }}>
+              Press <strong>Find</strong> to pin and auto-detect, or click the map directly.
             </div>
           </div>
-          <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6 }}>
-            {LAND_TYPES.find(lt => lt.key === landType)?.desc}
-          </div>
-          {legalInfo && (
-            <div style={{ marginTop: "6px", fontSize: "11px", fontWeight: 600, color: legalInfo.color }}>
-              {legalInfo.status === "allowed" ? "✓" : legalInfo.status === "conditional" ? "⚠" : "✗"} {legalInfo.heading}
+
+          {/* Coords + detecting spinner */}
+          {(location || isDetecting) && (
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "rgba(0,212,255,0.6)", fontFamily: "var(--mono)", padding: "5px 8px", background: "rgba(0,212,255,0.05)", borderRadius: "4px", border: "1px solid rgba(0,212,255,0.12)" }}>
+              <MapPin size={10} />
+              {location && `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`}
+              {isDetecting && <span style={{ fontFamily: "sans-serif", fontSize: "9px", color: "rgba(0,212,255,0.5)" }}>⟳ detecting…</span>}
             </div>
           )}
-          {legalInfo?.action && (
-            <div style={{ marginTop: "3px", fontSize: "10px", color: legalInfo.color, lineHeight: 1.5 }}>➜ {legalInfo.action}</div>
-          )}
-          {!isSelf && <div style={{ marginTop: "5px", fontSize: "9px", color: "var(--text-muted)", fontStyle: "italic" }}>This reflects the collection site land type — click map to override.</div>}
-        </div>
-      )}
 
-      {/* Could not detect — US location with no land type found in federal database */}
-      {location && !isDetecting && !landType && originCountry.toLowerCase().includes("united states") && (
-        <div style={{ padding: "10px 13px", borderRadius: "6px", background: "rgba(96,112,144,0.08)", border: "1px solid rgba(96,112,144,0.30)" }}>
-          <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-dim)", marginBottom: "3px" }}>Land type not found in federal database</div>
-          <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.6 }}>
-            This location does not appear in the BLM Surface Management Agency dataset. It is likely
-            private land, county land, or a small state parcel. If self-collected, written landowner
-            permission is required. If purchased, no special action is needed — select the type below if known.
+          {/* Detection result */}
+          {location && !isDetecting && landType && (
+            <div style={{
+              padding: "9px 11px", borderRadius: "6px",
+              background: `${(LAND_TYPES.find(lt => lt.key === landType)?.color || "#607090")}12`,
+              border: `1px solid ${(LAND_TYPES.find(lt => lt.key === landType)?.color || "#607090")}45`,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "4px" }}>
+                <div style={{ width: 10, height: 10, borderRadius: "2px", background: LAND_TYPES.find(lt => lt.key === landType)?.color, flexShrink: 0 }} />
+                <div style={{ fontSize: "11px", fontWeight: 700, color: LAND_TYPES.find(lt => lt.key === landType)?.color }}>
+                  {LAND_TYPES.find(lt => lt.key === landType)?.label}
+                  {autoSource.landType && <span style={{ fontWeight: 400, fontSize: "9px", opacity: 0.7 }}> · auto-detected</span>}
+                </div>
+              </div>
+              <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.55 }}>
+                {LAND_TYPES.find(lt => lt.key === landType)?.desc}
+              </div>
+              {legalInfo && (
+                <div style={{ marginTop: "6px", fontSize: "11px", fontWeight: 600, color: legalInfo.color }}>
+                  {legalInfo.status === "allowed" ? "✓" : legalInfo.status === "conditional" ? "⚠" : "✗"} {legalInfo.heading}
+                </div>
+              )}
+              {legalInfo?.detail && (
+                <div style={{ marginTop: "3px", fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.5 }}>{legalInfo.detail}</div>
+              )}
+              {legalInfo?.action && (
+                <div style={{ marginTop: "4px", fontSize: "10px", color: legalInfo.color, lineHeight: 1.5 }}>➜ {legalInfo.action}</div>
+              )}
+              {!isSelf && <div style={{ marginTop: "5px", fontSize: "9px", color: "var(--text-muted)", fontStyle: "italic" }}>Click map to override.</div>}
+            </div>
+          )}
+
+          {/* Could not detect */}
+          {location && !isDetecting && !landType && originCountry.toLowerCase().includes("united states") && (
+            <div style={{ padding: "9px 11px", borderRadius: "6px", background: "rgba(96,112,144,0.08)", border: "1px solid rgba(96,112,144,0.30)" }}>
+              <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-dim)", marginBottom: "3px" }}>Not in federal dataset</div>
+              <div style={{ fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.55 }}>
+                Likely private, county, or small state parcel. Select the type below if known.
+              </div>
+            </div>
+          )}
+
+          {/* No pin yet — prompt */}
+          {!location && !isDetecting && (
+            <div style={{ padding: "9px 11px", borderRadius: "6px", background: "rgba(96,112,144,0.06)", border: "1px solid rgba(96,112,144,0.20)", textAlign: "center" }}>
+              <div style={{ fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.55 }}>
+                Click the map or search a location to auto-detect land type.
+              </div>
+            </div>
+          )}
+
+          {/* Map legend */}
+          <div style={{ padding: "7px 9px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border-dim)", marginTop: "auto" }}>
+            <div style={{ fontSize: "9px", letterSpacing: "0.12em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "5px" }}>Overlay Legend (zoom 8+)</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3px 8px" }}>
+              <LegendDot color="#f5c842" label="BLM" />
+              <LegendDot color="#52c275" label="US Forest Service" />
+              <LegendDot color="#e06a2a" label="National Park Service" />
+              <LegendDot color="#5580c8" label="Bureau of Reclamation" />
+              <LegendDot color="#60b0b0" label="Fish & Wildlife" />
+              <LegendDot color="#7ab0e0" label="State" />
+            </div>
           </div>
+
         </div>
-      )}
+      </div>
 
       {/* Land type — only for self-collected */}
       {isSelf && (
