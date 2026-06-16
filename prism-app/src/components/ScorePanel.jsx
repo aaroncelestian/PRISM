@@ -34,8 +34,8 @@ const GRADE_FOR = Object.fromEntries(
   CONTEXTS.map(c => [c.key, GRADES.find(g => g.label === c.gradeLabel) || GRADES[GRADES.length - 1]])
 );
 
-// Spectrum bar colors — one per visible context (6 visible contexts)
-const SPECTRUM_COLORS = ["#ff5555", "#ffaa00", "#d4a840", "#40c880", "#5090ff", "#8090a8"];
+// Spectrum bar colors — ROY G BIV rainbow (7 visible contexts)
+const SPECTRUM_COLORS = ["#ff0000", "#ff7f00", "#ffff00", "#00ff00", "#0000ff", "#4b0082", "#9400d3"];
 // Grade lookup by raw score (used when no context passes threshold)
 function gradeFromScore(score) {
   return GRADES.find(g => score >= g.min) ?? GRADES[GRADES.length - 1];
