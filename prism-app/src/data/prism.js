@@ -1,9 +1,9 @@
 export const WEIGHTS = {
-  museum:     { crystal: 0.12, speciesRarity: 0.20,  localityRarity: 0.25,  provenance: 0.25, aesthetics: 0.04, scientific: 0.14 },
-  exhibition: { crystal: 0.42, speciesRarity: 0.07,  localityRarity: 0.12,  provenance: 0.06, aesthetics: 0.30, scientific: 0.03 },
-  collector:  { crystal: 0.22, speciesRarity: 0.26,  localityRarity: 0.26,  provenance: 0.10, aesthetics: 0.12, scientific: 0.04 },
-  study:      { crystal: 0.11, speciesRarity: 0.08,  localityRarity: 0.08,  provenance: 0.26, aesthetics: 0.05, scientific: 0.42 },
-  commercial: { crystal: 0.38, speciesRarity: 0.155, localityRarity: 0.155, provenance: 0.08, aesthetics: 0.15, scientific: 0.08 },
+  museum:     { crystal: 0.12, speciesRarity: 0.10,   varietyRarity: 0.10,   localityRarity: 0.25,  provenance: 0.25, aesthetics: 0.04, scientific: 0.14 },
+  exhibition: { crystal: 0.42, speciesRarity: 0.035,  varietyRarity: 0.035,  localityRarity: 0.12,  provenance: 0.06, aesthetics: 0.30, scientific: 0.03 },
+  collector:  { crystal: 0.22, speciesRarity: 0.13,   varietyRarity: 0.13,   localityRarity: 0.26,  provenance: 0.10, aesthetics: 0.12, scientific: 0.04 },
+  study:      { crystal: 0.11, speciesRarity: 0.04,   varietyRarity: 0.04,   localityRarity: 0.08,  provenance: 0.26, aesthetics: 0.05, scientific: 0.42 },
+  commercial: { crystal: 0.38, speciesRarity: 0.0775, varietyRarity: 0.0775, localityRarity: 0.155, provenance: 0.08, aesthetics: 0.15, scientific: 0.08 },
 };
 
 export const GRADES = [
@@ -22,6 +22,7 @@ export const CONTEXTS = [
     key: "museum",
     label: "Museum Specimen",
     icon: "🏛️",
+    hidden: true,
     desc: "I'm evaluating this as a potential museum-quality specimen.",
     detail: "Museum-quality specimens are defined by irreplaceability and documentation. Locality rarity (30%) and provenance (25%) dominate — a specimen from an exhausted or unique locality with a verified chain of custody represents the museum ideal. Scientific value is rewarded asymmetrically: absent science doesn't penalize, but exceptional science gets a major non-linear boost. Aesthetics barely factor in at 4%.",
   },
@@ -204,6 +205,7 @@ export function applyNonLinearTransform(dimKey, rawScore) {
       transformed = Math.pow(x, 0.7) * 100;
       break;
     case 'speciesRarity':
+    case 'varietyRarity':
     case 'localityRarity': {
       const normalized = (x - 0.5) * 2;
       const sig = 1 / (1 + Math.exp(-3.5 * normalized));
@@ -243,15 +245,23 @@ export function detectInconsistencies(scores, spec, sciCriteria) {
   }
 
   // High species rarity but no species entered
-  if ((s.speciesRarity ?? 50) > 60 && !spec?.species?.trim()) {
+  if ((s.speciesRarity ?? 0) > 60 && !spec?.species?.trim()) {
     warnings.push({
       key: "species_no_name", level: "warn", dim: "speciesRarity",
       msg: "Species Rarity is high (>60) but no mineral species is entered. Add the species name to support this score.",
     });
   }
 
+  // High variety rarity but no variety entered
+  if ((s.varietyRarity ?? 0) > 60 && !spec?.variety?.trim()) {
+    warnings.push({
+      key: "variety_no_name", level: "info", dim: "varietyRarity",
+      msg: "Variety/Form Uniqueness is high (>60) but no variety is entered in specimen data. Consider documenting the specific form.",
+    });
+  }
+
   // High locality rarity but no locality entered
-  if ((s.localityRarity ?? 50) > 60 && !spec?.locality?.trim()) {
+  if ((s.localityRarity ?? 0) > 60 && !spec?.locality?.trim()) {
     warnings.push({
       key: "locality_no_name", level: "warn", dim: "localityRarity",
       msg: "Locality Rarity is high (>60) but no locality is entered. Add the locality to support this score.",
@@ -267,7 +277,7 @@ export function detectInconsistencies(scores, spec, sciCriteria) {
   }
 
   // Excellent documentation on the most common possible material
-  if ((s.provenance ?? 50) >= 85 && (s.speciesRarity ?? 50) <= 15 && (s.localityRarity ?? 50) <= 15) {
+  if ((s.provenance ?? 0) >= 85 && (s.speciesRarity ?? 0) <= 15 && (s.localityRarity ?? 0) <= 15) {
     warnings.push({
       key: "provenance_common", level: "info", dim: "provenance",
       msg: "Excellent provenance on a ubiquitous species and active locality. Documentation adds credibility but won't drive collector value for common material.",
@@ -307,17 +317,32 @@ export const DIMS = [
   },
   {
     key: "speciesRarity",
-    label: "Species / Variety rarity",
+    label: "Species Rarity",
     short: "Species",
     icon: "🌍",
-    desc: "Rarity of this specific species or variety — score whichever is rarer",
-    detail: "Score the rarest uniquely identifiable feature of what you have. If the species itself is rare, score that. If the species is common but this specific variety, form, or locality-specific characteristic is rare or unique worldwide, score the variety. Example: metallic-coated almandine from a single Arizona locality scores 90+ on variety rarity even though almandine as a species scores 10. Always score what makes this specimen specifically rare, not what makes its mineral group common.",
+    desc: "How rare is this mineral species globally?",
+    detail: "Score based on how few localities worldwide produce this species and how rarely it appears on the market. Do not factor in variety or form here — that is the separate Variety/Form Uniqueness score. Examples: quartz = 5, beryl = 30, phenakite = 70, painite = 98.",
     anchors: [
-      { value: 10, label: "Ubiquitous species, no rare variety", hint: "Common species, no unusual form — e.g. plain quartz, calcite, pyrite" },
-      { value: 30, label: "Common species or variety", hint: "Widely available in typical form; fine examples exist but nothing unique" },
-      { value: 55, label: "Uncommon variety or species", hint: "Recognizable form not widely available; or moderately rare species" },
-      { value: 75, label: "Rare variety or species", hint: "Distinctive form/coating from very few localities; or genuinely rare species" },
-      { value: 95, label: "Unique variety or extreme rarity", hint: "One locality worldwide for this form; or newly described species with minimal material" },
+      { value: 5,  label: "Ubiquitous species",        hint: "Common everywhere — quartz, calcite, pyrite, feldspar" },
+      { value: 25, label: "Common species",             hint: "Many worldwide localities; widely available at shows" },
+      { value: 50, label: "Uncommon species",           hint: "Moderately scarce; limited number of producing localities" },
+      { value: 75, label: "Rare species",               hint: "Very few localities worldwide; infrequently seen at shows" },
+      { value: 95, label: "Extremely rare species",     hint: "Fewer than 10 known localities, or newly described" },
+    ],
+  },
+  {
+    key: "varietyRarity",
+    label: "Variety / Form Uniqueness",
+    short: "Variety",
+    icon: "🔷",
+    desc: "How rare is this specific variety, form, color, or habit of the species?",
+    detail: "Score how many localities worldwide produce this specific form. A metallic-blue almandine from a single Arizona locality scores 90+ here even though almandine as a species is common. Common habits like typical quartz prisms score low regardless of species rarity. Examples: typical quartz prism = 5, standard elbaite tourmaline = 30, tourmaline cat's-eye = 70, trapiche ruby = 90.",
+    anchors: [
+      { value: 5,  label: "Typical / standard form",          hint: "Common habit for this species; widely produced" },
+      { value: 25, label: "Recognizable but not distinctive",  hint: "Some variation, but this form available from multiple localities" },
+      { value: 55, label: "Uncommon variety",                  hint: "Specific form or coating not widely seen; limited sources" },
+      { value: 75, label: "Rare variety",                      hint: "Distinctive form from very few localities; notable in collections" },
+      { value: 95, label: "Unique or singular form",           hint: "One locality worldwide for this form, or entirely novel variety" },
     ],
   },
   {
@@ -380,4 +405,13 @@ export const DIMS = [
       { key: "compositional",   label: "Compositional significance", desc: "Represents an end-member or unusual composition for the species" },
     ],
   },
+];
+
+export const SIZE_CLASSES = [
+  { key: "thumbnail",  label: "Thumbnail",     range: "< 2.5 cm" },
+  { key: "miniature",  label: "Miniature",      range: "2.5–4.5 cm" },
+  { key: "small_cab",  label: "Small Cabinet",  range: "4.5–7.5 cm" },
+  { key: "cabinet",    label: "Cabinet",        range: "7.5–12 cm" },
+  { key: "large_cab",  label: "Large Cabinet",  range: "12–25 cm" },
+  { key: "museum",     label: "Museum",         range: "> 25 cm" },
 ];

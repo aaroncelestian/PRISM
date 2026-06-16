@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { X, ChevronLeft, ChevronRight, DollarSign, Copy, CheckCheck, Printer } from "lucide-react";
-import { WEIGHTS, CONTEXTS, GRADES, THRESHOLD } from "../data/prism.js";
+import { WEIGHTS, CONTEXTS, GRADES, THRESHOLD, applyNonLinearTransform } from "../data/prism.js";
 
 function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
   let best = 0, bestGrade = GRADES[GRADES.length - 1];
@@ -80,11 +80,12 @@ function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
 // ── Data ─────────────────────────────────────────────────────────────────────
 
 const SIZE_CLASSES = [
-  { key: "thumbnail",  label: "Thumbnail",      range: "< 2.5 cm",    mult: 1,   desc: "Fits on a fingertip — the most traded size class." },
-  { key: "miniature",  label: "Miniature",      range: "2.5 – 4.5 cm", mult: 3,  desc: "Most popular show size. Large collector demand." },
-  { key: "small_cab",  label: "Small Cabinet",  range: "4.5 – 7.5 cm", mult: 8,  desc: "Excellent display size — broad market." },
-  { key: "cabinet",    label: "Cabinet",         range: "7.5 – 12 cm", mult: 20,  desc: "Serious collector/show category. Strong value for fine pieces." },
-  { key: "large_cab",  label: "Large Cabinet",  range: "> 12 cm",      mult: 55,  desc: "Museum and major collector territory. Thinner market, higher ceiling." },
+  { key: "thumbnail",  label: "Thumbnail",      range: "< 2.5 cm",     desc: "Fits on a fingertip — the most traded size class." },
+  { key: "miniature",  label: "Miniature",      range: "2.5 – 4.5 cm", desc: "Most popular show size. Large collector demand." },
+  { key: "small_cab",  label: "Small Cabinet",  range: "4.5 – 7.5 cm", desc: "Excellent display size — broad market." },
+  { key: "cabinet",    label: "Cabinet",         range: "7.5 – 12 cm", desc: "Serious collector/show category. Strong value for fine pieces." },
+  { key: "large_cab",  label: "Large Cabinet",  range: "12 – 25 cm",   desc: "Major collector territory. Thinner market, higher ceiling." },
+  { key: "museum",     label: "Museum",          range: "> 25 cm",      desc: "Institutional-scale specimen. Very thin market; value driven by rarity, provenance, and scientific significance." },
 ];
 
 const CONDITIONS = [
@@ -203,12 +204,13 @@ const STEPS = ["Size", "Condition", "Sale Channel", "Price Guide"];
 // ── Price calculation ─────────────────────────────────────────────────────────
 
 function computePrimaryScore(scores) {
-  // Use museum context as the canonical quality measure (highest weight on provenance/science)
-  // Return the highest-scoring context that reflects specimen quality
+  const adj = Object.fromEntries(
+    Object.entries(scores).map(([k, v]) => [k, applyNonLinearTransform(k, v ?? 0)])
+  );
   let best = 0;
   Object.keys(WEIGHTS).forEach(ctxKey => {
     const W = WEIGHTS[ctxKey];
-    const s = Object.keys(W).reduce((sum, d) => sum + (scores[d] ?? 50) * W[d], 0);
+    const s = Object.keys(W).reduce((sum, d) => sum + (adj[d] ?? 0) * W[d], 0);
     if (s > best) best = s;
   });
   return Math.round(best);
@@ -261,6 +263,7 @@ const BASE_RETAIL = {
   small_cab: 145,
   cabinet:   360,
   large_cab: 990,
+  museum:    2800,
 };
 
 function getQualityMult(score) {
@@ -328,6 +331,7 @@ function buildMarketReport({ spec, score, grade, sizeClass, condition, channel, 
   const DIM_DISPLAY = [
     { key: "localityRarity", label: "Locality Rarity" },
     { key: "speciesRarity",  label: "Species Rarity"  },
+    { key: "varietyRarity",  label: "Variety Rarity"  },
     { key: "crystal",        label: "Crystal Quality" },
     { key: "aesthetics",     label: "Aesthetics"      },
     { key: "provenance",     label: "Provenance"      },
@@ -755,7 +759,7 @@ export default function PricingTool({ scores: initScores, spec: initSpec, record
   const [scores, setScores]         = useState(initScores);
   const [spec, setSpec]             = useState(initSpec);
   const [step, setStep]         = useState(0);
-  const [sizeClass, setSizeClass] = useState(null);
+  const [sizeClass, setSizeClass] = useState(initSpec?.size || null);
   const [condition, setCondition] = useState(null);
   const [channel, setChannel]   = useState(null);
 
@@ -766,7 +770,7 @@ export default function PricingTool({ scores: initScores, spec: initSpec, record
     return (
       <_PickerScreen
         initScores={initScores} initSpec={initSpec} records={records}
-        onSelect={(s, sp) => { setScores(s); setSpec(sp); setShowPicker(false); }}
+        onSelect={(s, sp) => { setScores(s); setSpec(sp); setSizeClass(sp?.size || null); setShowPicker(false); }}
         onClose={onClose}
       />
     );

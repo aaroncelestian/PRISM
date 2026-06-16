@@ -117,8 +117,9 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
     grade: GRADE_FOR[c.key],
     ...computeContextData(c.key, scores),
   }));
-  // Primary context is always the user-selected context
-  const selectedCtxData = allCtxData.find(c => c.key === ctx) || allCtxData[0];
+  const visibleCtxData = allCtxData.filter(c => !c.hidden);
+  // Primary context is always the user-selected context (never hidden)
+  const selectedCtxData = visibleCtxData.find(c => c.key === ctx) || visibleCtxData[0];
   const ctxGrade = GRADE_FOR[selectedCtxData.key];
   const primaryCtx = {
     ...selectedCtxData,
@@ -152,7 +153,7 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
           <div style={{ textAlign: "center", flexShrink: 0 }}>
             <div style={{ fontSize: "7px", letterSpacing: "0.22em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "7px" }}>PRISM</div>
             <div style={{ display: "flex", gap: "3px", alignItems: "flex-end" }}>
-              {allCtxData.map((c, i) => (
+              {visibleCtxData.map((c, i) => (
                 <div
                   key={c.key}
                   title={`${c.label}: ${c.score}`}
@@ -169,7 +170,7 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
               ))}
             </div>
             <div style={{ fontSize: "8px", color: "var(--text-muted)", marginTop: "5px", letterSpacing: "0.04em" }}>
-              {allCtxData.filter(c => c.passes).length}/5
+              {visibleCtxData.filter(c => c.passes).length}/{visibleCtxData.length}
             </div>
           </div>
           {/* Divider */}
@@ -300,7 +301,7 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
                 <span>All Contexts</span>
                 <span style={{ letterSpacing: 0, textTransform: "none", fontStyle: "italic" }}>threshold: {THRESHOLD}</span>
               </div>
-              {allCtxData.map(c => {
+              {visibleCtxData.map(c => {
                 const isSelected = c.key === ctx;
                 return (
                 <div key={c.key} style={{

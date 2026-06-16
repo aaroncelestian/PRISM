@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { Wand2, SlidersHorizontal, RotateCcw, Search } from "lucide-react";
+import { SlidersHorizontal, RotateCcw, Search } from "lucide-react";
 import { CONTEXTS, WEIGHTS, GRADES, THRESHOLD, detectCompoundGrades } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
-import WizardMode from "./WizardMode.jsx";
 import ExpertMode from "./ExpertMode.jsx";
 import DonationEval from "./DonationEval.jsx";
 import PricingTool from "./PricingTool.jsx";
@@ -31,7 +30,7 @@ function computePrimary(scores) {
 }
 
 const DEFAULT_SCORES = {
-  crystal: 0, speciesRarity: 0, localityRarity: 0,
+  crystal: 0, speciesRarity: 0, varietyRarity: 0, localityRarity: 0,
   provenance: 0, aesthetics: 0, scientific: 0,
 };
 
@@ -56,10 +55,10 @@ function ToolMenuItems({ items, isMobile }) {
 }
 
 export default function PRISM() {
-  const [mode, setMode] = useState("wizard"); // "wizard" | "expert" | "research"
+  const [mode, setMode] = useState("expert"); // "expert" | "research"
   const [ctx, setCtx] = useState("collector");
   const [scores, setScores] = useState(DEFAULT_SCORES);
-  const [spec, setSpec] = useState({ name: "", species: "", locality: "" });
+  const [spec, setSpec] = useState({ name: "", species: "", variety: "", locality: "", size: "" });
   const [sciCriteria, setSciCriteria] = useState([false, false, false, false, false]);
   const [showDonation,   setShowDonation]   = useState(false);
   const [showPricing,    setShowPricing]    = useState(false);
@@ -72,7 +71,6 @@ export default function PRISM() {
   const [lastSavedKey,   setLastSavedKey]   = useState(null);
   const [spSource,       setSpSource]       = useState(null); // SpecimenPro integration
   const [scoringCompId,  setScoringCompId]  = useState(null); // Research mode comp being scored
-  const [wizardKey,      setWizardKey]      = useState(0);     // increment to reset WizardMode step
   const [confirmReset,   setConfirmReset]   = useState(false);
   const resetTimerRef = useRef(null);
   const [savedFlash, setSavedFlash] = useState(null);
@@ -126,11 +124,11 @@ export default function PRISM() {
       const provenance = parseInt(p.get("provenance") || "0", 10);
       const objectId = p.get("objectId") || "";
 
-      if (name || species || locality) setSpec({ name, species, locality });
-      if (ctxParam && CONTEXTS.some(c => c.key === ctxParam)) setCtx(ctxParam);
+      if (name || species || locality) setSpec({ name, species, variety: "", locality, size: "" });
+      if (ctxParam && CONTEXTS.some(c => c.key === ctxParam && !c.hidden)) setCtx(ctxParam);
       if (provenance > 0) setScores(s => ({ ...s, provenance: Math.min(provenance, 100) }));
       setSpSource({ objectId, name });
-      setMode("wizard");
+      setMode("expert");
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -141,9 +139,9 @@ export default function PRISM() {
 
   const reset = () => {
     setScores(DEFAULT_SCORES);
-    setSpec({ name: "", species: "", locality: "" });
+    setSpec({ name: "", species: "", variety: "", locality: "", size: "" });
     setCtx("collector");
-    setMode("wizard");
+    setMode("expert");
     setSciCriteria([false, false, false, false, false]);
     setScoringCompId(null);
     setLastSavedKey(null);
@@ -166,11 +164,11 @@ export default function PRISM() {
 
   const handleScoreComp = (comp) => {
     setScoringCompId(comp.id);
-    setSpec({ name: comp.species, species: comp.species, locality: comp.locality || "" });
+    setSpec({ name: comp.species, species: comp.species, variety: "", locality: comp.locality || "", size: "" });
     setScores(comp.scores ? { ...DEFAULT_SCORES, ...comp.scores } : DEFAULT_SCORES);
     setSciCriteria([false, false, false, false, false]);
     if (comp.ctx) setCtx(comp.ctx);
-    setMode("wizard");
+    setMode("expert");
   };
 
   const handleSaveToComp = () => {
@@ -235,11 +233,10 @@ export default function PRISM() {
             {/* Mode toggle */}
             <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "5px", overflow: "hidden" }}>
               {[
-                { key: "wizard",   label: "Guided",   Icon: Wand2 },
                 { key: "expert",   label: "Expert",   Icon: SlidersHorizontal },
                 { key: "research", label: "Research", Icon: Search },
               ].map(({ key, label, Icon }, i, arr) => (
-                <button key={key} onClick={() => { if (key !== "wizard") setScoringCompId(null); setMode(key); }} style={{
+                <button key={key} onClick={() => { if (key !== "expert") setScoringCompId(null); setMode(key); }} style={{
                   display: "flex", alignItems: "center", gap: "4px",
                   padding: isMobile ? "5px 10px" : "5px 12px",
                   background: mode === key ? "rgba(0,212,255,0.1)" : "transparent", border: "none",
@@ -375,7 +372,7 @@ export default function PRISM() {
           onLoad={rec => {
             const loadedScores = { ...DEFAULT_SCORES, ...(rec.scores || {}) };
             setScores(loadedScores);
-            setSpec(rec.spec || {});
+            setSpec({ name: "", species: "", variety: "", locality: "", size: "", ...(rec.spec || {}) });
             setCtx(rec.ctx || "collector");
             setLastSavedKey(JSON.stringify({ scores: loadedScores, spec: rec.spec, ctx: rec.ctx }));
             const sciCount = Math.round((loadedScores.scientific ?? 0) / 20);
@@ -390,25 +387,7 @@ export default function PRISM() {
           onImport={importRecords}
         />
       )}
-        {mode === "wizard" ? (
-          <WizardMode
-            key={wizardKey}
-            scores={scores}
-            setScores={setScores}
-            ctx={ctx}
-            setCtx={setCtx}
-            spec={spec}
-            setSpec={setSpec}
-            sciCriteria={sciCriteria}
-            onSciCriteriaChange={handleSciCriteria}
-            onReset={reset}
-            onExport={() => setShowExport(true)}
-            initialStep={spSource || scoringCompId ? 1 : 0}
-            scoringComp={scoringCompId ? comps.find(c => c.id === scoringCompId) : null}
-            onSaveToComp={scoringCompId ? handleSaveToComp : null}
-            onSaveToCollection={handleSaveToCollection}
-          />
-        ) : mode === "expert" ? (
+        {mode === "expert" ? (
           <ExpertMode
             scores={scores}
             setScores={setScores}
@@ -419,6 +398,8 @@ export default function PRISM() {
             onSciCriteriaChange={handleSciCriteria}
             onExport={() => setShowExport(true)}
             onSaveToCollection={handleSaveToCollection}
+            scoringComp={scoringCompId ? comps.find(c => c.id === scoringCompId) : null}
+            onSaveToComp={scoringCompId ? handleSaveToComp : null}
           />
         ) : (
           <ResearchMode

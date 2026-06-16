@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { HelpCircle, X } from "lucide-react";
-import { DIMS, WEIGHTS, GRADES, CONTEXTS } from "../data/prism.js";
+import { DIMS, WEIGHTS, GRADES, CONTEXTS, SIZE_CLASSES } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import ScorePanel from "./ScorePanel.jsx";
 import TierSelector from "./TierSelector.jsx";
@@ -131,7 +131,7 @@ function DimRow({ dim, score, weight, onChange, sciCriteria, onSciCriteriaChange
   );
 }
 
-export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciCriteria, onSciCriteriaChange, onExport = null, onSaveToCollection = null }) {
+export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciCriteria, onSciCriteriaChange, onExport = null, onSaveToCollection = null, scoringComp = null, onSaveToComp = null }) {
   const W = WEIGHTS[ctx];
   const { isMobile } = useBreakpoint();
   const [showScorePanel, setShowScorePanel] = useState(false);
@@ -196,6 +196,33 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
         )}
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
 
+        {/* Comp scoring banner */}
+        {scoringComp && (
+          <div style={{
+            padding: "8px 12px", marginBottom: "12px",
+            background: "rgba(0,212,255,0.05)",
+            border: "1px solid rgba(0,212,255,0.2)",
+            borderRadius: "5px",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px",
+          }}>
+            <div style={{ fontSize: "11px", color: "rgba(0,212,255,0.8)" }}>
+              Scoring comp: <strong>{scoringComp.species}</strong>
+              {scoringComp.locality && <span style={{ color: "var(--text-muted)" }}> — {scoringComp.locality}</span>}
+            </div>
+            <button
+              onClick={onSaveToComp}
+              style={{
+                padding: "4px 12px", background: "rgba(0,212,255,0.1)",
+                border: "1px solid rgba(0,212,255,0.45)", borderRadius: "4px",
+                color: "var(--cyan)", fontSize: "10px", fontWeight: 700,
+                letterSpacing: "0.06em", cursor: "pointer", whiteSpace: "nowrap",
+              }}
+            >
+              Save to Research
+            </button>
+          </div>
+        )}
+
         {/* Specimen fields */}
         <div style={{ marginBottom: "22px" }}>
           <div style={{
@@ -208,17 +235,28 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
             {[
               { k: "name",     ph: "Catalog no. / label name", col: "1 / -1" },
               { k: "species",  ph: "Mineral species" },
-              { k: "locality", ph: "Locality" },
+              { k: "variety",  ph: "Variety / form (optional)" },
+              { k: "locality", ph: "Locality", col: "1 / -1" },
             ].map(f => (
               <input
                 key={f.k}
                 type="text"
-                value={spec[f.k]}
+                value={spec[f.k] || ""}
                 onChange={e => setSpec(s => ({ ...s, [f.k]: e.target.value }))}
                 placeholder={f.ph}
                 style={{ gridColumn: f.col || "auto" }}
               />
             ))}
+            <select
+              value={spec.size || ""}
+              onChange={e => setSpec(s => ({ ...s, size: e.target.value }))}
+              style={{ gridColumn: "1 / -1", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "4px", color: spec.size ? "var(--text)" : "var(--text-muted)", padding: "6px 10px", fontSize: "12px" }}
+            >
+              <option value="">Size class (optional)</option>
+              {SIZE_CLASSES.map(sc => (
+                <option key={sc.key} value={sc.key}>{sc.label} — {sc.range}</option>
+              ))}
+            </select>
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, Award, Camera, Printer, Copy, FileDown, AlertTriangle } from "lucide-react";
 import QRCode from "qrcode";
-import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades, applyNonLinearTransform } from "../data/prism.js";
+import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades, applyNonLinearTransform, SIZE_CLASSES } from "../data/prism.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -48,15 +48,6 @@ function computeDisplayScore(scores) {
   const allCtxScores = Object.fromEntries(all.map(c => [c.key, c.score]));
   return { score: best.score, grade: best.grade, compoundGrades: detectCompoundGrades(allCtxScores) };
 }
-
-const SIZE_CLASSES = [
-  { key: "thumbnail",  label: "Thumbnail",      range: "< 2.5 cm" },
-  { key: "miniature",  label: "Miniature",      range: "2.5–4.5 cm" },
-  { key: "small_cab",  label: "Small Cabinet",  range: "4.5–7.5 cm" },
-  { key: "cabinet",    label: "Cabinet",        range: "7.5–12 cm" },
-  { key: "large_cab",  label: "Large Cabinet",  range: "12–25 cm" },
-  { key: "museum",     label: "Museum",         range: "> 25 cm" },
-];
 
 const PROV_TIERS = [
   "T0a — Self-Collected with Permit (personally extracted; valid collecting permit or claim held)",
@@ -234,6 +225,12 @@ function DocumentationStep({ scores, spec, docData: initDocData, setDocData, pho
               <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text)" }}>{spec.species}</div>
             </div>
           )}
+          {spec.variety && (
+            <div>
+              <div style={{ fontSize: "8px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Variety / Form</div>
+              <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text)" }}>{spec.variety}</div>
+            </div>
+          )}
           {spec.locality && (
             <div style={{ gridColumn: "1 / -1" }}>
               <div style={{ fontSize: "8px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Locality</div>
@@ -290,6 +287,9 @@ function DocumentationStep({ scores, spec, docData: initDocData, setDocData, pho
             ✋ Self-collected — include: mine/pit name, collecting date, GPS or section/township/range, permit or claim number (if held), and landowner/claim contact if applicable.
           </div>
         )}
+        <div style={{ fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", marginTop: "6px" }}>
+          Chain of Custody / Collection History <span style={{ fontSize: "8px", color: "#a0c040", fontStyle: "italic", textTransform: "none", letterSpacing: 0 }}>— Highly recommended</span>
+        </div>
         <textarea
           placeholder={localDoc.provTier?.startsWith("T0")
             ? "Mine: [name & location]. Date collected: [date]. GPS / coordinates: [coords]. Permit or claim #: [number]. Landowner / claim holder: [name]. Notes: [any additional context]."
@@ -298,7 +298,7 @@ function DocumentationStep({ scores, spec, docData: initDocData, setDocData, pho
           rows={3} style={textareaStyle} />
         <div style={{ marginTop: "8px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
           <div>
-            <div style={{ fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px" }}>Collection Label / Tag</div>
+            <div style={{ fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px" }}>Collection Label / Tag <span style={{ fontSize: "8px", color: "#a0c040", fontStyle: "italic", textTransform: "none", letterSpacing: 0 }}>— Highly recommended</span></div>
             <PhotoCapture label="Photograph original label" value={photos.label} onChange={v => setPhoto("label", v)} />
           </div>
           <div>
@@ -309,6 +309,16 @@ function DocumentationStep({ scores, spec, docData: initDocData, setDocData, pho
               label={localDoc.provTier?.startsWith("T0") ? "Permit, claim doc, or field photo" : "Invoice, permit, or receipt"}
               value={photos.document} onChange={v => setPhoto("document", v)} />
           </div>
+        </div>
+        <div style={{ marginTop: "10px" }}>
+          <div style={{ fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px" }}>Permission / Permit Reference</div>
+          <input
+            type="text"
+            placeholder="Email address, permit #, reference number, or note describing permission documentation on file"
+            value={localDoc.permissionRef || ""}
+            onChange={e => update("permissionRef", e.target.value)}
+            style={{ ...textareaStyle, padding: "8px 10px", resize: "none" }}
+          />
         </div>
       </div>
 
@@ -359,7 +369,7 @@ const ATTESTATION_ITEMS = [
   },
 ];
 
-function AttestationStep({ attestations, setAttestations, evaluatorName, setEvaluatorName, evaluatorOrg, setEvaluatorOrg, customAttestations, setCustomAttestations }) {
+function AttestationStep({ attestations, setAttestations, evaluatorName, setEvaluatorName, evaluatorOrg, setEvaluatorOrg, ownerName, setOwnerName, customAttestations, setCustomAttestations }) {
   const [newText, setNewText] = useState("");
   const [showWhy, setShowWhy] = useState(false);
   const toggle = (key) => setAttestations(a => ({ ...a, [key]: !a[key] }));
@@ -503,13 +513,21 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
             style={{ ...textareaStyle, padding: "8px 10px", resize: "none" }} />
         </div>
       </div>
+      <div>
+        <div style={{ fontSize: "9px", letterSpacing: "0.14em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "4px" }}>Specimen Owner / Collector Name *</div>
+        <input value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Name of specimen owner or collector"
+          style={{ ...textareaStyle, padding: "8px 10px", resize: "none" }} />
+        <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "4px", fontStyle: "italic", lineHeight: 1.4 }}>
+          The owner affirms that all attestations above apply to this specimen. If you are both evaluator and owner, enter your name in both fields.
+        </div>
+      </div>
     </div>
   );
 }
 
 // ── Step 4: Certificate Preview ───────────────────────────────────────────────
 
-function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos, attestations, evaluatorName, evaluatorOrg, primaryCtx, compoundGrades, customAttestations = [], onSaved }) {
+function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos, attestations, evaluatorName, evaluatorOrg, ownerName, primaryCtx, compoundGrades, customAttestations = [], onSaved }) {
   const [qrUrl, setQrUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const grade = primaryCtx.grade;
@@ -518,9 +536,9 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
     v: 1, id: certId, t: issued,
     sp: { n: spec.name, s: spec.species, l: spec.locality, sz: sizeClass },
     sc: {
-      cr: scores.crystal ?? 50, sr: scores.speciesRarity ?? 50,
-      lr: scores.localityRarity ?? 50, pv: scores.provenance ?? 50,
-      ae: scores.aesthetics ?? 50, si: scores.scientific ?? 0,
+      cr: scores.crystal ?? 0, sr: scores.speciesRarity ?? 0, vr: scores.varietyRarity ?? 0,
+      lr: scores.localityRarity ?? 0, pv: scores.provenance ?? 0,
+      ae: scores.aesthetics ?? 0, si: scores.scientific ?? 0,
     },
     ps: primaryCtx.score,
     gr: grade.label,
@@ -531,7 +549,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
       di: attestations.disclosure,
       le: attestations.legal,
     },
-    ev: evaluatorName, org: evaluatorOrg,
+    ev: evaluatorName, org: evaluatorOrg, ow: ownerName,
   };
   const PRISM_BASE = "https://aaroncelestian.github.io/PRISM/";
 
@@ -599,7 +617,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
           <div>
             <div style={{ fontSize: "18px", fontWeight: 800, letterSpacing: "0.18em", color: "#0d1520" }}>PRISM</div>
             <div style={{ fontSize: "8px", letterSpacing: "0.14em", color: "#507090", textTransform: "uppercase" }}>Precision Rating Index of Specimen Minerals</div>
-            <div style={{ marginTop: "6px", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em", color: "#0d1520" }}>CERTIFICATE OF EVALUATION</div>
+            <div style={{ marginTop: "6px", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em", color: "#0d1520" }}>SELF-EVALUATION CERTIFICATE</div>
           </div>
           {qrUrl && (
             <div style={{ textAlign: "center" }}>
@@ -614,6 +632,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
           {[
             ["Specimen Name", spec.name || "—"],
             ["Species", spec.species || "—"],
+            ...(spec.variety ? [["Variety / Form", spec.variety]] : []),
             ["Locality", spec.locality || "—"],
             ["Size Class", sz ? `${sz.label} (${sz.range})` : "—"],
             ["Certificate ID", certId],
@@ -714,7 +733,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
         )}
 
         {/* Documentation notes */}
-        {(docData.provTier || docData.localityNote || docData.chainOfCustody || docData.conditionNote || docData.speciesNote || docData.scientificNote) && (
+        {(docData.provTier || docData.localityNote || docData.chainOfCustody || docData.conditionNote || docData.speciesNote || docData.scientificNote || docData.permissionRef) && (
           <div style={{ marginBottom: "12px", paddingBottom: "12px", borderBottom: "1px solid #d0dce8" }}>
             <div style={{ fontSize: "8px", letterSpacing: "0.14em", color: "#507090", textTransform: "uppercase", marginBottom: "6px" }}>Documentation Notes</div>
             {docData.provTier && <div style={{ marginBottom: "3px" }}><strong>Provenance Tier:</strong> {docData.provTier}</div>}
@@ -723,15 +742,14 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
             {docData.speciesNote && <div style={{ marginBottom: "3px" }}><strong>Species:</strong> {docData.speciesNote}</div>}
             {docData.conditionNote && <div style={{ marginBottom: "3px" }}><strong>Condition/Repairs:</strong> {docData.conditionNote}</div>}
             {docData.scientificNote && <div style={{ marginBottom: "3px" }}><strong>Scientific:</strong> {docData.scientificNote}</div>}
+            {docData.permissionRef && <div style={{ marginBottom: "3px" }}><strong>Permission / Permit:</strong> {docData.permissionRef}</div>}
           </div>
         )}
 
         {/* Attestations */}
         <div style={{ marginBottom: "12px", paddingBottom: "12px", borderBottom: "1px solid #d0dce8" }}>
-          <div style={{ fontSize: "8px", letterSpacing: "0.14em", color: "#507090", textTransform: "uppercase", marginBottom: "6px" }}>
-            Attestations — {evaluatorName}{evaluatorOrg ? `, ${evaluatorOrg}` : ""}
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 10px" }}>
+          <div style={{ fontSize: "8px", letterSpacing: "0.14em", color: "#507090", textTransform: "uppercase", marginBottom: "6px" }}>Attestations</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 10px", marginBottom: "10px" }}>
             {ATTESTATION_ITEMS.map(({ key, short }) => (
               <div key={key} style={{ fontSize: "9px", color: attestations[key] ? "#0d1520" : "#a0b0c0", display: "flex", alignItems: "baseline", gap: "3px" }}>
                 <span style={{ flexShrink: 0 }}>{attestations[key] ? "✓" : "✗"}</span>
@@ -744,6 +762,16 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
                 <span>{ca.text}</span>
               </div>
             ))}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", borderTop: "1px solid #d0dce8", paddingTop: "10px" }}>
+            <div>
+              <div style={{ fontSize: "8px", letterSpacing: "0.1em", color: "#507090", textTransform: "uppercase", marginBottom: "18px" }}>Evaluator</div>
+              <div style={{ borderTop: "1px solid #0d1520", paddingTop: "3px", fontSize: "9px", color: "#0d1520", fontWeight: 600 }}>{evaluatorName}{evaluatorOrg ? `, ${evaluatorOrg}` : ""}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: "8px", letterSpacing: "0.1em", color: "#507090", textTransform: "uppercase", marginBottom: "18px" }}>Specimen Owner / Collector</div>
+              <div style={{ borderTop: "1px solid #0d1520", paddingTop: "3px", fontSize: "9px", color: "#0d1520", fontWeight: 600 }}>{ownerName || evaluatorName}</div>
+            </div>
           </div>
         </div>
 
@@ -776,7 +804,7 @@ function SpecimenPickerScreen({ initScores, initSpec, records, onSelect, onClose
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Award size={16} style={{ color: "var(--cyan)" }} />
             <div>
-              <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>PRISM Certificate</div>
+              <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>PRISM Self-Evaluation Certificate</div>
               <div style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "1px" }}>Select the specimen to certify</div>
             </div>
           </div>
@@ -876,9 +904,9 @@ export default function CertGenerator({ scores: initScores, spec: initSpec, reco
   const [showPicker, setShowPicker] = useState(true);
   const [workingScores, setWorkingScores] = useState(initScores);
   const [workingSpec, setWorkingSpec] = useState(initSpec);
-  const [sizeClass, setSizeClass] = useState("");
+  const [sizeClass, setSizeClass] = useState(initSpec?.size || "");
   const [docData, setDocData] = useState({
-    localityNote: "", speciesNote: "", chainOfCustody: "", conditionNote: "None known.", scientificNote: "", provTier: "",
+    localityNote: "", speciesNote: "", chainOfCustody: "", conditionNote: "None known.", scientificNote: "", provTier: "", permissionRef: "",
   });
   const [photos, setPhotos] = useState({ specimen: null, display: null, label: null, document: null });
   const [attestations, setAttestations] = useState({
@@ -886,6 +914,7 @@ export default function CertGenerator({ scores: initScores, spec: initSpec, reco
   });
   const [evaluatorName, setEvaluatorName] = useState("");
   const [evaluatorOrg, setEvaluatorOrg] = useState("");
+  const [ownerName, setOwnerName] = useState("");
   const [customAttestations, setCustomAttestations] = useState([]);
   const [certId] = useState(generateCertId);
   const [issued] = useState(() => new Date().toISOString());
@@ -911,12 +940,13 @@ export default function CertGenerator({ scores: initScores, spec: initSpec, reco
   const handleSelectSource = (scores, spec) => {
     setWorkingScores(scores);
     setWorkingSpec(spec);
+    setSizeClass(spec?.size || "");
     setShowPicker(false);
   };
 
   const canAdvance = () => {
     if (step === 0) return !!sizeClass;
-    if (step === 2) return Object.values(attestations).every(Boolean) && evaluatorName.trim().length > 0;
+    if (step === 2) return Object.values(attestations).every(Boolean) && evaluatorName.trim().length > 0 && ownerName.trim().length > 0;
     return true;
   };
 
@@ -950,7 +980,7 @@ export default function CertGenerator({ scores: initScores, spec: initSpec, reco
             <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
               <Award size={16} style={{ color: "var(--cyan)", flexShrink: 0 }} />
               <div style={{ minWidth: 0 }}>
-                <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>PRISM Certificate</span>
+                <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>PRISM Self-Evaluation Certificate</span>
                 <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {workingSpec.name || workingSpec.species || "Unnamed Specimen"}
                   {workingSpec.locality ? ` · ${workingSpec.locality}` : ""}
@@ -976,8 +1006,8 @@ export default function CertGenerator({ scores: initScores, spec: initSpec, reco
         <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "18px 20px" }}>
           {step === 0 && <ReviewStep scores={workingScores} spec={workingSpec} sizeClass={sizeClass} setSizeClass={setSizeClass} allCtxData={allCtxData} primaryCtx={primaryCtx} compoundGrades={compoundGrades} />}
           {step === 1 && <DocumentationStep scores={workingScores} spec={workingSpec} docData={docData} setDocData={setDocData} photos={photos} setPhotos={setPhotos} />}
-          {step === 2 && <AttestationStep attestations={attestations} setAttestations={setAttestations} evaluatorName={evaluatorName} setEvaluatorName={setEvaluatorName} evaluatorOrg={evaluatorOrg} setEvaluatorOrg={setEvaluatorOrg} customAttestations={customAttestations} setCustomAttestations={setCustomAttestations} />}
-          {step === 3 && <CertPreview certId={certId} issued={issued} scores={workingScores} spec={workingSpec} sizeClass={sizeClass} docData={docData} photos={photos} attestations={attestations} evaluatorName={evaluatorName} evaluatorOrg={evaluatorOrg} primaryCtx={primaryCtx} compoundGrades={compoundGrades} customAttestations={customAttestations} onSaved={() => setCertSaved(true)} />}
+          {step === 2 && <AttestationStep attestations={attestations} setAttestations={setAttestations} evaluatorName={evaluatorName} setEvaluatorName={setEvaluatorName} evaluatorOrg={evaluatorOrg} setEvaluatorOrg={setEvaluatorOrg} ownerName={ownerName} setOwnerName={setOwnerName} customAttestations={customAttestations} setCustomAttestations={setCustomAttestations} />}
+          {step === 3 && <CertPreview certId={certId} issued={issued} scores={workingScores} spec={workingSpec} sizeClass={sizeClass} docData={docData} photos={photos} attestations={attestations} evaluatorName={evaluatorName} evaluatorOrg={evaluatorOrg} ownerName={ownerName} primaryCtx={primaryCtx} compoundGrades={compoundGrades} customAttestations={customAttestations} onSaved={() => setCertSaved(true)} />}
         </div>
 
         {/* Footer nav */}
