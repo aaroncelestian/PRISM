@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from "react";
+import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from "recharts";
 import { Plus, X, Search, Edit2, Trash2, Award, Camera, Download, FolderOpen, ExternalLink, Upload, Bot, Copy, Check } from "lucide-react";
-import { GRADES, WEIGHTS, CONTEXTS, THRESHOLD } from "../data/prism.js";
+import { GRADES, WEIGHTS, CONTEXTS, THRESHOLD, HERITAGE_FLAGS } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import { COMPS_SCHEMA } from "../version.js";
 import { migrateComp, wrapForSave, unwrapFromFile } from "../utils/dbMigrations.js";
@@ -91,15 +92,16 @@ const DOMAIN_TO_SOURCE = {
 };
 
 const DIM_DISPLAY = [
-  { key: "localityRarity", label: "Locality",   icon: "📍" },
+  { key: "crystal",        label: "Crystal",    icon: "�" },
   { key: "speciesRarity",  label: "Species",    icon: "🌍" },
-  { key: "crystal",        label: "Crystal",    icon: "💠" },
+  { key: "varietyRarity",  label: "Variety",    icon: "🔷" },
+  { key: "localityRarity", label: "Locality",   icon: "�" },
   { key: "aesthetics",     label: "Aesthetics", icon: "🎨" },
   { key: "provenance",     label: "Provenance", icon: "📜" },
   { key: "scientific",     label: "Scientific", icon: "🔬" },
 ];
 
-const EMPTY_FORM = { species: "", locality: "", sourceUrl: "", sizeClass: "miniature", condition: "excellent", askingPrice: "", source: "", notes: "", photo: null, photoUrl: "" };
+const EMPTY_FORM = { species: "", locality: "", sourceUrl: "", sizeClass: "miniature", condition: "excellent", askingPrice: "", source: "", notes: "", photo: null, photoUrl: "", heritageFlags: [], collectionName: "" };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -138,7 +140,8 @@ function computePrimary(scores) {
     const score = Math.round(Object.entries(W).reduce((a, [k, w]) => a + (scores[k] ?? 50) * w, 0));
     return { ...c, score };
   });
-  const passing = all.find(c => c.score >= THRESHOLD) || all[0];
+  const visible = all.filter(c => !c.hidden);
+  const passing = visible.find(c => c.score >= THRESHOLD) || visible[0];
   const grade = GRADES.find(g => passing.score >= g.min) || GRADES[GRADES.length - 1];
   return { score: passing.score, grade };
 }
@@ -449,19 +452,21 @@ function PhotoCapture({ value, onChange, urlValue, onUrlChange }) {
   );
 }
 
-// ── MiniBar ───────────────────────────────────────────────────────────────────
+// ── MiniRadar ─────────────────────────────────────────────────────────────────
 
-function MiniBar({ label, icon, value }) {
-  const color = value >= 70 ? "#1a9e60" : value >= 50 ? "#3878c8" : "#506070";
+const RADAR_SHORT = { crystal: "Xtal", speciesRarity: "Sp.R", varietyRarity: "Va.R", localityRarity: "Lo.R", aesthetics: "Aest", provenance: "Prov", scientific: "Sci" };
+
+function MiniRadar({ scores }) {
+  const data = DIM_DISPLAY.map(d => ({ dim: RADAR_SHORT[d.key] || d.label, v: scores?.[d.key] ?? 0 }));
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
-      <span style={{ fontSize: "9px", width: "64px", color: "var(--text-muted)", flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {icon} {label}
-      </span>
-      <div style={{ flex: 1, height: "4px", background: "var(--border)", borderRadius: "2px", overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${value}%`, background: color, borderRadius: "2px" }} />
-      </div>
-      <span style={{ width: "22px", textAlign: "right", fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-dim)" }}>{value}</span>
+    <div style={{ height: "140px", width: "100%" }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <RadarChart data={data} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+          <PolarGrid stroke="var(--border)" />
+          <PolarAngleAxis dataKey="dim" tick={{ fontSize: 9, fill: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }} />
+          <Radar dataKey="v" stroke="var(--cyan)" fill="var(--cyan)" fillOpacity={0.15} strokeWidth={1.5} dot={{ fill: "var(--cyan)", r: 2, strokeWidth: 0 }} />
+        </RadarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
@@ -607,7 +612,39 @@ function CompForm({ initial = EMPTY_FORM, onSave, onCancel }) {
           <datalist id="comp-sources">
             {COMMON_SOURCES.map(s => <option key={s} value={s} />)}
           </datalist>
+          <div style={{ fontSize: "9px", color: "var(--text-muted)", marginTop: "4px", lineHeight: 1.5 }}>
+            💡 High-end dealers (Collector's Edge, Kristalle, Crystal Classics, Wilensky) anchor the 80–95 score range in regression analysis.
+          </div>
         </div>
+      </div>
+
+      {/* Heritage / Cultural Significance */}
+      <div style={{ marginBottom: "12px" }}>
+        <label style={{ display: "block", fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "2px" }}>Heritage / Cultural Significance</label>
+        <div style={{ fontSize: "9px", color: "var(--text-muted)", opacity: 0.75, marginBottom: "6px", lineHeight: 1.5 }}>Named-collection, stamp, or award provenance can add 50–200%+ above score expectation. Tag anything applicable.</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: form.heritageFlags.includes("named_collection") ? "8px" : 0 }}>
+          {HERITAGE_FLAGS.map(f => {
+            const active = form.heritageFlags.includes(f.key);
+            return (
+              <button key={f.key} type="button" title={f.desc}
+                onClick={() => set("heritageFlags", active ? form.heritageFlags.filter(k => k !== f.key) : [...form.heritageFlags, f.key])}
+                style={{
+                  padding: "3px 9px", borderRadius: "4px", fontSize: "10px", cursor: "pointer",
+                  background: active ? "rgba(167,139,250,0.14)" : "transparent",
+                  border: `1px solid ${active ? "rgba(167,139,250,0.5)" : "var(--border)"}`,
+                  color: active ? "#a78bfa" : "var(--text-muted)",
+                  fontWeight: active ? 600 : 400, transition: "all 0.15s",
+                }}>
+                {f.emoji} {f.label}
+              </button>
+            );
+          })}
+        </div>
+        {form.heritageFlags.includes("named_collection") && (
+          <input value={form.collectionName} onChange={e => set("collectionName", e.target.value)}
+            placeholder="Collection name (e.g. Pinch Collection, Vaux Collection, Canfield)"
+            style={{ width: "100%", padding: "7px 10px", background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text)", fontSize: "12px", boxSizing: "border-box", marginTop: "4px" }} />
+        )}
       </div>
 
       {/* Row 3: Notes + Photo */}
@@ -699,6 +736,22 @@ function CompCard({ comp, onScore, onEdit, onDelete }) {
         )}
       </div>
 
+      {/* Heritage flags */}
+      {comp.heritageFlags?.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+          {comp.heritageFlags.map(key => {
+            const f = HERITAGE_FLAGS.find(h => h.key === key);
+            if (!f) return null;
+            const dispLabel = key === "named_collection" && comp.collectionName ? comp.collectionName : f.label;
+            return (
+              <span key={key} style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.3)", color: "#a78bfa" }}>
+                {f.emoji} {dispLabel}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
       {/* PRISM score section */}
       {isScored ? (
         <div>
@@ -709,11 +762,7 @@ function CompCard({ comp, onScore, onEdit, onDelete }) {
               <div style={{ fontSize: "9px", color: "var(--text-muted)" }}>PRISM Score</div>
             </div>
           </div>
-          <div>
-            {DIM_DISPLAY.map(d => (
-              <MiniBar key={d.key} label={d.label} icon={d.icon} value={comp.scores[d.key] ?? 50} />
-            ))}
-          </div>
+          <MiniRadar scores={comp.scores} />
         </div>
       ) : (
         <div style={{ padding: "10px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px dashed var(--border)", textAlign: "center" }}>
@@ -1177,6 +1226,28 @@ Rules:
               onDelete={onDelete}
             />
           ))}
+        </div>
+      )}
+
+      {/* Data quality progress */}
+      {comps.length > 0 && comps.length < 40 && (
+        <div style={{ padding: "12px 14px", background: "rgba(0,212,255,0.03)", border: "1px solid rgba(0,212,255,0.12)", borderRadius: "6px", display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>📡 Analysis Quality</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            {[
+              { threshold: 3,  label: "Price vs PRISM regression",          unlocked: comps.filter(c => c.prismScore != null && Number(c.askingPrice) > 0).length >= 3 },
+              { threshold: 5,  label: "Market position table",              unlocked: comps.filter(c => c.prismScore != null && Number(c.askingPrice) > 0).length >= 5 },
+              { threshold: 6,  label: "Species-specific price curves",      unlocked: Object.values(comps.reduce((m, c) => { const k = (c.species||"").toLowerCase(); if (c.prismScore && Number(c.askingPrice)) m[k] = (m[k]||0)+1; return m; }, {})).some(n => n >= 3) },
+              { threshold: 10, label: "Locality & condition premium charts", unlocked: comps.filter(c => c.prismScore != null && Number(c.askingPrice) > 0).length >= 10 },
+              { threshold: 40, label: "Statistically reliable averages",    unlocked: comps.length >= 40 },
+            ].map(({ label, unlocked }) => (
+              <div key={label} style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "10px" }}>
+                <span style={{ color: unlocked ? "#00c880" : "var(--border)", fontSize: "11px", flexShrink: 0 }}>{unlocked ? "✓" : "○"}</span>
+                <span style={{ color: unlocked ? "var(--text-dim)" : "var(--text-muted)" }}>{label}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: "9px", color: "var(--text-muted)", opacity: 0.65 }}>{comps.length}/40 listings — check the Analysis tab as you add more</div>
         </div>
       )}
       </>)}

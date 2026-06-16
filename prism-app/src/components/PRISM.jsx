@@ -31,8 +31,16 @@ function computePrimary(scores) {
 
 const DEFAULT_SCORES = {
   crystal: 0, speciesRarity: 0, varietyRarity: 0, localityRarity: 0,
-  provenance: 0, aesthetics: 0, scientific: 0,
+  provenance: 0, aesthetics: 0, scientific: 0, culturalSignificance: 0,
 };
+
+const DEFAULT_AESTHETICS_SUB = { color: 0, form: 0, presentation: 0, luster: 0 };
+const DEFAULT_TREATMENT_FLAGS = { synthetic: false, crystals_added: false, matrix_altered: false, coated: false, oiled: false, filled: false, lapidary: false, repaired: false, irradiated: false, heated: false };
+
+function initAestheticsSub(aestheticsScore) {
+  const v = aestheticsScore ?? 0;
+  return { color: v, form: v, presentation: v, luster: v };
+}
 
 function ToolMenuItems({ items, isMobile }) {
   return (
@@ -58,8 +66,11 @@ export default function PRISM() {
   const [mode, setMode] = useState("expert"); // "expert" | "research"
   const [ctx, setCtx] = useState("collector");
   const [scores, setScores] = useState(DEFAULT_SCORES);
-  const [spec, setSpec] = useState({ name: "", species: "", variety: "", locality: "", size: "" });
+  const [spec, setSpec] = useState({ name: "", species: "", variety: "", locality: "", size: "", exhibitions: [], literatureRefs: [] });
   const [sciCriteria, setSciCriteria] = useState([false, false, false, false, false]);
+  const [aestheticsSubScores, setAestheticsSubScores] = useState(DEFAULT_AESTHETICS_SUB);
+  const [treatmentFlags, setTreatmentFlags] = useState(DEFAULT_TREATMENT_FLAGS);
+  const [culturalCriteria, setCulturalCriteria] = useState([false, false, false, false, false]);
   const [showDonation,   setShowDonation]   = useState(false);
   const [showPricing,    setShowPricing]    = useState(false);
   const [showBuyerGuide, setShowBuyerGuide] = useState(false);
@@ -137,12 +148,27 @@ export default function PRISM() {
     setScores(s => ({ ...s, scientific: newCriteria.filter(Boolean).length * 20 }));
   };
 
+  const handleAestheticsSubScores = (newSubScores) => {
+    setAestheticsSubScores(newSubScores);
+    const vals = Object.values(newSubScores);
+    const mean = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+    setScores(s => ({ ...s, aesthetics: mean }));
+  };
+
+  const handleCulturalCriteria = (newCriteria) => {
+    setCulturalCriteria(newCriteria);
+    setScores(s => ({ ...s, culturalSignificance: newCriteria.filter(Boolean).length * 20 }));
+  };
+
   const reset = () => {
     setScores(DEFAULT_SCORES);
-    setSpec({ name: "", species: "", variety: "", locality: "", size: "" });
+    setSpec({ name: "", species: "", variety: "", locality: "", size: "", exhibitions: [], literatureRefs: [] });
     setCtx("collector");
     setMode("expert");
     setSciCriteria([false, false, false, false, false]);
+    setCulturalCriteria([false, false, false, false, false]);
+    setAestheticsSubScores(DEFAULT_AESTHETICS_SUB);
+    setTreatmentFlags(DEFAULT_TREATMENT_FLAGS);
     setScoringCompId(null);
     setLastSavedKey(null);
   };
@@ -156,7 +182,7 @@ export default function PRISM() {
       return;
     }
     const { score, grade, compoundGrades } = computePrimary(scores);
-    saveRecord(spec, scores, ctx, grade.label, grade.emoji, score, compoundGrades);
+    saveRecord(spec, scores, ctx, grade.label, grade.emoji, score, compoundGrades, aestheticsSubScores, treatmentFlags);
     setLastSavedKey(key);
     setSavedFlash("saved");
     savedFlashTimerRef.current = setTimeout(() => setSavedFlash(null), 1800);
@@ -164,9 +190,13 @@ export default function PRISM() {
 
   const handleScoreComp = (comp) => {
     setScoringCompId(comp.id);
-    setSpec({ name: comp.species, species: comp.species, variety: "", locality: comp.locality || "", size: "" });
-    setScores(comp.scores ? { ...DEFAULT_SCORES, ...comp.scores } : DEFAULT_SCORES);
+    setSpec({ name: comp.species, species: comp.species, variety: "", locality: comp.locality || "", size: "", exhibitions: [], literatureRefs: [] });
+    const loadedScores = comp.scores ? { ...DEFAULT_SCORES, ...comp.scores } : DEFAULT_SCORES;
+    setScores(loadedScores);
     setSciCriteria([false, false, false, false, false]);
+    setCulturalCriteria([false, false, false, false, false]);
+    setAestheticsSubScores(comp.aestheticsSub || initAestheticsSub(loadedScores.aesthetics));
+    setTreatmentFlags(comp.treatmentFlags || DEFAULT_TREATMENT_FLAGS);
     if (comp.ctx) setCtx(comp.ctx);
     setMode("expert");
   };
@@ -233,7 +263,7 @@ export default function PRISM() {
             {/* Mode toggle */}
             <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "5px", overflow: "hidden" }}>
               {[
-                { key: "expert",   label: "Expert",   Icon: SlidersHorizontal },
+                { key: "expert",   label: "PRISM",    Icon: SlidersHorizontal },
                 { key: "research", label: "Research", Icon: Search },
               ].map(({ key, label, Icon }, i, arr) => (
                 <button key={key} onClick={() => { if (key !== "expert") setScoringCompId(null); setMode(key); }} style={{
@@ -372,11 +402,15 @@ export default function PRISM() {
           onLoad={rec => {
             const loadedScores = { ...DEFAULT_SCORES, ...(rec.scores || {}) };
             setScores(loadedScores);
-            setSpec({ name: "", species: "", variety: "", locality: "", size: "", ...(rec.spec || {}) });
+            setSpec({ name: "", species: "", variety: "", locality: "", size: "", exhibitions: [], literatureRefs: [], ...(rec.spec || {}) });
             setCtx(rec.ctx || "collector");
             setLastSavedKey(JSON.stringify({ scores: loadedScores, spec: rec.spec, ctx: rec.ctx }));
             const sciCount = Math.round((loadedScores.scientific ?? 0) / 20);
             setSciCriteria(Array(5).fill(false).map((_, i) => i < sciCount));
+            const culturalCount = Math.round((loadedScores.culturalSignificance ?? 0) / 20);
+            setCulturalCriteria(Array(5).fill(false).map((_, i) => i < culturalCount));
+            setAestheticsSubScores(rec.aestheticsSub && Object.keys(rec.aestheticsSub).length > 0 ? rec.aestheticsSub : initAestheticsSub(loadedScores.aesthetics));
+            setTreatmentFlags(rec.treatmentFlags || DEFAULT_TREATMENT_FLAGS);
             setScoringCompId(null);
             setSpSource(null);
             setMode("expert");
@@ -396,6 +430,12 @@ export default function PRISM() {
             setSpec={setSpec}
             sciCriteria={sciCriteria}
             onSciCriteriaChange={handleSciCriteria}
+            culturalCriteria={culturalCriteria}
+            onCulturalCriteriaChange={handleCulturalCriteria}
+            aestheticsSubScores={aestheticsSubScores}
+            onAestheticsSubScoresChange={handleAestheticsSubScores}
+            treatmentFlags={treatmentFlags}
+            onTreatmentFlagsChange={setTreatmentFlags}
             onExport={() => setShowExport(true)}
             onSaveToCollection={handleSaveToCollection}
             scoringComp={scoringCompId ? comps.find(c => c.id === scoringCompId) : null}

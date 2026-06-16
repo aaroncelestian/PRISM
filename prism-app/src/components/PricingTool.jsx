@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { X, ChevronLeft, ChevronRight, DollarSign, Copy, CheckCheck, Printer } from "lucide-react";
-import { WEIGHTS, CONTEXTS, GRADES, THRESHOLD, applyNonLinearTransform } from "../data/prism.js";
+import { X, ChevronLeft, ChevronRight, TrendingUp, Copy, CheckCheck, Printer } from "lucide-react";
+import { WEIGHTS, CONTEXTS, GRADES, applyNonLinearTransform } from "../data/prism.js";
 
 function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
   let best = 0, bestGrade = GRADES[GRADES.length - 1];
@@ -16,8 +16,8 @@ function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
       <div style={{ width: "100%", maxWidth: "600px", maxHeight: "92vh", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "10px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-dim)", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>💰 Sell / Trade Price Guide</div>
-            <div style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "2px" }}>Select the specimen to price</div>
+            <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>� Sell / Trade Market Guide</div>
+            <div style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "2px" }}>Select the specimen to evaluate</div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={16} /></button>
         </div>
@@ -149,7 +149,7 @@ const CHANNELS = [
     time: "Months",
     desc: "Heritage, Bonhams, Lyon & Turnbull, Casterot — top hammer prices for exceptional pieces, but seller fees are significant.",
     tips: [
-      "Best for pieces likely valued over $2,000. Contact them with photos first.",
+      "Best reserved for exceptional pieces. Contact them with photos first — they will advise on suitability.",
       "Negotiate the seller's premium — it's not always fixed.",
       "Allow 3–6 months from consignment to payment.",
       "Auction catalog inclusion adds credibility and future provenance value.",
@@ -199,7 +199,7 @@ const CHANNELS = [
   },
 ];
 
-const STEPS = ["Size", "Condition", "Sale Channel", "Price Guide"];
+const STEPS = ["Size", "Condition", "Sale Channel", "Market Guide"];
 
 // ── Price calculation ─────────────────────────────────────────────────────────
 
@@ -230,73 +230,12 @@ const POSITION_TIERS = [
   { min:  0, label: "Entry / Bulk",    color: "#506070", bar: "linear-gradient(90deg, #506070, #405060)", desc: "Below average for this size class. Competes on price rather than quality." },
 ];
 
-// Channel guidance — qualitative, no dollar amounts
-const CHANNEL_GUIDANCE = {
-  private:     (p) => p >= 72 ? "Premium positioning — target specialist collectors who focus on this species or locality. Patience pays significantly here."
-                              : p >= 38 ? "Solid positioning. Post in Mindat forums or Facebook mineral groups with clear locality info and good photos."
-                              : "Competitive price is essential. Consider bundling or trading up rather than holding for top dollar.",
-  show:        (p) => p >= 72 ? "Strong show-table piece. Price with negotiation room — informed show buyers recognize premium positioning and will engage."
-                              : p >= 38 ? "Good show candidate. Thumbnail and miniature sizes move fastest on show day. Competitive but fair pricing."
-                              : "Price aggressively for quick floor traffic, or save for a swap rather than the main floor.",
-  online:      (p) => p >= 72 ? "Premium pieces sell online, but listing quality is everything. Professional photos, locality in the title, and a compelling description are essential."
-                              : p >= 38 ? "Broad online market. Lead with locality and species name. Natural light photos dramatically outperform flash."
-                              : "Expect a skeptical buyer pool. Emphasize any positive attributes; be transparent about limitations.",
-  auction:     (p) => p >= 72 ? "Well-suited for specialist auction. Contact Heritage, Bonhams, or Lyon & Turnbull with photos. Catalog exposure also adds provenance value."
-                              : "Auction seller fees (10–20%) erode margin on average-positioned pieces. Other channels will likely net more.",
-  consignment: (p) => p >= 72 ? "A premium piece gives you leverage to negotiate commission down to 30–35%. Ensure the dealer has the right collector audience."
-                              : "Standard consignment rates (40–50%) apply. Confirm the dealer actively sells in the relevant species or locality niche.",
-  buyout:      (_) => "Dealer buyout is position-independent — expect 20–35% of what the dealer plans to sell it for, regardless of your PRISM grade. Get 2–3 quotes.",
-  club:        (p) => p >= 72 ? "Knowledgeable club audiences appreciate quality, but top-tier pieces may be undervalued compared to open collector markets. Consider private sale first."
-                              : "Good fit. Club and society buyers tend to price fairly for mid-grade material, and the audience understands mineralogical value.",
-};
 
 function computeMarketPosition(score, conditionKey) {
   const adj = { pristine: 8, excellent: 0, good: -15, repaired: -32, damaged: -55 }[conditionKey] || 0;
   return Math.max(0, Math.min(100, score + adj));
 }
 
-// ── Price estimation helpers ──────────────────────────────────────────────────
-
-const BASE_RETAIL = {
-  thumbnail: 18,
-  miniature: 55,
-  small_cab: 145,
-  cabinet:   360,
-  large_cab: 990,
-  museum:    2800,
-};
-
-function getQualityMult(score) {
-  if (score >= 90) return 8.0;
-  if (score >= 75) return 4.0;
-  if (score >= 60) return 2.0;
-  if (score >= 45) return 1.0;
-  if (score >= 22) return 0.5;
-  return 0.25;
-}
-
-function computePriceRange(score, sizeClass, conditionKey, channelKey) {
-  const base    = BASE_RETAIL[sizeClass] ?? 50;
-  const qMult   = getQualityMult(score);
-  const cMult   = CONDITIONS.find(c => c.key === conditionKey)?.mult ?? 1;
-  const chMult  = CHANNELS.find(c => c.key === channelKey)?.mult ?? 1;
-  const retail  = base * qMult * cMult;
-  const mid     = retail * chMult;
-  return {
-    low:          Math.round(mid * 0.72),
-    mid:          Math.round(mid),
-    high:         Math.round(mid * 1.42),
-    retail:       Math.round(retail),
-    suggestedAsk: Math.round(mid * 1.15),
-    floor:        Math.round(mid * 0.80),
-  };
-}
-
-function fmt(n) {
-  if (n >= 10000) return `$${Math.round(n / 1000)}k`;
-  if (n >= 1000)  return `$${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
-  return `$${n}`;
-}
 
 const NEGOTIATION_GUIDE = {
   "Trophy":           { ask: "Price at the high end of your range and hold — exceptional pieces reward patient sellers.", floor: "Expect 85–90% of ask from serious buyers. Don't capitulate below that.", tip: "Document the PRISM score prominently. Top collectors pay premiums for quantified quality." },
@@ -306,93 +245,6 @@ const NEGOTIATION_GUIDE = {
   "Standard":         { ask: "Price at or slightly below mid estimate to remain competitive.", floor: "60–65% of ask is typical. Bundles and trades often net more than single-piece sales.", tip: "Flexible terms (trades, bundles) move standard-grade pieces more effectively than price cuts." },
   "Entry / Bulk":     { ask: "Price at the low end — this tier is highly price-competitive.", floor: "Quick liquidation beats holding. Set a firm floor and focus on volume.", tip: "Lot sales or trade-up offers are usually more effective than single-piece listings at this tier." },
 };
-
-function buildListingTitle(spec, grade, sizeClass) {
-  const sz = SIZE_CLASSES.find(s => s.key === sizeClass);
-  const parts = [];
-  if (grade.min >= 75) parts.push("Superb");
-  else if (grade.min >= 60) parts.push("Fine");
-  if (spec?.species) parts.push(spec.species);
-  else parts.push("Mineral Specimen");
-  if (sz) parts.push(sz.label);
-  if (spec?.locality) parts.push(spec.locality);
-  parts.push(`PRISM ${grade.label}`);
-  return parts.join(" ");
-}
-
-function buildMarketReport({ spec, score, grade, sizeClass, condition, channel, position, tier, prices, scores }) {
-  const now  = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-  const sz   = SIZE_CLASSES.find(s => s.key === sizeClass);
-  const cond = CONDITIONS.find(c => c.key === condition);
-  const ch   = CHANNELS.find(c => c.key === channel);
-  const neg  = NEGOTIATION_GUIDE[tier.label] || {};
-  const fmtD = n => n >= 1000 ? `$${n.toLocaleString()}` : `$${n}`;
-  const LINE = "\u2500".repeat(52);
-  const DIM_DISPLAY = [
-    { key: "localityRarity", label: "Locality Rarity" },
-    { key: "speciesRarity",  label: "Species Rarity"  },
-    { key: "varietyRarity",  label: "Variety Rarity"  },
-    { key: "crystal",        label: "Crystal Quality" },
-    { key: "aesthetics",     label: "Aesthetics"      },
-    { key: "provenance",     label: "Provenance"      },
-    { key: "scientific",     label: "Scientific Value"},
-  ];
-  const lines = ["PRISM \u2014 SPECIMEN MARKET REPORT", `Generated: ${now}`, LINE, ""];
-  if (spec?.name || spec?.species || spec?.locality) {
-    lines.push("SPECIMEN");
-    if (spec?.name)     lines.push(`  Name:      ${spec.name}`);
-    if (spec?.species)  lines.push(`  Species:   ${spec.species}`);
-    if (spec?.locality) lines.push(`  Locality:  ${spec.locality}`);
-    lines.push("");
-  }
-  lines.push(
-    "QUALITY",
-    `  PRISM Score: ${score}/100`,
-    `  Grade:       ${grade.emoji} ${grade.label}`,
-    `  Condition:   ${cond?.label}`,
-    "",
-    "SIZE & CHANNEL",
-    `  Size Class:   ${sz?.label} (${sz?.range})`,
-    `  Sale Channel: ${ch?.label}`,
-    "",
-    `ESTIMATED PRICE RANGE \u2014 ${ch?.label}`,
-    `  Low: ${fmtD(prices.low)}   Mid: ${fmtD(prices.mid)}   High: ${fmtD(prices.high)}`,
-    `  Suggested Ask:   ${fmtD(prices.suggestedAsk)}`,
-    `  Walk-Away Floor: ${fmtD(prices.floor)}`,
-    "",
-    `MARKET POSITION: ${tier.label} (${position}/100 among ${sz?.label} specimens)`,
-    `  ${tier.desc}`,
-    "",
-    "VALUE DIMENSIONS",
-  );
-  DIM_DISPLAY.forEach(d => {
-    const v = scores?.[d.key] ?? 50;
-    const arrow = v >= 68 ? "\u2191" : v <= 38 ? "\u2193" : " ";
-    lines.push(`  ${arrow} ${d.label}: ${v}/100`);
-  });
-  const guidance = CHANNEL_GUIDANCE[channel]?.(position);
-  lines.push("", "CHANNEL GUIDANCE");
-  if (guidance) lines.push(`  ${guidance}`);
-  lines.push("", "SELLING TIPS");
-  (ch?.tips || []).forEach(t => lines.push(`  \u2022 ${t}`));
-  if (neg.ask) {
-    lines.push(
-      "", "NEGOTIATION",
-      `  Suggested Ask:   ${fmtD(prices.suggestedAsk)}`,
-      `  Walk-Away Floor: ${fmtD(prices.floor)}`,
-      `  Strategy: ${neg.ask}`,
-      ...(neg.floor ? [`  Floor:    ${neg.floor}`] : []),
-      ...(neg.tip   ? [`  Tip:      ${neg.tip}`]   : []),
-    );
-  }
-  lines.push(
-    "", LINE,
-    "PRISM (Precision Rating Index of Specimen Minerals)",
-    "Estimates are based on market norms and PRISM scoring.",
-    "Individual results vary. Not a guarantee of value.",
-  );
-  return lines.join("\n");
-}
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -429,8 +281,8 @@ function SizeStep({ sizeClass, setSizeClass, grade, score, spec }) {
       <div>
         <h3 style={{ fontSize: "16px", fontWeight: 600, color: "var(--text)", marginBottom: "4px" }}>What size is the specimen?</h3>
         <p style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55 }}>
-          Size class is one of the biggest price drivers — a cabinet-sized specimen of the same quality
-          typically commands 5–20× the price of a thumbnail.
+          Size class significantly affects market value — a cabinet-sized specimen of the same quality
+          typically commands 5–20× the market value of a thumbnail.
         </p>
       </div>
 
@@ -442,7 +294,7 @@ function SizeStep({ sizeClass, setSizeClass, grade, score, spec }) {
           {spec?.name && <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>{spec.name}{spec.species ? ` · ${spec.species}` : ""}</div>}
         </div>
         <div style={{ fontSize: "10px", color: "var(--text-muted)", textAlign: "right", lineHeight: 1.5 }}>
-          This quality level is<br />used in price calculation
+          This quality level is<br />used in market positioning
         </div>
       </div>
 
@@ -550,159 +402,202 @@ function ChannelStep({ channel, setChannel }) {
   );
 }
 
-function PriceGuideStep({ score, sizeClass, condition, channel, scores, spec }) {
-  const [copiedReport, setCopiedReport] = useState(false);
-  const [copiedTitle,  setCopiedTitle]  = useState(false);
+// ── Advertising template helpers ─────────────────────────────────────────────
 
-  const sz       = SIZE_CLASSES.find(s => s.key === sizeClass);
-  const cond     = CONDITIONS.find(c => c.key === condition);
-  const ch       = CHANNELS.find(c => c.key === channel);
-  const grade    = getGrade(score);
+const AD_DIMS = {
+  localityRarity: "Locality Rarity", speciesRarity: "Species Rarity",
+  varietyRarity:  "Variety Rarity",  crystal:       "Crystal Quality",
+  aesthetics:     "Aesthetics",      provenance:    "Provenance",
+  scientific:     "Scientific Value",
+};
+
+function buildAdTemplate(channel, { spec, score, grade, sz, cond, tier, scores }) {
+  const sp  = spec?.species || "";
+  const va  = spec?.variety || "";
+  const lo  = spec?.locality || "";
+  const nm  = spec?.name || sp || "Mineral Specimen";
+  const sl  = [sp, va].filter(Boolean).join(" ") || nm;
+  const szS = sz  ? `${sz.label} (${sz.range})`  : "";
+  const coS = cond ? cond.label : "";
+  const hl  = Object.entries(scores || {})
+    .filter(([k, v]) => v >= 60 && AD_DIMS[k])
+    .sort(([, a], [, b]) => b - a).slice(0, 4)
+    .map(([k, v]) => `  \u2022 ${AD_DIMS[k]}: ${v}/100`);
+  const hasProv = (scores?.provenance ?? 0) >= 60;
+  const today   = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const LINE    = "\u2500".repeat(50);
+  const PSCORE  = `PRISM ${score}/100  \u00b7  ${grade.emoji} ${grade.label}  \u00b7  ${tier.label}`;
+  const DETAIL  = [
+    sp  && `  Species:    ${sp}`,
+    va  && `  Variety:    ${va}`,
+    lo  && `  Locality:   ${lo}`,
+    szS && `  Size:       ${szS}`,
+    coS && `  Condition:  ${coS}`,
+    `  PRISM:      ${score}/100 \u2014 ${grade.label} (${tier.label})`,
+  ].filter(Boolean).join("\n");
+  const HL   = hl.length ? `\n\nSTRONGEST ATTRIBUTES\n${hl.join("\n")}` : "";
+  const PROV = hasProv ? "\n  Provenance documentation available on request." : "";
+
+  if (channel === "private") return {
+    title: "Private Sale Inquiry",
+    hint: "Fill in the blanks (marked ___). Edit any section. Delete what doesn\u2019t apply.",
+    template: `To: _______________________________________________\nDate: ${today}\nSubject: ${sl}${lo ? " from " + lo : ""} \u2014 PRISM ${grade.label} \u00b7 Available\n\n${LINE}\n\nHi _______________,\n\nI have a ${sl}${lo ? " from " + lo : ""} available for private sale. This piece scored ${score}/100 on the PRISM Mineral Rating Index \u2014 ${grade.label} (${tier.label}).\n\nSPECIMEN DETAILS\n${DETAIL}${HL}${PROV}\n\nAsking: _______________________________________________\n  (Happy to discuss \u2014 serious collectors welcome)\n\nAdditional photos, video, or provenance documentation available on request.\n\n${LINE}\nFrom: _______________________________________________\nContact / email: ____________________________________`,
+  };
+
+  if (channel === "show" || channel === "club") return {
+    title: channel === "show" ? "Mineral Show Display Label" : "Club / Society Sale Label",
+    hint: "Print and display with the specimen. Adjust size as needed for your label holder.",
+    template: `${LINE}\n  ${sl.toUpperCase()}\n${lo ? "  " + lo.toUpperCase() + "\n" : ""}${LINE}\n\n  ${[szS, coS].filter(Boolean).join("  \u00b7  ")}\n\n  \u2605  ${PSCORE}\n${hl.length ? "\n  Notable Attributes:\n" + hl.join("\n") + "\n" : ""}\n${LINE}\n  PRICE:  $___________________________________________\n  Seller: _______________________________________________\n${LINE}`,
+  };
+
+  if (channel === "online") return {
+    title: "Online Marketplace Listing",
+    hint: "Copy the title and description separately into your listing platform (eBay, Catawiki, Etsy, etc.).",
+    template: `LISTING TITLE\n${[grade.min >= 75 ? "Superb" : grade.min >= 60 ? "Fine" : null, sl, sz?.label, lo || null, `PRISM ${grade.label}`].filter(Boolean).join(" \u2014 ")}\n\nSEARCH TAGS\n${[sp, va, lo, sz?.label, "mineral", "crystal", "specimen", "natural"].filter(Boolean).join(", ")}\n\n${LINE}\nDESCRIPTION\n\n${[coS, sl].filter(Boolean).join(" ")}${lo ? " from " + lo : ""}. PRISM Score: ${score}/100 (${grade.label} \u2014 ${tier.label}).\n\nSPECIMEN DETAILS\n${DETAIL}${HL}${PROV}\n\nShipping: _______________________________________________\nCombined shipping available: ___________________________\n\nAdditional photos available. Questions welcome.`,
+  };
+
+  if (channel === "auction") return {
+    title: "Specialist Auction Consignment Summary",
+    hint: "Submit to the auction house as a consignment summary. They will write final catalog copy.",
+    template: `CONSIGNMENT SUBMISSION\n${LINE}\nDate: ${today}\nAuction House: _________________________________________\nLot Reference: _________________________________________\nConsignor: _____________________________________________\nContact: _______________________________________________\n\nSPECIMEN\n${DETAIL}${HL}${PROV}\n\n${LINE}\nMarket Tier: ${tier.label}  \u00b7  Position: ${computeMarketPosition(score, cond?.key)} /100\n\nReserve guidance: ______________________________________\n  (Many specialist houses prefer no reserve \u2014 discuss.)\n\nSeller\u2019s premium rate: _____% (confirm with house)\nExpected timeline: 3\u20136 months consignment to payment\n${LINE}\n\nNote: Final catalog copy will be prepared by the auction house.\nThis summary is for your records only.\n\nSignature: _____________________________________________ Date: ____________`,
+  };
+
+  if (channel === "consignment") return {
+    title: "Dealer Consignment Record",
+    hint: "Keep a signed copy before handing over the specimen. Fill all fields.",
+    template: `DEALER CONSIGNMENT AGREEMENT\n${LINE}\nDate: ${today}              Ref: ________________________\n\nDealer:    _______________________________________________\nContact:   _______________________________________________\nLocation:  _______________________________________________\n\nSPECIMEN\n${DETAIL}${HL}${PROV}\n\n${LINE}\nCommission rate agreed:             _________ %\nYour floor price (net, confidential): $________________\nDealer\u2019s agreed asking price:         $________________\n\nProvenance documents handed over:   ${hasProv ? "Yes \u2014 included" : "____________________"}\nPhotos on file / shared:            ____________________\nReturn-if-unsold date:              ____________________\n${LINE}\nDealer signature: ______________________________________\nOwner signature:  ______________________________________\n${LINE}`,
+  };
+
+  if (channel === "buyout") return {
+    title: "Dealer Direct Buyout \u2014 Specimen Fact Sheet",
+    hint: "For dealer evaluation. Do not write your minimum on the copy you hand over.",
+    template: `SPECIMEN FACT SHEET \u2014 DEALER EVALUATION\n${LINE}\nDate: ${today}\nPresented to: __________________________________________\n\nSPECIMEN\n${DETAIL}${HL}${PROV}\n\n${LINE}\nMarket Tier: ${tier.label}  \u00b7  PRISM Position: ${computeMarketPosition(score, cond?.key)}/100\n\nComparable sales on record:\n  ____________________________________________________\n  ____________________________________________________\n\nNotes:\n  ____________________________________________________\n  ____________________________________________________\n${LINE}\nPRISM provides qualitative market positioning only.\nNot a formal appraisal. Prices negotiated directly.`,
+  };
+
+  return { title: "Market Guide", hint: "", template: "" };
+}
+
+function AdvertisingStep({ score, sizeClass, condition, channel, scores, spec }) {
+  const sz    = SIZE_CLASSES.find(s => s.key === sizeClass);
+  const cond  = CONDITIONS.find(c => c.key === condition);
+  const ch    = CHANNELS.find(c => c.key === channel);
+  const grade = getGrade(score);
   const position = computeMarketPosition(score, condition);
-  const tier     = POSITION_TIERS.find(t => position >= t.min) || POSITION_TIERS[POSITION_TIERS.length - 1];
-  const guidance = CHANNEL_GUIDANCE[channel]?.(position) || "";
-  const prices   = computePriceRange(score, sizeClass, condition, channel);
-  const neg      = NEGOTIATION_GUIDE[tier.label] || {};
-  const listingTitle = buildListingTitle(spec, grade, sizeClass);
+  const tier  = POSITION_TIERS.find(t => position >= t.min) || POSITION_TIERS[POSITION_TIERS.length - 1];
 
-  const DIM_DISPLAY = [
-    { key: "localityRarity", label: "Locality Rarity", icon: "📍" },
-    { key: "speciesRarity",  label: "Species Rarity",  icon: "🌍" },
-    { key: "crystal",        label: "Crystal Quality", icon: "💠" },
-    { key: "aesthetics",     label: "Aesthetics",      icon: "🎨" },
-    { key: "provenance",     label: "Provenance",      icon: "📜" },
-    { key: "scientific",     label: "Scientific Value",icon: "🔬" },
-  ];
-  const positiveDrivers = DIM_DISPLAY.filter(d => (scores?.[d.key] ?? 50) >= 68).sort((a, b) => (scores?.[b.key] ?? 50) - (scores?.[a.key] ?? 50));
-  const negativeDrivers = DIM_DISPLAY.filter(d => (scores?.[d.key] ?? 50) <= 38).sort((a, b) => (scores?.[a.key] ?? 50) - (scores?.[b.key] ?? 50));
+  const { title, hint, template } = useMemo(
+    () => buildAdTemplate(channel, { spec, score, grade, sz, cond, tier, scores }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [channel, score, sizeClass, condition]
+  );
+  const [text, setText]   = useState(template);
+  const [copied, setCopied] = useState(false);
+  const neg = NEGOTIATION_GUIDE[tier.label] || {};
 
-  const copyReport = () => {
-    const txt = buildMarketReport({ spec, score, grade, sizeClass, condition, channel, position, tier, prices, scores });
-    navigator.clipboard.writeText(txt)
-      .then(() => { setCopiedReport(true); setTimeout(() => setCopiedReport(false), 2500); })
+  const copyText = () => {
+    navigator.clipboard.writeText(text)
+      .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); })
       .catch(() => {});
   };
 
+  const printDoc = () => {
+    const win = window.open("", "_blank", "width=720,height=960");
+    if (!win) return;
+    const safe = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    win.document.write(`<!DOCTYPE html><html><head><title>${title}</title><style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'Courier New',Courier,monospace;font-size:12px;line-height:1.65;color:#000;background:#fff;padding:48px 52px;max-width:680px;margin:0 auto}
+      .doc-header{border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:18px}
+      .doc-title{font-size:13px;font-weight:bold;letter-spacing:0.12em;text-transform:uppercase}
+      .prism-badge{display:inline-block;border:1px solid #000;padding:3px 12px;font-size:11px;font-weight:bold;margin-top:6px;letter-spacing:0.06em}
+      pre{white-space:pre-wrap;font-family:'Courier New',Courier,monospace;font-size:12px;line-height:1.65}
+      @media print{body{padding:24px 28px}@page{margin:1.2cm}}
+    </style></head><body>
+      <div class="doc-header">
+        <div class="doc-title">${title}</div>
+        <div class="prism-badge">PRISM ${score}/100 &nbsp;&middot;&nbsp; ${grade.label} &nbsp;&middot;&nbsp; ${tier.label}</div>
+      </div>
+      <pre>${safe}</pre>
+    </body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 450);
+  };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+
+      {/* ── Context bar ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: "7px", flexWrap: "wrap" }}>
+        <div style={{ padding: "3px 10px", borderRadius: "4px", background: `${grade.color}15`, border: `1px solid ${grade.color}35`, fontSize: "11px", fontWeight: 700, color: grade.color }}>
+          {grade.emoji} PRISM {score}/100 · {grade.label}
+        </div>
+        <div style={{ padding: "3px 10px", borderRadius: "4px", background: `${tier.color}10`, border: `1px solid ${tier.color}30`, fontSize: "11px", fontWeight: 600, color: tier.color }}>
+          {tier.label}
+        </div>
+        <div style={{ padding: "3px 10px", borderRadius: "4px", background: "var(--bg-panel)", border: "1px solid var(--border)", fontSize: "11px", color: "var(--text-dim)" }}>
+          {ch?.icon} {ch?.label} · {ch?.fees} · {ch?.time}
+        </div>
+      </div>
+
+      {/* ── Channel title + hint ── */}
       <div>
-        <h3 style={{ fontSize: "16px", fontWeight: 600, color: "var(--text)", marginBottom: "4px" }}>Market Position &amp; Price Guide</h3>
-        <p style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55 }}>
-          Estimated pricing for a <strong>{sz?.label}</strong> sold via <strong>{ch?.label}</strong>.
-          Ranges reflect real-world variability — individual sales depend on buyer, timing, and presentation.
-        </p>
+        <h3 style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)", marginBottom: "4px" }}>
+          {ch?.icon} {title}
+        </h3>
+        <p style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.55 }}>{hint}</p>
       </div>
 
-      {/* ── Price Range Card ── */}
-      <div style={{ padding: "16px 18px", background: "var(--bg-panel)", borderRadius: "8px", border: `1px solid ${tier.color}35` }}>
-        <div style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "12px" }}>
-          Estimated Price Range · {ch?.icon} {ch?.label}
+      {/* ── Editable template ── */}
+      <div>
+        <div style={{ fontSize: "8px", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "5px" }}>
+          Template — pre-filled from PRISM data · edit directly · fill in blanks marked ___
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "12px" }}>
-          {[
-            { label: "Low",  value: prices.low,  color: "var(--text-muted)" },
-            { label: "Mid",  value: prices.mid,  color: tier.color },
-            { label: "High", value: prices.high, color: "var(--text-dim)" },
-          ].map(({ label, value, color }) => (
-            <div key={label} style={{ textAlign: "center", padding: "10px 8px", background: "var(--bg)", borderRadius: "5px" }}>
-              <div style={{ fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "4px" }}>{label}</div>
-              <div style={{ fontSize: label === "Mid" ? "20px" : "16px", fontWeight: 700, color, fontFamily: "var(--mono)" }}>{fmt(value)}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "10px" }}>
-          <div style={{ padding: "8px 10px", background: "rgba(0,212,255,0.06)", borderRadius: "5px", border: "1px solid rgba(0,212,255,0.2)" }}>
-            <div style={{ fontSize: "8px", color: "rgba(0,212,255,0.5)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "3px" }}>Suggested Ask</div>
-            <div style={{ fontSize: "18px", fontWeight: 700, color: "var(--cyan)", fontFamily: "var(--mono)" }}>{fmt(prices.suggestedAsk)}</div>
-            <div style={{ fontSize: "9px", color: "rgba(0,212,255,0.4)", marginTop: "1px" }}>+15% above mid for negotiation room</div>
-          </div>
-          <div style={{ padding: "8px 10px", background: "rgba(255,80,80,0.04)", borderRadius: "5px", border: "1px solid rgba(255,80,80,0.15)" }}>
-            <div style={{ fontSize: "8px", color: "rgba(255,100,100,0.5)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "3px" }}>Walk-Away Floor</div>
-            <div style={{ fontSize: "18px", fontWeight: 700, color: "#ff8080", fontFamily: "var(--mono)" }}>{fmt(prices.floor)}</div>
-            <div style={{ fontSize: "9px", color: "rgba(255,100,100,0.4)", marginTop: "1px" }}>Don't accept below this</div>
-          </div>
-        </div>
-        <div style={{ fontSize: "9px", color: "var(--text-muted)", lineHeight: 1.5 }}>
-          Based on PRISM {score}/100 · {cond?.label} · {sz?.label} · {ch?.label} ({ch?.fees} fees).
-          Reference ranges only — not a formal appraisal.
-        </div>
+        <textarea
+          value={text}
+          onChange={e => setText(e.target.value)}
+          spellCheck={false}
+          style={{
+            width: "100%", boxSizing: "border-box",
+            minHeight: (channel === "show" || channel === "club") ? "210px" : "360px",
+            padding: "12px 14px",
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            borderRadius: "5px",
+            color: "var(--text)",
+            fontFamily: "var(--mono)",
+            fontSize: "11px",
+            lineHeight: 1.65,
+            resize: "vertical",
+            outline: "none",
+          }}
+        />
       </div>
 
-      {/* ── Market Position ── */}
-      <div style={{ padding: "14px 16px", background: "var(--bg-panel)", borderRadius: "8px", border: `1px solid ${tier.color}25` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-          <div style={{ fontSize: "9px", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase" }}>
-            Market Position · {sz?.label} Class
-          </div>
-          <div style={{ padding: "3px 10px", borderRadius: "4px", background: `${tier.color}18`, border: `1px solid ${tier.color}40`, fontSize: "11px", fontWeight: 700, color: tier.color }}>
-            {tier.label}
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-          <div style={{ fontSize: "26px", fontWeight: 700, color: tier.color, fontFamily: "var(--mono)", lineHeight: 1 }}>
-            {position}<span style={{ fontSize: "13px", opacity: 0.6 }}>/100</span>
-          </div>
-          <div style={{ flex: 1, height: "5px", background: "var(--bg)", borderRadius: "2px", overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${position}%`, background: tier.bar, borderRadius: "2px", transition: "width 0.5s" }} />
-          </div>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.07em", marginBottom: "7px" }}>
-          <span>Entry</span><span>Standard</span><span>Premium</span><span>Trophy</span>
-        </div>
-        <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>{tier.desc}</div>
+      {/* ── Action buttons ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px" }}>
+        <button
+          onClick={copyText}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "9px 12px", borderRadius: "5px", fontSize: "11px", fontWeight: 600, cursor: "pointer", background: copied ? "rgba(0,200,128,0.09)" : "rgba(0,212,255,0.07)", border: `1px solid ${copied ? "rgba(0,200,128,0.4)" : "rgba(0,212,255,0.3)"}`, color: copied ? "#00c880" : "var(--cyan)", transition: "all 0.2s" }}
+        >
+          {copied ? <CheckCheck size={12} /> : <Copy size={12} />}
+          {copied ? "Copied!" : "Copy Text"}
+        </button>
+        <button
+          onClick={printDoc}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "9px 12px", borderRadius: "5px", fontSize: "11px", fontWeight: 600, cursor: "pointer", background: "rgba(0,212,255,0.07)", border: "1px solid rgba(0,212,255,0.3)", color: "var(--cyan)" }}
+        >
+          <Printer size={12} /> Print / Save PDF
+        </button>
       </div>
 
-      {/* ── Value Drivers ── */}
-      {(positiveDrivers.length > 0 || negativeDrivers.length > 0 || condition === "repaired") && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <div style={{ fontSize: "9px", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "2px" }}>Value Drivers</div>
-          {positiveDrivers.map(d => (
-            <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", background: "rgba(0,200,128,0.05)", border: "1px solid rgba(0,200,128,0.18)", borderRadius: "4px" }}>
-              <span style={{ color: "#00c880", fontSize: "12px" }}>↑</span>
-              <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>{d.icon} <strong style={{ color: "var(--text)" }}>{d.label}</strong> {scores?.[d.key] ?? 50}/100 — supports premium pricing</span>
-            </div>
-          ))}
-          {negativeDrivers.map(d => (
-            <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", background: "rgba(255,80,80,0.05)", border: "1px solid rgba(255,80,80,0.15)", borderRadius: "4px" }}>
-              <span style={{ color: "#ff6060", fontSize: "12px" }}>↓</span>
-              <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>{d.icon} <strong style={{ color: "var(--text)" }}>{d.label}</strong> {scores?.[d.key] ?? 50}/100 — limiting market position</span>
-            </div>
-          ))}
-          {condition === "repaired" && (
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", background: "rgba(255,160,40,0.06)", border: "1px solid rgba(255,160,40,0.25)", borderRadius: "4px" }}>
-              <span style={{ color: "#ffa028", fontSize: "12px" }}>↓</span>
-              <span style={{ fontSize: "11px", color: "#ffa028" }}>🔧 Repaired/restored — position adjusted down. <strong>Must disclose in every listing.</strong></span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Channel guidance + tips ── */}
-      {(guidance || ch?.tips?.length > 0) && (
-        <div style={{ padding: "10px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border-dim)" }}>
-          <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "7px" }}>
-            {ch?.icon} {ch?.label} — Channel Strategy
-          </div>
-          {guidance && <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: ch?.tips?.length ? "8px" : 0 }}>{guidance}</div>}
-          {ch?.tips?.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              {ch.tips.map((tip, i) => (
-                <div key={i} style={{ display: "flex", gap: "7px", fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.5 }}>
-                  <span style={{ color: "var(--cyan)", flexShrink: 0 }}>›</span>{tip}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Negotiation guide ── */}
+      {/* ── Negotiation reminder ── */}
       {neg.ask && (
         <div style={{ padding: "10px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border-dim)" }}>
-          <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "7px" }}>
-            Negotiation Guide · {tier.label}
+          <div style={{ fontSize: "8px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "7px" }}>
+            Negotiation · {tier.label}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>📣 <strong style={{ color: "var(--text)" }}>Ask:</strong> {neg.ask}</div>
             {neg.floor && <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>🛑 <strong style={{ color: "var(--text)" }}>Floor:</strong> {neg.floor}</div>}
             {neg.tip   && <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>💡 <strong style={{ color: "var(--text)" }}>Tip:</strong> {neg.tip}</div>}
@@ -710,44 +605,22 @@ function PriceGuideStep({ score, sizeClass, condition, channel, scores, spec }) 
         </div>
       )}
 
-      {/* ── Listing title helper ── */}
-      <div style={{ padding: "10px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border-dim)" }}>
-        <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "7px" }}>
-          Listing Title Helper
+      {/* ── Channel tips ── */}
+      {ch?.tips?.length > 0 && (
+        <div style={{ padding: "10px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border-dim)" }}>
+          <div style={{ fontSize: "8px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
+            {ch?.icon} {ch?.label} — Channel Tips
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {ch.tips.map((tip, i) => (
+              <div key={i} style={{ display: "flex", gap: "7px", fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.5 }}>
+                <span style={{ color: "var(--cyan)", flexShrink: 0 }}>›</span>{tip}
+              </div>
+            ))}
+          </div>
         </div>
-        <div style={{ fontSize: "12px", color: "var(--text)", lineHeight: 1.5, padding: "7px 10px", background: "var(--bg)", borderRadius: "4px", border: "1px solid var(--border-dim)", marginBottom: "7px", fontStyle: "italic" }}>
-          "{listingTitle}"
-        </div>
-        <button
-          onClick={() => navigator.clipboard.writeText(listingTitle).then(() => { setCopiedTitle(true); setTimeout(() => setCopiedTitle(false), 2000); }).catch(() => {})}
-          style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", borderRadius: "4px", fontSize: "10px", fontWeight: 500, cursor: "pointer", background: copiedTitle ? "rgba(0,200,128,0.09)" : "rgba(0,212,255,0.07)", border: `1px solid ${copiedTitle ? "rgba(0,200,128,0.4)" : "rgba(0,212,255,0.25)"}`, color: copiedTitle ? "#00c880" : "var(--cyan)", transition: "all 0.2s" }}
-        >
-          {copiedTitle ? <CheckCheck size={11} /> : <Copy size={11} />}
-          {copiedTitle ? "Copied!" : "Copy Title"}
-        </button>
-      </div>
+      )}
 
-      {/* ── Export ── */}
-      <div style={{ borderTop: "1px solid var(--border-dim)", paddingTop: "14px" }}>
-        <div style={{ fontSize: "9px", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>
-          Export Market Report
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
-          <button
-            onClick={copyReport}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", padding: "7px 10px", borderRadius: "5px", fontSize: "10px", fontWeight: 500, cursor: "pointer", background: copiedReport ? "rgba(0,200,128,0.09)" : "var(--bg-card)", border: `1px solid ${copiedReport ? "rgba(0,200,128,0.4)" : "var(--border)"}`, color: copiedReport ? "#00c880" : "var(--text-dim)", transition: "all 0.2s" }}
-          >
-            {copiedReport ? <CheckCheck size={12} /> : <Copy size={12} />}
-            {copiedReport ? "Copied!" : "Copy Report"}
-          </button>
-          <button
-            onClick={() => window.print()}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", padding: "7px 10px", borderRadius: "5px", fontSize: "10px", fontWeight: 500, cursor: "pointer", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-dim)" }}
-          >
-            <Printer size={12} /> Print
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
@@ -810,7 +683,7 @@ export default function PricingTool({ scores: initScores, spec: initSpec, record
         }}>
           <div>
             <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: "7px" }}>
-              <DollarSign size={14} style={{ color: "var(--cyan)" }} /> Sell / Trade Price Guide
+              <TrendingUp size={14} style={{ color: "var(--cyan)" }} /> Sell / Trade Market Guide
             </div>
             {(spec?.name || spec?.species) && (
               <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>
@@ -843,7 +716,7 @@ export default function PricingTool({ scores: initScores, spec: initSpec, record
           {step === 0 && <SizeStep sizeClass={sizeClass} setSizeClass={setSizeClass} grade={grade} score={score} spec={spec} />}
           {step === 1 && <ConditionStep condition={condition} setCondition={setCondition} />}
           {step === 2 && <ChannelStep channel={channel} setChannel={setChannel} />}
-          {step === 3 && <PriceGuideStep score={score} sizeClass={sizeClass} condition={condition} channel={channel} scores={scores} spec={spec} />}
+          {step === 3 && <AdvertisingStep score={score} sizeClass={sizeClass} condition={condition} channel={channel} scores={scores} spec={spec} />}
         </div>
 
         {/* Footer */}

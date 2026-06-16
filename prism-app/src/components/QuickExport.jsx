@@ -21,7 +21,7 @@ function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
       <div style={{ width: "100%", maxWidth: "600px", maxHeight: "92vh", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "10px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-dim)", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>📤 Quick Summary</div>
+            <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>Quick Summary</div>
             <div style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "2px" }}>Select the specimen to summarize</div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={16} /></button>
@@ -40,7 +40,7 @@ function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
               </div>
               <div style={{ textAlign: "right", flexShrink: 0 }}>
                 <div style={{ fontSize: "20px", fontWeight: 700, fontFamily: "var(--mono)", color: primary.grade.color, lineHeight: 1 }}>{primary.score}</div>
-                <div style={{ marginTop: "3px", fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: `${primary.grade.color}15`, color: primary.grade.color, border: `1px solid ${primary.grade.color}30`, fontWeight: 600, letterSpacing: "0.06em", display: "inline-block" }}>{primary.grade.emoji} {primary.grade.label}</div>
+                <div style={{ marginTop: "3px", fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: `${primary.grade.color}15`, color: primary.grade.color, border: `1px solid ${primary.grade.color}30`, fontWeight: 600, letterSpacing: "0.06em", display: "inline-block" }}>{primary.grade.label}</div>
               </div>
             </button>
           </div>
@@ -115,7 +115,7 @@ function PhotoCapture({ value, onChange }) {
       <input ref={ref} type="file" accept="image/*" capture="environment" onChange={handleFile} style={{ display: "none" }} />
       {value ? (
         <div style={{ position: "relative" }}>
-          <img src={value} alt="Specimen" style={{ width: "100%", maxHeight: "200px", objectFit: "cover", borderRadius: "6px", display: "block" }} />
+          <img src={value} alt="Specimen" style={{ display: "block", width: "auto", maxWidth: "100%", maxHeight: "200px", borderRadius: "6px", margin: "0 auto" }} />
           <button
             onClick={() => onChange(null)}
             style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,0.7)", border: "none", borderRadius: "4px", color: "#fff", fontSize: "11px", padding: "3px 8px", cursor: "pointer" }}
@@ -155,12 +155,17 @@ export default function QuickExport({ scores: initScores, spec: initSpec, spSour
   }
 
   const handlePrint = () => {
-    const style = document.createElement("style");
-    style.id = "qe-print-style";
-    style.textContent = `@media print { body > * { display:none!important; } #qe-card-root { display:block!important; } }`;
-    document.head.appendChild(style);
-    window.print();
-    setTimeout(() => document.getElementById("qe-print-style")?.remove(), 500);
+    const cardEl = document.getElementById("qe-card-root");
+    if (!cardEl) return;
+    const win = window.open("", "_blank", "width=680,height=960");
+    if (!win) return;
+    win.document.write(
+      `<!DOCTYPE html><html><head><meta charset="utf-8"><title>PRISM Specimen Record</title>` +
+      `<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">` +
+      `<style>body{margin:0;padding:24px;background:#fff;font-family:'Exo 2',system-ui,sans-serif;}@media print{body{margin:0;padding:12px;}}</style>` +
+      `</head><body>${cardEl.outerHTML}<script>window.onload=function(){window.print();}<\/script></body></html>`
+    );
+    win.document.close();
   };
 
   const handleDownloadJSON = () => {
@@ -189,7 +194,6 @@ export default function QuickExport({ scores: initScores, spec: initSpec, spSour
       evaluation: {
         prismScore: primary.score,
         prismGrade: primary.grade.label,
-        prismGradeEmoji: primary.grade.emoji,
         crystal: scores.crystal ?? 0,
         speciesRarity: scores.speciesRarity ?? 0,
         varietyRarity: scores.varietyRarity ?? 0,
@@ -197,6 +201,7 @@ export default function QuickExport({ scores: initScores, spec: initSpec, spSour
         provenance: scores.provenance ?? 0,
         aesthetics: scores.aesthetics ?? 0,
         scientific: scores.scientific ?? 0,
+        culturalSignificance: scores.culturalSignificance ?? 0,
         certId,
         evaluated,
       },
@@ -210,8 +215,9 @@ export default function QuickExport({ scores: initScores, spec: initSpec, spSour
         prism_locality_rarity:  String(scores.localityRarity ?? 0),
         prism_provenance:       String(scores.provenance ?? 0),
         prism_aesthetics:       String(scores.aesthetics ?? 0),
-        prism_scientific:       String(scores.scientific ?? 0),
-        prism_cert_id:          certId,
+        prism_scientific:           String(scores.scientific ?? 0),
+        prism_cultural_significance: String(scores.culturalSignificance ?? 0),
+        prism_cert_id:               certId,
         prism_evaluated:        evaluated,
       },
     };
@@ -236,7 +242,7 @@ export default function QuickExport({ scores: initScores, spec: initSpec, spSour
 
         {/* Modal header */}
         <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border-dim)", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-          <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)" }}>📤 Export Specimen Record</span>
+          <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)" }}>Export Specimen Record</span>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={16} /></button>
         </div>
 
@@ -258,7 +264,7 @@ export default function QuickExport({ scores: initScores, spec: initSpec, spSour
 
             {/* Photo (shown in card when provided) */}
             {photo && (
-              <img src={photo} alt="Specimen" style={{ width: "100%", maxHeight: "180px", objectFit: "cover", borderRadius: "4px", marginBottom: "14px", display: "block" }} />
+              <img src={photo} alt="Specimen" style={{ display: "block", width: "auto", maxWidth: "100%", maxHeight: "180px", borderRadius: "4px", marginBottom: "14px", margin: "0 auto 14px" }} />
             )}
 
             {/* Header */}
@@ -278,18 +284,17 @@ export default function QuickExport({ scores: initScores, spec: initSpec, spSour
               {primary.compoundGrades?.length > 0 ? (
                 <>
                   <div style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "5px 16px", borderRadius: "3px", border: `1px solid ${primary.compoundGrades[0].color}70`, background: `${primary.compoundGrades[0].color}14`, color: primary.compoundGrades[0].color, fontSize: "12px", fontWeight: 700, letterSpacing: "0.09em", marginBottom: "5px" }}>
-                    <span>{primary.compoundGrades[0].emoji}</span>
                     <span>{primary.compoundGrades[0].label}</span>
                     <span style={{ fontSize: "7px", padding: "1px 5px", borderRadius: "2px", background: `${primary.compoundGrades[0].color}20`, border: `1px solid ${primary.compoundGrades[0].color}40` }}>{primary.compoundGrades[0].rarity}</span>
                   </div>
                   <div style={{ fontSize: "9px", color: "#507090", marginBottom: "4px", lineHeight: 1.4 }}>{primary.compoundGrades[0].shortDesc}</div>
                   <div style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "2px 10px", borderRadius: "2px", border: `1px solid ${primary.grade.color}40`, color: primary.grade.color, fontSize: "9px", fontWeight: 600, letterSpacing: "0.09em" }}>
-                    {primary.grade.emoji} {primary.grade.label} Grade
+                    {primary.grade.label} Grade
                   </div>
                 </>
               ) : (
                 <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 14px", borderRadius: "3px", border: `1px solid ${primary.grade.color}60`, background: `${primary.grade.color}12`, color: primary.grade.color, fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em" }}>
-                  {primary.grade.emoji} {primary.grade.label} Grade
+                  {primary.grade.label} Grade
                 </div>
               )}
             </div>
@@ -299,7 +304,9 @@ export default function QuickExport({ scores: initScores, spec: initSpec, spSour
               {[
                 ["Name", spec?.name],
                 ["Species", spec?.species],
+                ["Variety", spec?.variety],
                 ["Locality", spec?.locality],
+                ["Size", spec?.size ? spec.size.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : null],
                 ["Date", today],
               ].map(([l, v]) => v ? (
                 <div key={l}>
@@ -318,7 +325,6 @@ export default function QuickExport({ scores: initScores, spec: initSpec, spSour
                   const barColor = v >= 70 ? "#1a9e60" : v >= 50 ? "#3070b0" : "#8090a0";
                   return (
                     <div key={d.key} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "12px", width: "18px" }}>{d.icon}</span>
                       <span style={{ flex: 1, fontSize: "10px", color: "#0d1520" }}>{d.label}</span>
                       <div style={{ width: "80px", height: "5px", background: "#e0e8f0", borderRadius: "2px", overflow: "hidden" }}>
                         <div style={{ height: "100%", width: `${v}%`, background: barColor, borderRadius: "2px" }} />
@@ -347,7 +353,7 @@ export default function QuickExport({ scores: initScores, spec: initSpec, spSour
             border: `1px solid ${spSource ? "rgba(0,200,128,0.45)" : "var(--border)"}`,
             color: spSource ? "#00c880" : "var(--text-muted)",
           }}>
-            📲 Export to SpecimenPro (.prism.json)
+            Export to SpecimenPro (.prism.json)
           </button>
 
           <div style={{ display: "flex", gap: "7px" }}>

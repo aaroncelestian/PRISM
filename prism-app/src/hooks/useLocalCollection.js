@@ -17,7 +17,7 @@ function persist(records) {
 export function useLocalCollection() {
   const [records, setRecords] = useState(load);
 
-  const saveRecord = useCallback((spec, scores, ctx, grade, gradeEmoji, prismScore, compoundGrades = []) => {
+  const saveRecord = useCallback((spec, scores, ctx, grade, gradeEmoji, prismScore, compoundGrades = [], aestheticsSub = null, treatmentFlags = null) => {
     const rec = {
       id: `prism-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       savedAt: new Date().toISOString(),
@@ -28,6 +28,8 @@ export function useLocalCollection() {
       gradeEmoji,
       prismScore,
       compoundGrades,
+      ...(aestheticsSub ? { aestheticsSub } : {}),
+      ...(treatmentFlags ? { treatmentFlags } : {}),
     };
     setRecords(prev => {
       const next = [rec, ...prev];

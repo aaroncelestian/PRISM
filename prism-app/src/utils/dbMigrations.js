@@ -21,11 +21,13 @@ export function migrateComp(raw) {
     photoUrl:    raw.photoUrl    || null,
     soldPrice:   raw.soldPrice   ?? null,
     sourceUrl:   raw.sourceUrl   || "",
-    scores:      raw.scores      || null,
-    grade:       raw.grade       || null,
-    gradeEmoji:  raw.gradeEmoji  || null,
-    prismScore:  raw.prismScore  ?? null,
-    ctx:         raw.ctx         || null,
+    scores:         raw.scores         || null,
+    grade:          raw.grade          || null,
+    gradeEmoji:     raw.gradeEmoji     || null,
+    prismScore:     raw.prismScore     ?? null,
+    ctx:            raw.ctx            || null,
+    heritageFlags:  Array.isArray(raw.heritageFlags) ? raw.heritageFlags : [],
+    collectionName: raw.collectionName || "",
     _sv: COMPS_SCHEMA,
   };
   // v1 → v2 example (uncomment and extend when bumping schema):

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { HelpCircle, X } from "lucide-react";
-import { DIMS, WEIGHTS, GRADES, CONTEXTS, SIZE_CLASSES } from "../data/prism.js";
+import { DIMS, WEIGHTS, GRADES, CONTEXTS, SIZE_CLASSES, TREATMENT_FLAGS, AESTHETICS_SUB_DIMS } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import ScorePanel from "./ScorePanel.jsx";
 import TierSelector from "./TierSelector.jsx";
@@ -8,9 +8,166 @@ import CriteriaChecklist from "./CriteriaChecklist.jsx";
 
 const EXPERT_SPECTRUM = ["#ff5555", "#ffaa00", "#00dd88", "#0088ff", "#aa55ff"];
 
-function DimRow({ dim, score, weight, onChange, sciCriteria, onSciCriteriaChange }) {
+function AestheticsSubSliders({ subScores, onChange }) {
+  const vals = Object.values(subScores);
+  const computed = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+  const computedColor = computed >= 75 ? "#00c880" : computed >= 50 ? "var(--cyan)" : "var(--text-label)";
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingTop: "4px" }}>
+      {AESTHETICS_SUB_DIMS.map(sub => {
+        const val = subScores[sub.key] ?? 0;
+        const barColor = val >= 75 ? "#00c880" : val >= 50 ? "var(--cyan)" : "var(--text-label)";
+        return (
+          <div key={sub.key} style={{ paddingLeft: "8px", borderLeft: "2px solid var(--border-dim)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "2px" }}>
+              <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>{sub.label}</span>
+              <span style={{ fontFamily: "var(--mono)", fontSize: "12px", color: barColor, minWidth: "24px", textAlign: "right" }}>{val}</span>
+            </div>
+            <div style={{ position: "relative", height: "20px" }}>
+              <div style={{ position: "absolute", pointerEvents: "none", top: "calc(50% - 1.5px)", left: 0, right: 0, height: "3px", background: "var(--border-dim)", borderRadius: "2px" }}>
+                <div style={{ position: "absolute", height: "100%", width: `${val}%`, borderRadius: "2px", background: barColor, opacity: 0.65, transition: "width 0.05s, background 0.2s" }} />
+              </div>
+              <input
+                type="range" min={0} max={100} value={val}
+                onChange={e => onChange({ ...subScores, [sub.key]: +e.target.value })}
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", margin: 0 }}
+              />
+            </div>
+          </div>
+        );
+      })}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 10px", background: "rgba(0,212,255,0.04)", border: "1px solid var(--border-dim)", borderRadius: "4px" }}>
+        <span style={{ fontSize: "10px", color: "var(--text-muted)" }}>Computed aesthetics score</span>
+        <span style={{ fontFamily: "var(--mono)", fontSize: "14px", fontWeight: 600, color: computedColor }}>{computed}</span>
+      </div>
+    </div>
+  );
+}
+
+function TreatmentFlagsSection({ flags, onChange }) {
+  const activeFlags = TREATMENT_FLAGS.filter(tf => flags[tf.key]);
+  const hasCritical = TREATMENT_FLAGS.some(tf => tf.severity === "critical" && flags[tf.key]);
+  const hasHigh = TREATMENT_FLAGS.some(tf => tf.severity === "high" && flags[tf.key]);
+  return (
+    <div style={{ marginTop: "10px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+        <span style={{
+          fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase",
+          color: hasCritical ? "#ff6060" : hasHigh ? "#ffaa00" : activeFlags.length > 0 ? "#ffaa00" : "var(--text-muted)",
+          fontWeight: activeFlags.length > 0 ? 600 : 400,
+        }}>
+          Enhancement Disclosure
+        </span>
+        {activeFlags.length > 0 && (
+          <span style={{ fontSize: "9px", padding: "1px 7px", borderRadius: "2px", border: `1px solid ${hasCritical ? "rgba(255,80,80,0.4)" : "rgba(255,170,0,0.35)"}`, color: hasCritical ? "#ff6060" : "#ffaa00", background: hasCritical ? "rgba(255,80,80,0.06)" : "rgba(255,170,0,0.06)" }}>
+            TREATED
+          </span>
+        )}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
+        {TREATMENT_FLAGS.map(tf => {
+          const checked = flags[tf.key] || false;
+          const severityColor = tf.severity === "critical" ? "#ff6060" : tf.severity === "high" ? "#ffaa00" : "var(--text-dim)";
+          return (
+            <label key={tf.key} title={tf.desc} style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              padding: "5px 8px", borderRadius: "4px", cursor: "pointer",
+              border: `1px solid ${checked ? (tf.severity === "critical" ? "rgba(255,80,80,0.4)" : "rgba(255,170,0,0.35)") : "var(--border-dim)"}`,
+              background: checked ? (tf.severity === "critical" ? "rgba(255,80,80,0.07)" : "rgba(255,170,0,0.06)") : "transparent",
+              fontSize: "11px",
+              color: checked ? severityColor : "var(--text-muted)",
+            }}>
+              <input
+                type="checkbox" checked={checked}
+                onChange={e => onChange({ ...flags, [tf.key]: e.target.checked })}
+                style={{ margin: 0, accentColor: tf.severity === "critical" ? "#ff6060" : "#ffaa00" }}
+              />
+              {tf.label}
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DocumentationSection({ spec, setSpec }) {
   const [open, setOpen] = useState(false);
-  const contrib = (score * weight).toFixed(1);
+  const exhibitions = spec.exhibitions || [];
+  const literatureRefs = spec.literatureRefs || [];
+  const count = exhibitions.filter(e => e.venue?.trim()).length + literatureRefs.filter(r => r?.trim()).length;
+
+  const addExhibition = () => setSpec(s => ({ ...s, exhibitions: [...(s.exhibitions || []), { venue: "", year: "" }] }));
+  const removeExhibition = (i) => setSpec(s => ({ ...s, exhibitions: (s.exhibitions || []).filter((_, idx) => idx !== i) }));
+  const updateExhibition = (i, field, val) => setSpec(s => {
+    const arr = [...(s.exhibitions || [])];
+    arr[i] = { ...arr[i], [field]: val };
+    return { ...s, exhibitions: arr };
+  });
+  const addLit = () => setSpec(s => ({ ...s, literatureRefs: [...(s.literatureRefs || []), ""] }));
+  const removeLit = (i) => setSpec(s => ({ ...s, literatureRefs: (s.literatureRefs || []).filter((_, idx) => idx !== i) }));
+  const updateLit = (i, val) => setSpec(s => {
+    const arr = [...(s.literatureRefs || [])];
+    arr[i] = val;
+    return { ...s, literatureRefs: arr };
+  });
+
+  return (
+    <div style={{ marginTop: "10px", borderTop: "1px solid var(--border-dim)", paddingTop: "10px" }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", background: "none", border: "none", cursor: "pointer", padding: "0 0 2px" }}
+      >
+        <span style={{
+          fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase",
+          color: count > 0 ? "var(--cyan)" : "var(--text-muted)",
+          fontWeight: count > 0 ? 600 : 400,
+        }}>
+          Documentation History {count > 0 ? `(${count})` : ""}
+        </span>
+        <span style={{ fontSize: "10px", color: "rgba(0,212,255,0.45)" }}>{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+              <span style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Exhibition History</span>
+              <button onClick={addExhibition} style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: "3px", color: "var(--cyan)", cursor: "pointer" }}>+ Add</button>
+            </div>
+            {exhibitions.length === 0 && (
+              <div style={{ fontSize: "10px", color: "var(--text-muted)", fontStyle: "italic", padding: "4px 0" }}>No exhibition history — add shows, museum displays, or competitive events.</div>
+            )}
+            {exhibitions.map((ex, i) => (
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 72px 22px", gap: "4px", marginBottom: "4px", alignItems: "center" }}>
+                <input type="text" value={ex.venue} onChange={e => updateExhibition(i, "venue", e.target.value)} placeholder="Venue / Show / Museum" style={{ fontSize: "11px" }} />
+                <input type="text" value={ex.year} onChange={e => updateExhibition(i, "year", e.target.value)} placeholder="Year" style={{ fontSize: "11px" }} />
+                <button onClick={() => removeExhibition(i)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "16px", lineHeight: 1, padding: "0", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+              </div>
+            ))}
+          </div>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+              <span style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Literature Citations</span>
+              <button onClick={addLit} style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: "3px", color: "var(--cyan)", cursor: "pointer" }}>+ Add</button>
+            </div>
+            {literatureRefs.length === 0 && (
+              <div style={{ fontSize: "10px", color: "var(--text-muted)", fontStyle: "italic", padding: "4px 0" }}>No citations — add published references featuring this specimen or its locality.</div>
+            )}
+            {literatureRefs.map((ref, i) => (
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 22px", gap: "4px", marginBottom: "4px", alignItems: "center" }}>
+                <input type="text" value={ref} onChange={e => updateLit(i, e.target.value)} placeholder="Author, Journal, Vol., Year — or DOI/URL" style={{ fontSize: "11px" }} />
+                <button onClick={() => removeLit(i)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "16px", lineHeight: 1, padding: "0", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DimRow({ dim, score, weight, onChange, criteriaValues, onCriteriaChange, subScores, onSubScoresChange }) {
+  const [open, setOpen] = useState(false);
   const barColor = score >= 75 ? "#00c880" : score >= 50 ? "var(--cyan)" : "var(--text-label)";
 
   return (
@@ -26,7 +183,7 @@ function DimRow({ dim, score, weight, onChange, sciCriteria, onSciCriteriaChange
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
             <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)" }}>
-              {dim.icon} {dim.label}
+              {dim.label}
             </span>
             <button
               onClick={() => setOpen(o => !o)}
@@ -65,12 +222,6 @@ function DimRow({ dim, score, weight, onChange, sciCriteria, onSciCriteriaChange
           }}>
             {score}
           </span>
-          <span style={{
-            fontFamily: "var(--mono)", fontSize: "10px",
-            color: "var(--text-muted)", minWidth: "36px", textAlign: "right",
-          }}>
-            +{contrib}
-          </span>
         </div>
       </div>
 
@@ -89,7 +240,7 @@ function DimRow({ dim, score, weight, onChange, sciCriteria, onSciCriteriaChange
               const w = WEIGHTS[c.key][dim.key];
               return (
                 <div key={c.key} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
-                  <span style={{ fontSize: "10px", color: "var(--text-dim)", width: "120px", flexShrink: 0 }}>{c.icon} {c.label}</span>
+                  <span style={{ fontSize: "10px", color: "var(--text-dim)", width: "120px", flexShrink: 0 }}>{c.label}</span>
                   <div style={{ flex: 1, height: "3px", background: "var(--border-dim)", borderRadius: "2px" }}>
                     <div style={{ height: "100%", width: `${Math.round(w * 100)}%`, background: EXPERT_SPECTRUM[i], borderRadius: "2px" }} />
                   </div>
@@ -101,20 +252,21 @@ function DimRow({ dim, score, weight, onChange, sciCriteria, onSciCriteriaChange
         </div>
       )}
 
-      {/* Criteria checklist, tier selector, or slider */}
+      {/* Criteria checklist, tier selector, sub-sliders, or single slider */}
       {dim.criteria ? (
-        <CriteriaChecklist criteria={dim.criteria} checked={sciCriteria} onChange={onSciCriteriaChange} />
+        <CriteriaChecklist criteria={dim.criteria} checked={criteriaValues} onChange={onCriteriaChange} />
       ) : dim.tiers ? (
         <TierSelector tiers={dim.tiers} value={score} onChange={onChange} />
+      ) : subScores ? (
+        <AestheticsSubSliders subScores={subScores} onChange={onSubScoresChange} />
       ) : (
-        <div style={{ position: "relative" }}>
-          <div style={{ position: "relative", height: "3px", background: "var(--border-dim)", borderRadius: "2px", marginBottom: "2px" }}>
+        <div style={{ position: "relative", height: "20px" }}>
+          <div style={{ position: "absolute", pointerEvents: "none", top: "calc(50% - 1.5px)", left: 0, right: 0, height: "3px", background: "var(--border-dim)", borderRadius: "2px" }}>
             <div style={{
               position: "absolute", height: "100%", width: `${score}%`,
               borderRadius: "2px", background: barColor, opacity: 0.65,
               transition: "width 0.05s, background 0.2s",
             }} />
-            {/* weight marker */}
             <div style={{
               position: "absolute", width: "1px", height: "7px",
               background: "rgba(0,212,255,0.4)", top: "-2px",
@@ -124,6 +276,7 @@ function DimRow({ dim, score, weight, onChange, sciCriteria, onSciCriteriaChange
           <input
             type="range" min={0} max={100} value={score}
             onChange={e => onChange(+e.target.value)}
+            style={{ position: "absolute", top: 0, left: 0, width: "100%", margin: 0 }}
           />
         </div>
       )}
@@ -131,7 +284,7 @@ function DimRow({ dim, score, weight, onChange, sciCriteria, onSciCriteriaChange
   );
 }
 
-export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciCriteria, onSciCriteriaChange, onExport = null, onSaveToCollection = null, scoringComp = null, onSaveToComp = null }) {
+export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciCriteria, onSciCriteriaChange, culturalCriteria, onCulturalCriteriaChange, aestheticsSubScores, onAestheticsSubScoresChange, treatmentFlags, onTreatmentFlagsChange, onExport = null, onSaveToCollection = null, scoringComp = null, onSaveToComp = null }) {
   const W = WEIGHTS[ctx];
   const { isMobile } = useBreakpoint();
   const [showScorePanel, setShowScorePanel] = useState(false);
@@ -188,7 +341,7 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
                 border: `1px solid ${quickGrade.color}30`,
                 color: quickGrade.color, fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em",
               }}>
-                {quickGrade.emoji} {quickGrade.label}
+                {quickGrade.label}
               </span>
             </div>
             <span style={{ fontSize: "10px", color: "rgba(0,212,255,0.55)", letterSpacing: "0.06em" }}>View Score ›</span>
@@ -258,6 +411,10 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
               ))}
             </select>
           </div>
+          {treatmentFlags && onTreatmentFlagsChange && (
+            <TreatmentFlagsSection flags={treatmentFlags} onChange={onTreatmentFlagsChange} />
+          )}
+          <DocumentationSection spec={spec} setSpec={setSpec} />
         </div>
 
         {/* Sub-score sliders */}
@@ -279,8 +436,18 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
             score={scores[d.key]}
             weight={W[d.key]}
             onChange={v => setScores(s => ({ ...s, [d.key]: v }))}
-            sciCriteria={d.key === "scientific" ? sciCriteria : undefined}
-            onSciCriteriaChange={d.key === "scientific" ? onSciCriteriaChange : undefined}
+            criteriaValues={
+              d.key === "scientific" ? sciCriteria
+              : d.key === "culturalSignificance" ? culturalCriteria
+              : undefined
+            }
+            onCriteriaChange={
+              d.key === "scientific" ? onSciCriteriaChange
+              : d.key === "culturalSignificance" ? onCulturalCriteriaChange
+              : undefined
+            }
+            subScores={d.key === "aesthetics" ? aestheticsSubScores : undefined}
+            onSubScoresChange={d.key === "aesthetics" ? onAestheticsSubScoresChange : undefined}
           />
         ))}
         </div>
@@ -312,7 +479,7 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
               gap: "6px",
             }}
           >
-            📤 Export Record
+            Export Record
           </button>
           <button
             onClick={() => {
@@ -338,7 +505,7 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
               transition: "all 0.2s",
             }}
           >
-            {saveFlash ? "✓ Saved to History" : "💾 Save to History"}
+            {saveFlash ? "✓ Saved to History" : "Save to History"}
           </button>
         </div>
       </div>
@@ -346,7 +513,7 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
       {/* ── Right: score panel (desktop only) ── */}
       {!isMobile && (
         <div style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
-          <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} />
+          <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} culturalCriteria={culturalCriteria} />
         </div>
       )}
 
@@ -373,7 +540,7 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
             </button>
           </div>
           <div style={{ flex: 1, overflowY: "auto" }}>
-            <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} />
+            <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} culturalCriteria={culturalCriteria} />
           </div>
         </div>
       )}

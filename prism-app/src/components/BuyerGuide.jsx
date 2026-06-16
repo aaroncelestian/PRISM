@@ -256,28 +256,28 @@ const AESTHETICS_FACTORS = [
     tip: "Bright directed light oversaturates colors artificially. Always examine in diffuse or natural light before scoring.",
   },
   {
-    key: "matrix", label: "Matrix Presentation", icon: "🪨", color: "#a0c0e0",
-    desc: "How crystals sit on, contrast with, or emerge from their matrix.",
+    key: "form", label: "Crystal Form & Habit", icon: "⬡", color: "#a0c0e0",
+    desc: "How completely and elegantly the crystal expresses its characteristic habit and natural geometry.",
     ranges: [
-      { band: "80–100", label: "Exceptional",  text: "Crystals elevated prominently above contrasting matrix. Natural pedestal effect, clean base, self-contained composition. A perfect floater also scores here." },
-      { band: "60–79",  label: "Good",         text: "Good matrix contrast, crystals well-separated and accessible. Perhaps slightly crowded or with minor base damage." },
-      { band: "40–59",  label: "Moderate",     text: "Displayable but crystals partially buried, matrix is plain, or specimen requires an awkward angle to show its best face." },
-      { band: "20–39",  label: "Poor",         text: "Crystals partially encrusted, matrix same color/texture as specimen, or heavily saw-trimmed showing cut marks." },
-      { band: "0–19",   label: "Detracting",   text: "Broken base, unattractive grinding marks, specimen won't stand without a mount, or matrix actively hides the specimen." },
+      { band: "80–100", label: "Exceptional",  text: "Textbook expression of the species habit. All characteristic faces present, well-proportioned, and geometrically ideal. The best possible form for this mineral." },
+      { band: "60–79",  label: "Good",         text: "Main habit features present and clearly expressed. Minor deviations from ideal that don’t detract from the characteristic form." },
+      { band: "40–59",  label: "Moderate",     text: "Form partially expressed. Habit recognizable but underdeveloped or some faces missing. Still identifiable with experience." },
+      { band: "20–39",  label: "Poor",         text: "Crystal outline present but habit poorly realized. Faces indistinct, no characteristic morphology expressed." },
+      { band: "0–19",   label: "Formless",     text: "Massive, cleavage fragments, or so incomplete that the species habit is unrecognizable." },
     ],
-    tip: "A perfect floater is not penalized here — score based on presentation quality, not whether matrix exists.",
+    tip: "Some species habitually develop imperfect forms — hoppered halite, rounded garnets, striated tourmaline. Score against the best achievable for the species from that deposit, not against an idealized textbook crystal.",
   },
   {
-    key: "composition", label: "Composition & Symmetry", icon: "⚖️", color: "#80d0c0",
-    desc: "Natural balance, visual weight distribution, and compositional harmony.",
+    key: "presentation", label: "Presentation & Balance", icon: "⚖️", color: "#80d0c0",
+    desc: "Matrix contrast, specimen composition, self-sufficiency on display, and overall visual balance.",
     ranges: [
-      { band: "80–100", label: "Exceptional",  text: "Clear visual center and natural balance. Whether single crystal or multi-crystal group, the composition reads as intentional and complete." },
-      { band: "60–79",  label: "Good",         text: "Mostly balanced. One dominant crystal appropriate to the cluster, or good density without chaos." },
-      { band: "40–59",  label: "Moderate",     text: "Slightly awkward — off-center, front-heavy, or visually incomplete (e.g. broken half of a cluster)." },
-      { band: "20–39",  label: "Poor",         text: "Visually chaotic, obviously a broken fragment, or no satisfying compositional arrangement." },
-      { band: "0–19",   label: "Fragment",     text: "Obvious breakage, clearly a portion of a larger piece with no aesthetic independence." },
+      { band: "80–100", label: "Exceptional",  text: "Outstanding presentation. Crystals elevated above contrasting matrix with natural balance. Self-standing, clean base, or perfect floater. Composition reads as complete and intentional." },
+      { band: "60–79",  label: "Good",         text: "Clear display orientation, reasonable matrix contrast, no serious detractors. Minor issues with balance or base." },
+      { band: "40–59",  label: "Moderate",     text: "Displayable but compromised. Crystals partially buried, matrix plain or same-color as specimen, or requires awkward angle to show best face." },
+      { band: "20–39",  label: "Poor",         text: "Matrix detracting, specimen won’t stand without a mount, heavy saw marks, or crystals inaccessible to view." },
+      { band: "0–19",   label: "Fragment",     text: "Broken base, no display orientation, or composition entirely absent. No meaningful presentation value." },
     ],
-    tip: "Thumbnail specimens often score well here — small but complete is better than large but broken.",
+    tip: "Perfect floaters score at the top — no matrix is not a detractor if the specimen is self-sufficient. Score actual display impact, not whether matrix is present.",
   },
   {
     key: "luster", label: "Luster & Surface", icon: "✨", color: "#e0d080",
@@ -341,18 +341,29 @@ const SCORE_CALIBRATION = [
     ],
   },
   {
-    key: "speciesRarity", label: "Species / Variety Rarity", icon: "🧬", color: "#e0a040",
-    note: "Score whichever is rarer: the species globally, OR this specific variety/form/coating if it's unique to one locality. A common species with a unique variety should score as rare.",
+    key: "speciesRarity", label: "Species Rarity", icon: "🧬", color: "#e0a040",
+    note: "Score how rare the mineral species is globally, regardless of crystal quality. A perfect fluorite cube is beautiful, but fluorite as a species scores low — push quality into Crystal Quality and Aesthetics.",
     ranges: [
-      { band: "80–100", label: "Unique variety / extreme",  text: "One locality worldwide for this form or coating. OR fewer than 5 localities for the species. The rarest thing about this specimen is something no other locality produces." },
-      { band: "60–79",  label: "Rare variety or species",   text: "Distinctive form/coating from very few localities. OR genuinely rare species (10–30 localities globally)." },
-      { band: "40–59",  label: "Uncommon",                  text: "Recognisable form not widely available. OR species that exists but is not abundant in the market." },
-      { band: "20–39",  label: "Common species/variety",    text: "Widely available in this form (quartz, calcite, pyrite, typical fluorite). Fine crystals exist but nothing unique." },
-      { band: "0–19",   label: "Ubiquitous",                text: "Found virtually everywhere in this form. No rarity premium applies — all value comes from crystal quality and aesthetics." },
+      { band: "80–100", label: "Extreme / Ultra-Rare", text: "Fewer than 5 known localities worldwide. Species described from a single deposit or known from only a handful of global occurrences." },
+      { band: "60–79",  label: "Rare",                 text: "Genuinely rare species (5–30 localities globally). Collectors specifically seek this species, not just a nice example of it." },
+      { band: "40–59",  label: "Uncommon",             text: "Not abundant in the market. Species exists in reasonable quantity but is not a common show-floor staple." },
+      { band: "20–39",  label: "Common",               text: "Widely available species: quartz, calcite, pyrite, fluorite, galena, sphalerite, tourmaline. Fine crystals exist but species itself has no scarcity premium." },
+      { band: "0–19",   label: "Ubiquitous",            text: "Found virtually everywhere. No species rarity premium applies — all value is in crystal quality, locality, and aesthetics." },
+    ],
+  },
+  {
+    key: "varietyRarity", label: "Variety / Form Rarity", icon: "🔮", color: "#c090e0",
+    note: "Score how rare this specific variety, color form, or crystal habit is — completely independent of species rarity. A metallic-coated almandine from one locality scores 90+ here even though almandine as a species is common.",
+    ranges: [
+      { band: "80–100", label: "Unique variety",          text: "One or two localities worldwide produce this specific form, color, or coating. The variety is the primary value driver for this specimen." },
+      { band: "60–79",  label: "Distinctive",             text: "Recognized variety from very few localities. Collectors specifically seek this form and it commands a meaningful premium over typical examples." },
+      { band: "40–59",  label: "Noted variety",           text: "A recognized form or color variant available from multiple sources. Some variety premium applies." },
+      { band: "20–39",  label: "Standard form",           text: "Typical habit and color for the species. Nothing distinguishing about this particular crystal form or variety." },
+      { band: "0–19",   label: "No variety distinction",  text: "Completely standard, no recognizable variety. Variety score does not contribute meaningfully." },
     ],
     example: {
       title: "Worked example: Metallic-coated Almandine, Aquarius Mtns, Arizona",
-      text: "Almandine-spessartine as a species scores ~10 (thousands of localities worldwide). But metallic-coated almandine from the Aquarius Mountains is documented from one locality on Earth. Score the variety: 90+. The coating is the rare thing, not the garnet species.",
+      text: "Almandine-spessartine as a species scores ~10 on Species Rarity (thousands of localities worldwide). But the metallic iridescent coating on almandine from the Aquarius Mountains is documented from one locality on Earth. Score Variety Rarity: 90+. The coating is the rare thing, not the garnet species.",
     },
   },
   {
@@ -379,13 +390,24 @@ const SCORE_CALIBRATION = [
   },
   {
     key: "aesthetics", label: "Aesthetics", icon: "🎨", color: "#ff80a0",
-    note: "Score overall visual impact: color, luster, matrix, composition together.",
+    note: "Score overall visual impact using the four aesthetic sub-dimensions: color saturation, crystal form expression, presentation quality, and luster.",
     ranges: [
       { band: "80–100", label: "Display Masterpiece", text: "Stops people in their tracks. Exceptional color, luster, composition, and matrix. Would be the centrepiece of any display." },
       { band: "60–79",  label: "Display Quality",     text: "Clearly beautiful. Looks good in any collection. Good color, reasonable composition, no major flaws from display angle." },
       { band: "40–59",  label: "Presentable",         text: "Attractive but not remarkable. Solid for reference or mid-tier display. Visible flaws at close inspection." },
       { band: "20–39",  label: "Study Grade",         text: "Aesthetics are not a selling point. Scientifically or locality-interesting but not visually compelling." },
       { band: "0–19",   label: "No Aesthetic Merit",  text: "Fragment, heavily damaged, or completely unremarkable. No display value." },
+    ],
+  },
+  {
+    key: "cultural", label: "Cultural / Historical Significance", icon: "🏺", color: "#d4a840",
+    note: "Most specimens score 0–10 here — that is normal and expected. Score rises only when there is documented historical attribution, named collection provenance, or verifiable cultural connection.",
+    ranges: [
+      { band: "80–100", label: "Historically Documented", text: "Named historical collection with verified chain of custody, museum deaccession record, or documented connection to a significant historical figure, institution, or event." },
+      { band: "60–79",  label: "Published / Attribution", text: "Cited in historical literature, part of a documented estate or auction record, or attributable to a named historical collector with supporting evidence." },
+      { band: "40–59",  label: "Partial Record",          text: "Some historical context with partial evidence. Old collection attribution with approximate documentation." },
+      { band: "20–39",  label: "Reported",               text: "Seller reports old collection origin or approximate age with no verifiable documentation." },
+      { band: "0–19",   label: "None",                    text: "No cultural or historical significance. Contemporary specimen or undocumented heritage. Normal for the vast majority of specimens." },
     ],
   },
   {
@@ -445,7 +467,7 @@ export default function BuyerGuide({ onClose }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
             <div>
               <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)", marginBottom: "3px" }}>
-                🎓 Buyer's Reference Guide
+                Buyer's Reference Guide
               </div>
               <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.4 }}>
                 Use this to calibrate what a dealer tells you against objective standards.
@@ -794,7 +816,7 @@ export default function BuyerGuide({ onClose }) {
           {tab === "aesthetics" && (
             <>
               <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, padding: "10px 12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-                <strong style={{ color: "var(--text)" }}>What aesthetics measures:</strong> Visual impact — color saturation, luster quality, matrix presentation, and compositional balance. Score what you actually see, not what the specimen "should" look like for the species.
+                <strong style={{ color: "var(--text)" }}>What aesthetics measures:</strong> Visual impact — color saturation, crystal form expression, presentation quality, and luster. Score what you actually see, not what the specimen "should" look like for the species.
               </div>
 
               {AESTHETICS_FACTORS.map(factor => {
@@ -842,7 +864,7 @@ export default function BuyerGuide({ onClose }) {
               </div>
 
               <div style={{ padding: "8px 12px", background: "rgba(80,144,255,0.06)", border: "1px solid rgba(80,144,255,0.2)", borderRadius: "5px", fontSize: "11px", color: "#78a8ff", lineHeight: 1.5 }}>
-                🔬 The Study and Museum contexts weight scientific value at <strong>42%</strong> and <strong>20%</strong> respectively. A specimen with poor science scores will never reach those grades regardless of beauty.
+                The Study and Museum contexts weight scientific value at <strong>40%</strong> and <strong>12%</strong> respectively. A specimen with poor science scores will never reach those grades regardless of beauty.
               </div>
 
               {SCIENTIFIC_FACTORS.map(factor => {

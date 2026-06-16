@@ -29,11 +29,13 @@ function useAnimatedScore(target) {
   return display;
 }
 
-// CONTEXTS is prestige-ordered (museum → commercial), same index as GRADES
-const GRADE_FOR = Object.fromEntries(CONTEXTS.map((c, i) => [c.key, GRADES[i]]));
+// Map each context to its display grade via gradeLabel property
+const GRADE_FOR = Object.fromEntries(
+  CONTEXTS.map(c => [c.key, GRADES.find(g => g.label === c.gradeLabel) || GRADES[GRADES.length - 1]])
+);
 
-// Spectrum bar colors — one per context, in light-spectrum order
-const SPECTRUM_COLORS = ["#ff5555", "#ffaa00", "#00dd88", "#0088ff", "#aa55ff"];
+// Spectrum bar colors — one per visible context (6 visible contexts)
+const SPECTRUM_COLORS = ["#ff5555", "#ffaa00", "#d4a840", "#40c880", "#5090ff", "#8090a8"];
 // Grade lookup by raw score (used when no context passes threshold)
 function gradeFromScore(score) {
   return GRADES.find(g => score >= g.min) ?? GRADES[GRADES.length - 1];
@@ -91,7 +93,7 @@ function generateNarrative(scores, primaryCtx, allCtxData) {
     Exhibition: `Show-quality. At ${s}/100, this piece warrants prominent exhibition display.`,
     Collector:  `Solid collector\u2019s piece. ${s}/100 reflects genuine appeal and lasting value.`,
     Study:      `Research-grade. ${s}/100 makes this well-suited for scientific or educational use.`,
-    Commercial: `Commercial grade. ${s}/100 is typical for accessible, market-common specimens.`,
+    General:    `General grade. At ${s}/100, this is accessible and appropriate for educational or introductory use.`,
   };
 
   const strengthAdj = topDim.score >= 80 ? "exceptional" : topDim.score >= 65 ? "strong" : "above-average";
@@ -107,7 +109,7 @@ function generateNarrative(scores, primaryCtx, allCtxData) {
   };
 }
 
-export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = false }) {
+export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCriteria, compact = false }) {
   const [tab, setTab] = useState("grade");
   const [openCtxTip, setOpenCtxTip] = useState(null);
   const { isMobile } = useBreakpoint();
@@ -120,7 +122,7 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
   const visibleCtxData = allCtxData.filter(c => !c.hidden);
   // Primary context is always the user-selected context (never hidden)
   const selectedCtxData = visibleCtxData.find(c => c.key === ctx) || visibleCtxData[0];
-  const ctxGrade = GRADE_FOR[selectedCtxData.key];
+  const ctxGrade = GRADES.find(g => selectedCtxData.score >= g.min) || GRADES[GRADES.length - 1];
   const primaryCtx = {
     ...selectedCtxData,
     grade: selectedCtxData.passes
@@ -129,7 +131,7 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
   };
   // Best passing context across all (for reference in callout when selected doesn't pass)
   const bestPassingCtx = allCtxData.find(c => c.passes);
-  const inconsistencies = detectInconsistencies(scores, spec, sciCriteria);
+  const inconsistencies = detectInconsistencies(scores, spec, sciCriteria, culturalCriteria);
   const displayScore = useAnimatedScore(primaryCtx.score);
   const radarData = DIMS.map(d => ({ dim: d.short, v: scores[d.key] }));
   const narrative = generateNarrative(scores, primaryCtx, allCtxData);
@@ -188,7 +190,6 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
                   color: compoundGrades[0].color, fontSize: "12px", fontWeight: 700,
                   letterSpacing: "0.09em", textTransform: "uppercase",
                 }}>
-                  <span>{compoundGrades[0].emoji}</span>
                   <span>{compoundGrades[0].label}</span>
                   <span style={{ fontSize: "7px", padding: "1px 5px", borderRadius: "2px", background: `${compoundGrades[0].color}20`, border: `1px solid ${compoundGrades[0].color}30`, marginLeft: "2px" }}>{compoundGrades[0].rarity}</span>
                 </div>
@@ -202,7 +203,6 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
                   color: primaryCtx.grade.color, fontSize: "9px", fontWeight: 500,
                   letterSpacing: "0.08em", textTransform: "uppercase",
                 }}>
-                  <span>{primaryCtx.grade.emoji}</span>
                   <span>{primaryCtx.grade.label}{primaryCtx.passes ? " ✓" : ` · +${THRESHOLD - primaryCtx.score} pts`}</span>
                 </div>
               </>
@@ -217,7 +217,6 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
                   color: primaryCtx.grade.color, fontSize: "11px", fontWeight: 600,
                   letterSpacing: "0.11em", textTransform: "uppercase",
                 }}>
-                  <span>{primaryCtx.grade.emoji}</span>
                   <span>{primaryCtx.grade.label} Grade</span>
                 </div>
                 <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.45 }}>
@@ -240,12 +239,12 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
             </div>
             {primaryCtx.bottleneck && (
               <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.5 }}>
-                Bottleneck: <strong style={{ color: "var(--text)" }}>{primaryCtx.bottleneck.icon} {primaryCtx.bottleneck.label}</strong> is the largest gap.
+                Bottleneck: <strong style={{ color: "var(--text)" }}>{primaryCtx.bottleneck.label}</strong> is the largest gap.
               </div>
             )}
             {bestPassingCtx && (
               <div style={{ marginTop: "4px", fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.5, fontStyle: "italic" }}>
-                Highest grade achieved: <strong style={{ color: bestPassingCtx.grade.color }}>{bestPassingCtx.grade.emoji} {bestPassingCtx.grade.label}</strong> — {bestPassingCtx.label}.
+                Highest grade achieved: <strong style={{ color: bestPassingCtx.grade.color }}>{bestPassingCtx.grade.label}</strong> — {bestPassingCtx.label}.
               </div>
             )}
           </div>
@@ -261,7 +260,7 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
                 background: w.level === "warn" ? "rgba(255,160,40,0.06)" : "rgba(120,180,255,0.05)",
                 display: "flex", alignItems: "flex-start", gap: "7px",
               }}>
-                <span style={{ fontSize: "12px", flexShrink: 0 }}>{w.level === "warn" ? "⚠️" : "ℹ️"}</span>
+                <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: w.level === "warn" ? "#ffa028" : "#6090c8", flexShrink: 0, marginTop: "4px", display: "inline-block" }} />
                 <span style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.5 }}>{w.msg}</span>
               </div>
             ))}
@@ -319,7 +318,7 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "5px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
                         <span style={{ fontSize: "12px", fontWeight: c.passes ? 600 : 400, color: c.passes ? c.grade.color : isSelected ? "var(--text)" : "var(--text-muted)" }}>
-                          {c.grade.emoji} {c.label}
+                          {c.label}
                         </span>
                         <button
                           onClick={() => setOpenCtxTip(openCtxTip === c.key ? null : c.key)}
@@ -327,14 +326,6 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
                         >
                           <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11zm0 3.25a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5zm-.75 1.5h1.5v3.5h-1.5V7.25z"/></svg>
                         </button>
-                        {isSelected && (
-                          <span style={{
-                            fontSize: "8px", letterSpacing: "0.1em", textTransform: "uppercase",
-                            padding: "1px 5px", borderRadius: "3px",
-                            background: "rgba(0,212,255,0.12)", color: "var(--cyan)",
-                            border: "1px solid rgba(0,212,255,0.25)", flexShrink: 0,
-                          }}>selected</span>
-                        )}
                       </div>
                       <span style={{ fontFamily: "var(--mono)", fontSize: "13px", fontWeight: 600, color: c.passes ? c.grade.color : isSelected ? "var(--text)" : "var(--text-muted)", flexShrink: 0 }}>
                         {c.score}
@@ -345,14 +336,14 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
                     </div>
                     {openCtxTip === c.key && (
                       <div style={{ marginTop: "7px", padding: "8px 10px", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "4px", fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.55 }}>
-                        <div style={{ fontWeight: 600, color: "var(--text)", marginBottom: "3px" }}>{c.icon} {c.label}</div>
+                        <div style={{ fontWeight: 600, color: "var(--text)", marginBottom: "3px" }}>{c.label}</div>
                         <div style={{ marginBottom: "5px" }}>{c.desc}</div>
                         {c.detail && <div style={{ color: "var(--text-muted)", fontSize: "9.5px", lineHeight: 1.6, borderTop: "1px solid var(--border-dim)", paddingTop: "5px" }}>{c.detail}</div>}
                       </div>
                     )}
                     {!c.passes && c.bottleneck && (
                       <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "5px" }}>
-                        ↳ bottleneck: {c.bottleneck.icon} {c.bottleneck.label}
+                        ↳ bottleneck: {c.bottleneck.label}
                       </div>
                     )}
                   </div>
@@ -374,19 +365,19 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
               <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
                 <div style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.5 }}>
                   <span style={{ color: "#00c880" }}>↑</span>{" "}
-                  <strong style={{ color: "var(--text)" }}>{narrative.topDim.icon} {narrative.topDim.label}</strong>{" "}
+                  <strong style={{ color: "var(--text)" }}>{narrative.topDim.label}</strong>{" "}
                   is {narrative.strengthAdj} at {narrative.topDim.score} — top driver ({Math.round(narrative.topDim.weight * 100)}% weight).
                 </div>
                 {narrative.weakLink && (
                   <div style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.5 }}>
                     <span style={{ color: "#ff6060" }}>↓</span>{" "}
-                    <strong style={{ color: "var(--text)" }}>{narrative.weakLink.icon} {narrative.weakLink.label}</strong>{" "}
+                    <strong style={{ color: "var(--text)" }}>{narrative.weakLink.label}</strong>{" "}
                     ({narrative.weakLink.score}) is limiting — {Math.round(narrative.weakLink.weight * 100)}% weight in this context.
                   </div>
                 )}
                 {narrative.nextCtx && narrative.gapToNext > 0 && (
                   <div style={{ marginTop: "4px", fontSize: "11px", color: narrative.nextCtx.grade.color, padding: "7px 11px", background: `${narrative.nextCtx.grade.color}0c`, borderRadius: "4px", border: `1px solid ${narrative.nextCtx.grade.color}25` }}>
-                    {narrative.nextCtx.grade.emoji} +{narrative.gapToNext} pts in <strong>{narrative.nextCtx.label}</strong> context to reach {narrative.nextCtx.grade.label} grade
+                    +{narrative.gapToNext} pts in <strong>{narrative.nextCtx.label}</strong> context to reach {narrative.nextCtx.grade.label} grade
                   </div>
                 )}
               </div>
@@ -401,7 +392,7 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
                 return (
                   <div key={d.key} style={{ marginBottom: "12px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "5px" }}>
-                      <span style={{ fontSize: "12px", color: "var(--text-dim)" }}>{d.icon} {d.label}</span>
+                      <span style={{ fontSize: "12px", color: "var(--text-dim)" }}>{d.label}</span>
                       <span style={{ fontSize: "11px", fontFamily: "var(--mono)", color: "var(--text)" }}>
                         {v} <span style={{ fontSize: "9px", color: "var(--text-muted)" }}>×{Math.round(w * 100)}%</span>{" "}
                         <span style={{ color: "rgba(0,212,255,0.8)", fontWeight: 600 }}>= {Math.round(v * w)}</span>
@@ -443,7 +434,7 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, compact = f
               {DIMS.map(d => (
                 <div key={d.key} style={{ marginBottom: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                    <span style={{ fontSize: "12px", color: "var(--text-dim)" }}>{d.icon} {d.label}</span>
+                    <span style={{ fontSize: "12px", color: "var(--text-dim)" }}>{d.label}</span>
                     <span style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "rgba(0,212,255,0.7)" }}>{Math.round(W[d.key] * 100)}%</span>
                   </div>
                   <div style={{ height: "3px", background: "var(--border-dim)", borderRadius: "2px" }}>

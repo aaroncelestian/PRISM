@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { X, ExternalLink } from "lucide-react";
+import { HERITAGE_FLAGS } from "../data/prism.js";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
   ScatterChart, Scatter, CartesianGrid,
@@ -81,7 +82,7 @@ function EmptyHint({ children }) {
 const SIZE_NUM   = { thumbnail: 1, miniature: 2, small_cab: 3, cabinet: 4, large_cab: 5, museum: 6 };
 const SIZE_SHORT = { 1: "Thumb", 2: "Mini", 3: "S.Cab", 4: "Cabinet", 5: "L.Cab", 6: "Museum" };
 const COND_RANK  = { pristine: 5, excellent: 4, good: 3, repaired: 2, damaged: 1 };
-const COND_LABEL = { pristine: "Pristine 💎", excellent: "Display ✨", good: "Minor chips 🔶", repaired: "Repaired 🔧", damaged: "Damaged ⚠️" };
+const COND_LABEL = { pristine: "Pristine", excellent: "Display", good: "Minor chips", repaired: "Repaired", damaged: "Damaged" };
 const BUBBLE_PALETTE = ["#00d4ff", "#7c5cfc", "#00c880", "#ffb347", "#ff8060", "#a0c4ff", "#f472b6"];
 const SPECIES_CURVE_COLORS = ["#00d4ff", "#ff6b9d", "#a78bfa", "#fbbf24", "#22d3ee", "#e879f9", "#f97316"];
 
@@ -249,9 +250,40 @@ export default function ResearchAnalysis({ comps }) {
       .filter(x => x.avgPremium != null && x.count >= 2)
       .sort((a, b) => a.avgPremium - b.avgPremium);
 
+    // ── Condition premium (score-adjusted) ───────────────────────────────────
+    const COND_ORDER = ["pristine", "excellent", "good", "repaired", "damaged"];
+    const byCondition = COND_ORDER.map(cond => {
+      const items = pricedAndScored.filter(c => c.condition === cond);
+      if (!items.length) return null;
+      const premiums = items.map(c => {
+        const key = normKey(c.species);
+        const activeReg = speciesRegs[key]?.reg || reg;
+        if (!activeReg) return null;
+        const expected = Math.exp(activeReg.slope * c.prismScore + activeReg.intercept);
+        return (Number(c.askingPrice) - expected) / expected * 100;
+      }).filter(x => x != null);
+      if (!premiums.length) return null;
+      return { cond, count: items.length, avgPremium: Math.round(mean(premiums)), avgActual: Math.round(mean(items.map(c => Number(c.askingPrice)))) };
+    }).filter(Boolean);
+
+    // ── Heritage / cultural premium (score-adjusted) ─────────────────────────
+    const byHeritage = HERITAGE_FLAGS.map(f => {
+      const items = pricedAndScored.filter(c => c.heritageFlags?.includes(f.key));
+      if (!items.length) return null;
+      const premiums = items.map(c => {
+        const key = normKey(c.species);
+        const activeReg = speciesRegs[key]?.reg || reg;
+        if (!activeReg) return null;
+        const expected = Math.exp(activeReg.slope * c.prismScore + activeReg.intercept);
+        return (Number(c.askingPrice) - expected) / expected * 100;
+      }).filter(x => x != null);
+      if (!premiums.length) return null;
+      return { ...f, count: items.length, avgPremium: Math.round(mean(premiums)), avgActual: Math.round(mean(items.map(c => Number(c.askingPrice)))) };
+    }).filter(Boolean);
+
     return { priced, scored, pricedAndScored, avgPrice, medPrice, minPrice, maxPrice,
              bySpecies, byLocalityAvg, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg,
-             speciesRegs, hasSpeciesCurves, byLocality };
+             speciesRegs, hasSpeciesCurves, byLocality, byCondition, byHeritage };
   }, [comps]);
 
   const speciesList = useMemo(() => {
@@ -311,12 +343,76 @@ export default function ResearchAnalysis({ comps }) {
 
   const { priced, scored, pricedAndScored, avgPrice, medPrice, minPrice, maxPrice,
           bySpecies, byLocalityAvg, bySize, bySource, avgScore, regPoints, regCurve, marketPosition, reg,
-          speciesRegs, hasSpeciesCurves, byLocality } = analysis;
+          speciesRegs, hasSpeciesCurves, byLocality, byCondition, byHeritage } = analysis;
+
+  const insights = useMemo(() => {
+    const tips = [];
+
+    // Entry count
+    if (comps.length < 40) {
+      tips.push({ level: "info",
+        text: `${comps.length} listing${comps.length !== 1 ? "s" : ""} total — aim for 40+ to make averages statistically meaningful.` });
+    }
+
+    // Unscored priced listings
+    const unscoredPriced = comps.filter(c => c.prismScore == null && Number(c.askingPrice) > 0).length;
+    if (unscoredPriced > 0) {
+      tips.push({ level: "warn",
+        text: `${unscoredPriced} priced listing${unscoredPriced !== 1 ? "s are" : " is"} unscored — score ${unscoredPriced !== 1 ? "them" : "it"} with PRISM to include in regression and market position analysis.` });
+    }
+
+    // Species depth for regression curves
+    const spCounts = {};
+    pricedAndScored.forEach(c => {
+      const k = normKey(c.species); spCounts[k] = (spCounts[k] || 0) + 1;
+    });
+    const thinKeys = Object.entries(spCounts).filter(([, n]) => n < 3).map(([k]) => k);
+    if (thinKeys.length > 0 && Object.keys(spCounts).length > 1) {
+      const names = thinKeys.slice(0, 2).map(k => pricedAndScored.find(c => normKey(c.species) === k)?.species || k);
+      const tail = thinKeys.length > 2 ? ` +${thinKeys.length - 2} more` : "";
+      tips.push({ level: "warn",
+        text: `${names.join(", ")}${tail} ${thinKeys.length === 1 ? "has" : "have"} fewer than 3 scored entries — each species needs 3+ for its own price curve.` });
+    }
+
+    // Score ceiling — regression extrapolation warning
+    if (pricedAndScored.length >= 5) {
+      const maxScore = Math.max(...pricedAndScored.map(c => c.prismScore));
+      if (maxScore < 78) {
+        tips.push({ level: "warn",
+          text: `Highest scored listing is ${maxScore}/100 — regression is extrapolating above that. Add high-end dealer listings (Collector's Edge, Kristalle, Crystal Classics) to anchor the 80–95 range.` });
+      }
+    }
+
+    // Heritage flags unused
+    const flagged = comps.filter(c => c.heritageFlags?.length > 0).length;
+    if (flagged === 0 && comps.length >= 8) {
+      tips.push({ level: "tip",
+        text: "No heritage flags set. Tag named-collection, postage-stamp, or show-award specimens to measure the real premium those provenance markers carry." });
+    }
+
+    // Condition variety
+    if (pricedAndScored.length >= 10) {
+      const conds = new Set(pricedAndScored.map(c => c.condition).filter(Boolean));
+      if (conds.size < 3) {
+        tips.push({ level: "tip",
+          text: "Most listings share the same condition rating — mix in pristine through damaged examples of the same species to unlock meaningful condition premium data." });
+      }
+    }
+
+    // Locality depth
+    if (byLocality.length === 0 && pricedAndScored.length >= 8) {
+      tips.push({ level: "tip",
+        text: "Locality Premium needs 2+ scored listings per locality. Add multiple specimens from the same mine (Tsumeb, Broken Hill, Herja) to compare locality premiums directly." });
+    }
+
+    // Sort: warn first, then tip, then info
+    const order = { warn: 0, tip: 1, info: 2 };
+    return tips.sort((a, b) => order[a.level] - order[b.level]).slice(0, 5);
+  }, [comps, pricedAndScored, byLocality]);
 
   if (!comps.length) {
     return (
       <div style={{ padding: "60px 20px", textAlign: "center", color: "var(--text-muted)" }}>
-        <div style={{ fontSize: "36px", marginBottom: "12px" }}>📊</div>
         <div style={{ fontSize: "14px" }}>Add some listings first, then come back here for analysis.</div>
       </div>
     );
@@ -324,6 +420,29 @@ export default function ResearchAnalysis({ comps }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+
+      {/* ── Smart Insights ─────────────────────────────────────────────── */}
+      {insights.length > 0 && (
+        <div>
+          <SectionTitle>Smart Insights</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            {insights.map((tip, i) => {
+              const borderColor = tip.level === "warn" ? "rgba(255,160,40,0.35)" : tip.level === "tip" ? "rgba(167,139,250,0.3)" : "rgba(0,212,255,0.2)";
+              const bgColor    = tip.level === "warn" ? "rgba(255,160,40,0.04)"  : tip.level === "tip" ? "rgba(167,139,250,0.05)" : "rgba(0,212,255,0.04)";
+              const dotColor   = tip.level === "warn" ? "#ffa028"               : tip.level === "tip" ? "#a78bfa"               : "var(--cyan)";
+              return (
+                <div key={i} style={{
+                  display: "flex", gap: "10px", padding: "9px 12px",
+                  background: bgColor, border: `1px solid ${borderColor}`, borderRadius: "5px",
+                  borderLeft: `3px solid ${dotColor}`,
+                }}>
+                  <span style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.55 }}>{tip.text}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Price summary ──────────────────────────────────────────────── */}
       <div>
@@ -700,109 +819,107 @@ export default function ResearchAnalysis({ comps }) {
         );
       })()}
 
-      {/* ── Price Drivers bubble scatter ─────────────────────────────────── */}
-      {comps.filter(c => Number(c.askingPrice) > 0).length >= 3 && (
-        <div>
-          <SectionTitle>Price Drivers — Size · {colorDimLabel === "vendor" ? "Vendor" : colorDimLabel === "locality" ? "Locality" : "Species"} · Condition</SectionTitle>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.06em" }}>Species:</span>
-            <select value={driversSpecies} onChange={e => setDriversSpecies(e.target.value)}
-              style={{ fontSize: "11px", padding: "4px 8px", background: "var(--bg-input)", border: "1px solid var(--border)", borderRadius: "4px", color: driversSpecies !== "all" ? "var(--cyan)" : "var(--text-dim)", cursor: "pointer" }}>
-              <option value="all">All species</option>
-              {speciesList.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <span style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.06em", marginLeft: "6px" }}>Color by:</span>
-            <div style={{ display: "flex", borderRadius: "4px", overflow: "hidden", border: "1px solid var(--border)" }}>
-              {[["auto", "Auto"], ["source", "Vendor"]].map(([val, label]) => (
-                <button key={val} onClick={() => setColorBy(val)} style={{
-                  padding: "3px 10px", fontSize: "10px", border: "none",
-                  background: colorBy === val ? "rgba(0,212,255,0.12)" : "transparent",
-                  color: colorBy === val ? "var(--cyan)" : "var(--text-muted)",
-                  fontWeight: colorBy === val ? 600 : 400,
-                  borderRight: val === "auto" ? "1px solid var(--border)" : "none",
-                  cursor: "pointer", transition: "all 0.15s",
-                }}>{label}</button>
-              ))}
+      {/* ── Condition Premium ────────────────────────────────────────────── */}
+      {byCondition.length >= 2 && (() => {
+        const maxAbs = Math.max(...byCondition.map(c => Math.abs(c.avgPremium ?? 0)), 10);
+        return (
+          <div>
+            <SectionTitle>Condition Premium — Score-Adjusted</SectionTitle>
+            <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "10px", lineHeight: 1.6 }}>
+              Actual price vs the species-specific regression expectation, grouped by condition.
+              Answers whether "pristine" listings truly command more beyond what their PRISM score already predicts.
+              <span style={{ color: "#00c880" }}> Green</span> = priced below expectation ·
+              <span style={{ color: "#ff8060" }}> Orange</span> = condition carries a real premium.
             </div>
-            <span style={{ fontSize: "10px", color: "var(--text-muted)", opacity: 0.7 }}>
-              {bubbleData.length} listing{bubbleData.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-
-          <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "10px", lineHeight: 1.6 }}>
-            <strong style={{ color: "var(--text-dim)" }}>X</strong> = physical size &nbsp;·&nbsp;
-            <strong style={{ color: "var(--text-dim)" }}>Y</strong> = price &nbsp;·&nbsp;
-            <strong style={{ color: "var(--text-dim)" }}>Color</strong> = {colorDimLabel} &nbsp;·&nbsp;
-            <strong style={{ color: "var(--text-dim)" }}>Dot size</strong> = condition quality
-          </div>
-
-          <ResponsiveContainer width="100%" height={260}>
-            <ScatterChart margin={{ left: 0, right: 20, top: 8, bottom: 24 }}>
-              <CartesianGrid stroke="#1e2d3d" />
-              <XAxis type="number" dataKey="x" domain={[0.5, 6.5]} ticks={[1,2,3,4,5,6]}
-                tickFormatter={n => SIZE_SHORT[Math.round(n)] || ""}
-                tick={{ fill: "#8899aa", fontSize: 9 }} axisLine={false} tickLine={false} />
-              <YAxis type="number" dataKey="y" tickFormatter={fmtK}
-                tick={{ fill: "#6a7f94", fontSize: 10 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                cursor={{ strokeDasharray: "3 3", stroke: "#2a3a50" }}
-                content={({ active, payload }) => {
-                  if (!active || !payload?.length) return null;
-                  const d = payload[0]?.payload || {};
-                  return (
-                    <div style={CUSTOM_TOOLTIP_STYLE}>
-                      <div style={{ fontWeight: 600, marginBottom: "4px", color: d.color }}>{d.species}</div>
-                      <div style={{ color: colorBy === "source" ? d.color : "#8899aa", fontWeight: colorBy === "source" ? 600 : 400 }}>🏪 {d.source}</div>
-                      <div style={{ color: "#8899aa", fontSize: "10px" }}>📍 {d.locality || "—"}</div>
-                      <div>💰 <strong>{fmt(d.y)}</strong></div>
-                      <div>📏 {d.sizeLabel}</div>
-                      <div>{COND_LABEL[d.condition] || d.condition}</div>
-                      {d.prismScore != null && (
-                        <div style={{ marginTop: "3px" }}>🔬 PRISM: <strong style={{ color: "#7c5cfc" }}>{d.prismScore}</strong></div>
-                      )}
+            <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+              {byCondition.map(item => {
+                const pct = item.avgPremium ?? 0;
+                const color = pct > 10 ? "#ff8060" : pct < -10 ? "#00c880" : "#8899aa";
+                const cappedPct = Math.max(-maxAbs, Math.min(maxAbs, pct));
+                const halfW = (Math.abs(cappedPct) / maxAbs) * 48;
+                const barStyle = cappedPct >= 0
+                  ? { left: "50%", width: `${halfW}%` }
+                  : { left: `${50 - halfW}%`, width: `${halfW}%` };
+                return (
+                  <div key={item.cond} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <div style={{ width: "145px", flexShrink: 0 }}>
+                      <div style={{ fontSize: "11px", color: "var(--text-dim)" }}>{COND_LABEL[item.cond] || item.cond}</div>
                     </div>
-                  );
-                }}
-              />
-              <Scatter data={bubbleData} shape={<BubbleDot />} />
-            </ScatterChart>
-          </ResponsiveContainer>
-
-          {/* Color legend */}
-          {topColorValues.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "8px" }}>
-              {topColorValues.map((v, i) => (
-                <div key={v} style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "var(--text-muted)" }}>
-                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: BUBBLE_PALETTE[i], flexShrink: 0 }} />
-                  {v}
-                </div>
-              ))}
-              {bubbleData.some(d => d.color === "#3d4f60") && (
-                <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "var(--text-muted)" }}>
-                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#3d4f60", flexShrink: 0 }} />
-                  Other
-                </div>
-              )}
+                    <div style={{ flex: 1, height: "8px", background: "var(--border-dim)", borderRadius: "4px", position: "relative" }}>
+                      <div style={{ position: "absolute", left: "50%", top: 0, width: "1px", height: "100%", background: "var(--border)", zIndex: 1 }} />
+                      <div style={{ position: "absolute", ...barStyle, top: 0, height: "100%", background: color, borderRadius: "2px", opacity: 0.7 }} />
+                    </div>
+                    <div style={{ width: "38px", textAlign: "right", fontSize: "10px", fontFamily: "var(--mono)", fontWeight: 600, color }}>
+                      {pct > 0 ? "+" : ""}{pct}%
+                    </div>
+                    <div style={{ width: "48px", textAlign: "right", fontSize: "10px", color: "var(--text-muted)", fontFamily: "var(--mono)" }}>
+                      {fmtK(item.avgActual)}
+                    </div>
+                    <div style={{ width: "22px", textAlign: "right", fontSize: "9px", color: "var(--border)", fontFamily: "var(--mono)" }}>
+                      ×{item.count}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          )}
-
-          {/* Condition size legend */}
-          <div style={{ display: "flex", gap: "14px", marginTop: "10px", flexWrap: "wrap", alignItems: "center" }}>
-            <span style={{ fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Dot size =</span>
-            {[["pristine",5],["excellent",4],["good",3],["repaired",2],["damaged",1]].map(([cond, rank]) => {
-              const r = 5 + rank * 2;
-              return (
-                <div key={cond} style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "var(--text-muted)" }}>
-                  <svg width={r*2+2} height={r*2+2} style={{ flexShrink: 0 }}>
-                    <circle cx={r+1} cy={r+1} r={r} fill="rgba(180,200,220,0.2)" stroke="rgba(180,200,220,0.45)" strokeWidth={1} />
-                  </svg>
-                  {cond}
-                </div>
-              );
-            })}
+            <div style={{ fontSize: "9px", color: "var(--text-muted)", opacity: 0.7, marginTop: "8px" }}>
+              Bars scaled to ±{maxAbs}% · Requires scored + priced listings per condition level
+            </div>
           </div>
-        </div>
+        );
+      })()}
+
+      {/* ── Heritage / Cultural Premium ──────────────────────────────────── */}
+      {byHeritage.length >= 1 && (() => {
+        const maxAbs = Math.max(...byHeritage.map(h => Math.abs(h.avgPremium ?? 0)), 10);
+        return (
+          <div>
+            <SectionTitle>Heritage &amp; Cultural Premium — Score-Adjusted</SectionTitle>
+            <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "10px", lineHeight: 1.6 }}>
+              Price premium for specimens with documented cultural or historical significance, controlling for PRISM score.
+              A postage stamp feature or named-collection provenance that adds +60% above a score-equivalent specimen
+              represents real, quantifiable collector value.
+              <span style={{ color: "#ff8060" }}> Orange</span> = flag carries a measurable market premium.
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+              {byHeritage.map(item => {
+                const pct = item.avgPremium ?? 0;
+                const color = pct > 10 ? "#ff8060" : pct < -10 ? "#00c880" : "#8899aa";
+                const cappedPct = Math.max(-maxAbs, Math.min(maxAbs, pct));
+                const halfW = (Math.abs(cappedPct) / maxAbs) * 48;
+                const barStyle = cappedPct >= 0
+                  ? { left: "50%", width: `${halfW}%` }
+                  : { left: `${50 - halfW}%`, width: `${halfW}%` };
+                return (
+                  <div key={item.key} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <div style={{ width: "145px", flexShrink: 0 }}>
+                      <div style={{ fontSize: "11px", color: "#a78bfa" }}>{item.label}</div>
+                    </div>
+                    <div style={{ flex: 1, height: "8px", background: "var(--border-dim)", borderRadius: "4px", position: "relative" }}>
+                      <div style={{ position: "absolute", left: "50%", top: 0, width: "1px", height: "100%", background: "var(--border)", zIndex: 1 }} />
+                      <div style={{ position: "absolute", ...barStyle, top: 0, height: "100%", background: color, borderRadius: "2px", opacity: 0.7 }} />
+                    </div>
+                    <div style={{ width: "38px", textAlign: "right", fontSize: "10px", fontFamily: "var(--mono)", fontWeight: 600, color }}>
+                      {pct > 0 ? "+" : ""}{pct}%
+                    </div>
+                    <div style={{ width: "48px", textAlign: "right", fontSize: "10px", color: "var(--text-muted)", fontFamily: "var(--mono)" }}>
+                      {fmtK(item.avgActual)}
+                    </div>
+                    <div style={{ width: "22px", textAlign: "right", fontSize: "9px", color: "var(--border)", fontFamily: "var(--mono)" }}>
+                      ×{item.count}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: "9px", color: "var(--text-muted)", opacity: 0.7, marginTop: "8px" }}>
+              Bars scaled to ±{maxAbs}% · Requires scored + priced listings with heritage flags set
+            </div>
+          </div>
+        );
+      })()}
+      {byHeritage.length === 0 && pricedAndScored.length >= 3 && (
+        <EmptyHint>Tag scored listings with Heritage / Cultural flags (in the listing form) to unlock the Heritage Premium chart.</EmptyHint>
       )}
 
       {/* ── Listing card modal ─────────────────────────────────────────── */}
@@ -869,7 +986,7 @@ export default function ResearchAnalysis({ comps }) {
                 {selectedComp.sizeClass && <span style={{ fontSize: "10px", padding: "2px 7px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: "3px", color: "var(--text-muted)" }}>{selectedComp.sizeClass.replace("_"," ")}</span>}
                 {selectedComp.condition  && <span style={{ fontSize: "10px", padding: "2px 7px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: "3px", color: "var(--text-muted)" }}>{selectedComp.condition}</span>}
                 {selectedComp.source     && <span style={{ fontSize: "10px", padding: "2px 7px", background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.2)", borderRadius: "3px", color: "var(--cyan)" }}>{selectedComp.source}</span>}
-                {selectedComp.gradeEmoji && <span style={{ fontSize: "10px", padding: "2px 7px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: "3px", color: "var(--text-muted)" }}>{selectedComp.gradeEmoji} {selectedComp.grade}</span>}
+                {selectedComp.grade && <span style={{ fontSize: "10px", padding: "2px 7px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: "3px", color: "var(--text-muted)" }}>{selectedComp.grade}</span>}
               </div>
 
               {selectedComp.notes && (
