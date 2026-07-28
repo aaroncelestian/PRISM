@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { SlidersHorizontal, RotateCcw, Search } from "lucide-react";
+import { ListOrdered, SlidersHorizontal, RotateCcw, Search } from "lucide-react";
 import { CONTEXTS, WEIGHTS, GRADES, THRESHOLD, detectCompoundGrades } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import ExpertMode from "./ExpertMode.jsx";
+import WizardMode from "./WizardMode.jsx";
 import DonationEval from "./DonationEval.jsx";
 import PricingTool from "./PricingTool.jsx";
 import BuyerGuide from "./BuyerGuide.jsx";
@@ -16,6 +17,19 @@ import { useLocalCollection } from "../hooks/useLocalCollection.js";
 import { APP_VERSION } from "../version.js";
 import { useComparables } from "../hooks/useComparables.js";
 import ResearchMode from "./ResearchMode.jsx";
+
+function getPreferredScoringMode() {
+  try {
+    const saved = localStorage.getItem("prism_scoringMode");
+    if (saved === "wizard" || saved === "expert") return saved;
+  } catch { /* ignore */ }
+  return "wizard";
+}
+
+function persistScoringMode(mode) {
+  if (mode !== "wizard" && mode !== "expert") return;
+  try { localStorage.setItem("prism_scoringMode", mode); } catch { /* ignore */ }
+}
 
 function computePrimary(scores) {
   const all = CONTEXTS.map(c => {
@@ -63,7 +77,7 @@ function ToolMenuItems({ items, isMobile }) {
 }
 
 export default function PRISM() {
-  const [mode, setMode] = useState("expert"); // "expert" | "research"
+  const [mode, setMode] = useState(() => getPreferredScoringMode()); // "wizard" | "expert" | "research"
   const [ctx, setCtx] = useState("collector");
   const [scores, setScores] = useState(DEFAULT_SCORES);
   const [spec, setSpec] = useState({ name: "", species: "", variety: "", locality: "", size: "", exhibitions: [], literatureRefs: [] });
@@ -139,7 +153,7 @@ export default function PRISM() {
       if (ctxParam && CONTEXTS.some(c => c.key === ctxParam && !c.hidden)) setCtx(ctxParam);
       if (provenance > 0) setScores(s => ({ ...s, provenance: Math.min(provenance, 100) }));
       setSpSource({ objectId, name });
-      setMode("expert");
+      setMode(getPreferredScoringMode());
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -164,7 +178,7 @@ export default function PRISM() {
     setScores(DEFAULT_SCORES);
     setSpec({ name: "", species: "", variety: "", locality: "", size: "", exhibitions: [], literatureRefs: [] });
     setCtx("collector");
-    setMode("expert");
+    setMode(getPreferredScoringMode());
     setSciCriteria([false, false, false, false, false]);
     setCulturalCriteria([false, false, false, false, false]);
     setAestheticsSubScores(DEFAULT_AESTHETICS_SUB);
@@ -198,7 +212,7 @@ export default function PRISM() {
     setAestheticsSubScores(comp.aestheticsSub || initAestheticsSub(loadedScores.aesthetics));
     setTreatmentFlags(comp.treatmentFlags || DEFAULT_TREATMENT_FLAGS);
     if (comp.ctx) setCtx(comp.ctx);
-    setMode("expert");
+    setMode(getPreferredScoringMode());
   };
 
   const handleSaveToComp = () => {
@@ -263,12 +277,17 @@ export default function PRISM() {
             {/* Mode toggle */}
             <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "5px", overflow: "hidden" }}>
               {[
-                { key: "expert",   label: "PRISM",    Icon: SlidersHorizontal },
+                { key: "wizard",   label: "Guided",   Icon: ListOrdered },
+                { key: "expert",   label: "Expert",   Icon: SlidersHorizontal },
                 { key: "research", label: "Research", Icon: Search },
               ].map(({ key, label, Icon }, i, arr) => (
-                <button key={key} onClick={() => { if (key !== "expert") setScoringCompId(null); setMode(key); }} style={{
+                <button key={key} onClick={() => {
+                  if (key === "research") setScoringCompId(null);
+                  setMode(key);
+                  persistScoringMode(key);
+                }} style={{
                   display: "flex", alignItems: "center", gap: "4px",
-                  padding: isMobile ? "5px 10px" : "5px 12px",
+                  padding: isMobile ? "5px 8px" : "5px 12px",
                   background: mode === key ? "rgba(0,212,255,0.1)" : "transparent", border: "none",
                   borderRight: i < arr.length - 1 ? "1px solid var(--border)" : "none",
                   color: mode === key ? "var(--cyan)" : "var(--text-muted)",
@@ -413,7 +432,7 @@ export default function PRISM() {
             setTreatmentFlags(rec.treatmentFlags || DEFAULT_TREATMENT_FLAGS);
             setScoringCompId(null);
             setSpSource(null);
-            setMode("expert");
+            setMode(getPreferredScoringMode());
           }}
           onDelete={deleteRecord}
           onClearAll={clearAll}
@@ -421,7 +440,26 @@ export default function PRISM() {
           onImport={importRecords}
         />
       )}
-        {mode === "expert" ? (
+        {mode === "wizard" ? (
+          <WizardMode
+            scores={scores}
+            setScores={setScores}
+            ctx={ctx}
+            setCtx={setCtx}
+            spec={spec}
+            setSpec={setSpec}
+            sciCriteria={sciCriteria}
+            onSciCriteriaChange={handleSciCriteria}
+            culturalCriteria={culturalCriteria}
+            onCulturalCriteriaChange={handleCulturalCriteria}
+            onReset={reset}
+            onExport={() => setShowExport(true)}
+            onSaveToCollection={handleSaveToCollection}
+            scoringComp={scoringCompId ? comps.find(c => c.id === scoringCompId) : null}
+            onSaveToComp={scoringCompId ? handleSaveToComp : null}
+            onSwitchToExpert={() => { setMode("expert"); persistScoringMode("expert"); }}
+          />
+        ) : mode === "expert" ? (
           <ExpertMode
             scores={scores}
             setScores={setScores}

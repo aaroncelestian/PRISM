@@ -6,7 +6,7 @@ import ScorePanel from "./ScorePanel.jsx";
 import TierSelector from "./TierSelector.jsx";
 import CriteriaChecklist from "./CriteriaChecklist.jsx";
 
-const TOTAL_STEPS = 1 + DIMS.length + 1; // specimen info + 6 dims + done
+const TOTAL_STEPS = 1 + DIMS.length + 1; // specimen info + 8 dims + done
 
 function Tooltip({ text, onClose }) {
   return (
@@ -77,16 +77,17 @@ function AnchorButton({ anchor, selected, onClick }) {
 }
 
 
-export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSpec, sciCriteria, onSciCriteriaChange, onReset, onExport, initialStep = 0, scoringComp = null, onSaveToComp = null, onSaveToCollection = null }) {
+export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSpec, sciCriteria, onSciCriteriaChange, culturalCriteria, onCulturalCriteriaChange, onReset, onExport, initialStep = 0, scoringComp = null, onSaveToComp = null, onSaveToCollection = null, onSwitchToExpert = null }) {
   const [step, setStep] = useState(initialStep);
   const [showTip, setShowTip] = useState(null);
   const [saveFlash, setSaveFlash] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(() => localStorage.getItem('prism_autoAdvance') === 'true');
 
   // step 0 = specimen info
-  // steps 1..6 = DIMS[0..5]
+  // steps 1..DIMS.length = DIMS[0..]
+  // last step = done
   const dimIndex = step - 1;
-  const currentDim = dimIndex >= 0 ? DIMS[dimIndex] : null;
+  const currentDim = dimIndex >= 0 && dimIndex < DIMS.length ? DIMS[dimIndex] : null;
   const progress = Math.round((step / (TOTAL_STEPS - 1)) * 100);
 
   const canAdvance = step !== 0 || spec.name.trim().length > 0 || spec.species.trim().length > 0;
@@ -282,8 +283,8 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
               {currentDim.criteria ? (
                 <CriteriaChecklist
                   criteria={currentDim.criteria}
-                  checked={sciCriteria}
-                  onChange={onSciCriteriaChange}
+                  checked={currentDim.key === "culturalSignificance" ? culturalCriteria : sciCriteria}
+                  onChange={currentDim.key === "culturalSignificance" ? onCulturalCriteriaChange : onSciCriteriaChange}
                 />
               ) : currentDim.tiers ? (
                 <TierSelector
@@ -359,6 +360,22 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                 Switch to Expert Mode anytime to fine-tune individual values.
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "center" }}>
+                {onSwitchToExpert && (
+                  <button
+                    onClick={onSwitchToExpert}
+                    style={{
+                      width: "220px", padding: "11px 20px",
+                      background: "rgba(0,212,255,0.12)",
+                      border: "1px solid rgba(0,212,255,0.5)",
+                      borderRadius: "6px", color: "var(--cyan)",
+                      fontSize: "12px", fontWeight: 700,
+                      letterSpacing: "0.08em", cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                    }}
+                  >
+                    🎛 Open in Expert Mode
+                  </button>
+                )}
                 {scoringComp && onSaveToComp && (
                   <button
                     onClick={onSaveToComp}
@@ -541,7 +558,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
       {/* ── Right: live score panel (desktop only) ── */}
       {!isMobile && (
         <div style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
-          <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} />
+          <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} culturalCriteria={culturalCriteria} />
         </div>
       )}
 
@@ -568,7 +585,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
             </button>
           </div>
           <div style={{ flex: 1, overflowY: "auto" }}>
-            <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} />
+            <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} culturalCriteria={culturalCriteria} />
           </div>
         </div>
       )}

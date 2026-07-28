@@ -202,7 +202,8 @@ function TabHowTo() {
     <>
       <Section title="Quick Start">
         <Step n="1" title="Choose your mode">
-          Use <strong>Expert</strong> mode to score all eight dimensions at once with live feedback.
+          Use <strong>Guided</strong> mode (the default) to score one category at a time with plain-language choices.
+          Switch to <strong>Expert</strong> mode to see and adjust all eight dimensions at once with live feedback.
           Use <strong>Research</strong> mode to build a market intelligence database of comparable listings.
         </Step>
         <Step n="2" title="Six evaluation contexts scored simultaneously">
@@ -233,7 +234,7 @@ function TabHowTo() {
 
       <Section title="Tips">
         <Callout icon="">
-          In Expert mode, click any dimension row to expand detailed guidance, anchor descriptions, and calibration tips for that dimension.
+          In Guided mode, work through each dimension step by step. In Expert mode, click any dimension row to expand detailed guidance, anchor descriptions, and calibration tips.
         </Callout>
         <Callout icon="🔁">
           Use <strong>Reset</strong> (↺ button top-right) to clear all scores and start fresh for a new
@@ -364,8 +365,8 @@ function TabResearch() {
           asking price, and source (dealer or platform name). Notes and photos are optional.
         </Step>
         <Step n="2" title="Score listings with PRISM">
-          Each listing card has a <strong>Score with PRISM</strong> button. Clicking it takes you into
-          Expert mode pre-filled with the specimen’s species and locality. When done, save the score
+          Each listing card has a <strong>Score with PRISM</strong> button. Clicking it opens your preferred
+          scoring mode (Guided or Expert) pre-filled with the specimen’s species and locality. When done, save the score
           back to the listing.
         </Step>
         <Step n="3" title="Switch to Analysis view">
