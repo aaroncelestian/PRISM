@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { ListOrdered, SlidersHorizontal, RotateCcw, Search } from "lucide-react";
+import { ListOrdered, SlidersHorizontal, RotateCcw, Search, Sun, Moon } from "lucide-react";
 import { CONTEXTS, WEIGHTS, GRADES, THRESHOLD, detectCompoundGrades } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
+import { useTheme } from "../hooks/useTheme.js";
 import ExpertMode from "./ExpertMode.jsx";
 import WizardMode from "./WizardMode.jsx";
 import DonationEval from "./DonationEval.jsx";
@@ -108,6 +109,7 @@ export default function PRISM() {
   const [verifyPayload, setVerifyPayload] = useState(null);
   const [showTools, setShowTools] = useState(false);
   const { isMobile } = useBreakpoint();
+  const { theme, toggleTheme } = useTheme();
 
   const toolMenuItems = [
     { type: "header", label: "Reference" },
@@ -278,6 +280,21 @@ export default function PRISM() {
           {/* Primary controls */}
           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
 
+
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+              aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "5px 8px", borderRadius: "5px",
+                background: "transparent", border: "1px solid var(--border)",
+                color: "var(--text-muted)", cursor: "pointer",
+              }}
+            >
+              {theme === "light" ? <Moon size={13} /> : <Sun size={13} />}
+            </button>
 
             {/* Mode toggle */}
             <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "5px", overflow: "hidden" }}>

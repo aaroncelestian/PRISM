@@ -1,27 +1,52 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-:root {
-  /* Light scientific palette — cool slate, high contrast for reading */
-  --bg:           #eef2f6;  /* page canvas */
-  --bg-panel:     #ffffff;  /* elevated surfaces */
-  --bg-card:      #f5f8fb;  /* cards / list rows */
-  --bg-input:     #ffffff;  /* inputs sit on white */
-  --border:       #b8c6d4;  /* clear structure */
-  --border-dim:   #d5dee8;  /* subtle dividers */
-  --border-input: #9aafc0;  /* inputs must read as inputs */
-  --cyan:         #0a6f88;  /* teal accent — readable as text on light */
+/* ── Light (default) ── */
+:root,
+[data-theme="light"] {
+  --bg:           #eef2f6;
+  --bg-panel:     #ffffff;
+  --bg-card:      #f5f8fb;
+  --bg-input:     #ffffff;
+  --border:       #b8c6d4;
+  --border-dim:   #d5dee8;
+  --border-input: #9aafc0;
+  --cyan:         #0a6f88;
   --cyan-dim:     rgba(10, 111, 136, 0.12);
   --cyan-glow:    rgba(10, 111, 136, 0.06);
-  --accent-warm:  #8a6a18;  /* museum gold, darkened for light bg */
+  --accent-rgb:   10, 111, 136;
+  --accent-warm:  #8a6a18;
   --success:      #0a7a52;
   --warn:         #a65d00;
   --danger:       #c03535;
-  --text:         #15202b;  /* near-black primary */
-  --text-dim:     #354859;  /* secondary body copy */
-  --text-muted:   #4d6478;  /* labels / helper — still clear */
-  --text-label:   #3f566a;  /* form labels */
+  --text:         #15202b;
+  --text-dim:     #354859;
+  --text-muted:   #4d6478;
+  --text-label:   #3f566a;
   --mono:         'JetBrains Mono', ui-monospace, monospace;
   --sans:         'Exo 2', system-ui, sans-serif;
+}
+
+/* ── Dark ── */
+[data-theme="dark"] {
+  --bg:           #0b101c;
+  --bg-panel:     #121a28;
+  --bg-card:      #172233;
+  --bg-input:     #0e1624;
+  --border:       #2e4258;
+  --border-dim:   #1e2e40;
+  --border-input: #3a5368;
+  --cyan:         #3dd9ff;
+  --cyan-dim:     rgba(61, 217, 255, 0.22);
+  --cyan-glow:    rgba(61, 217, 255, 0.10);
+  --accent-rgb:   61, 217, 255;
+  --accent-warm:  #d4b45a;
+  --success:      #2ecf8f;
+  --warn:         #e09a30;
+  --danger:       #ff6b6b;
+  --text:         #e8eef8;
+  --text-dim:     #a8c0d8;
+  --text-muted:   #7e9ab0;
+  --text-label:   #8aa4bc;
 }
 
 html, body, #root {
@@ -43,12 +68,10 @@ html, body, #root {
 /* ── Scrollbar — always visible ── */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-panel); border-radius: 4px; }
-::-webkit-scrollbar-thumb { background: rgba(10,111,136,0.35); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(10,111,136,0.55); }
+::-webkit-scrollbar-thumb { background: rgba(var(--accent-rgb), 0.35); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(var(--accent-rgb), 0.55); }
 ::-webkit-scrollbar-corner { background: var(--bg-panel); }
-/* Firefox: auto keeps bar always present when content overflows */
-* { scrollbar-width: auto; scrollbar-color: rgba(10,111,136,0.35) var(--bg-panel); }
-/* Reserve gutter space so layout doesn't shift when scrollbar appears */
+* { scrollbar-width: auto; scrollbar-color: rgba(var(--accent-rgb), 0.35) var(--bg-panel); }
 html { scrollbar-gutter: stable; }
 
 /* ── Range inputs ── */
@@ -75,7 +98,7 @@ input[type=range]::-webkit-slider-thumb {
   margin-top: -5.5px;
   cursor: pointer;
   transition: transform 0.12s;
-  box-shadow: 0 1px 4px rgba(10,111,136,0.35);
+  box-shadow: 0 1px 4px rgba(var(--accent-rgb), 0.35);
 }
 input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.25); }
 input[type=range]::-moz-range-track { height: 3px; background: transparent; border-radius: 2px; }
@@ -98,8 +121,8 @@ input[type=text], input:not([type]) {
   transition: border-color 0.15s;
 }
 input[type=text]:focus, input:not([type]):focus {
-  border-color: rgba(10, 111, 136, 0.65);
-  box-shadow: 0 0 0 2px rgba(10, 111, 136, 0.12);
+  border-color: rgba(var(--accent-rgb), 0.65);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.12);
 }
 input::placeholder { color: var(--text-muted); }
 
