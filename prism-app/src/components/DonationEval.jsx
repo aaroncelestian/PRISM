@@ -44,9 +44,9 @@ function DonationPickerScreen({ initScores, initSpec, records, onSelect, onClose
             <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Current Evaluation</div>
             <button
               onClick={() => onSelect(initScores, initSpec)}
-              style={{ width: "100%", textAlign: "left", padding: "12px 14px", background: "rgba(0,212,255,0.04)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: "7px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.5)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.25)"}
+              style={{ width: "100%", textAlign: "left", padding: "12px 14px", background: "rgba(10,111,136,0.04)", border: "1px solid rgba(10,111,136,0.25)", borderRadius: "7px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.5)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.25)"}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>
@@ -85,7 +85,7 @@ function DonationPickerScreen({ initScores, initSpec, records, onSelect, onClose
                       key={rec.id}
                       onClick={() => onSelect(rec.scores, rec.spec)}
                       style={{ width: "100%", textAlign: "left", padding: "10px 14px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.3)"}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.3)"}
                       onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -165,13 +165,13 @@ const LAND_TYPES = [
 const LAND_LEGAL = {
   blm: {
     status: "allowed",
-    color: "#00c880",
+    color: "#0a7a52",
     heading: "Generally Permitted",
     detail: "Casual recreational collecting allowed under 43 CFR 8365 for personal use. Commercial collection, use of power tools, and collection from ACECs, Wilderness Areas, or other special management areas require a permit or are prohibited.",
   },
   usfs: {
     status: "conditional",
-    color: "#ffa028",
+    color: "#a65d00",
     heading: "Conditionally Permitted",
     detail: "Limited casual collecting typically permitted on most National Forests for personal use (~25 lbs/day, ~250 lbs/yr guideline). Some forests restrict or prohibit collecting — always verify the local forest management plan before collecting.",
   },
@@ -184,7 +184,7 @@ const LAND_LEGAL = {
   },
   state: {
     status: "conditional",
-    color: "#ffa028",
+    color: "#a65d00",
     heading: "Varies by State / Jurisdiction",
     detail: "Rules differ significantly by state or country — some allow casual collecting; others require permits or prohibit it entirely. Verify with the relevant land management agency that collecting was legal at this site.",
   },
@@ -323,8 +323,8 @@ function CheckItem({ q, checked, onToggle }) {
     <label style={{
       display: "flex", alignItems: "flex-start", gap: "10px",
       padding: "8px 12px", borderRadius: "5px", cursor: "pointer",
-      background: checked ? "rgba(0,212,255,0.05)" : "var(--bg-card)",
-      border: `1px solid ${checked ? "rgba(0,212,255,0.3)" : "var(--border)"}`,
+      background: checked ? "rgba(10,111,136,0.05)" : "var(--bg-card)",
+      border: `1px solid ${checked ? "rgba(10,111,136,0.3)" : "var(--border)"}`,
       transition: "all 0.15s",
     }}>
       <input
@@ -334,10 +334,10 @@ function CheckItem({ q, checked, onToggle }) {
       <div>
         <div style={{ fontSize: "12px", fontWeight: checked ? 600 : 400, color: checked ? "var(--cyan)" : "var(--text)", marginBottom: "1px" }}>
           {q.label}
-          {q.required && <span style={{ color: "#ffa028", marginLeft: "5px", fontSize: "9px" }}>★ required</span>}
-          {q.recommended && <span style={{ color: "#00c880", marginLeft: "5px", fontSize: "9px" }}>⊕ highly recommended</span>}
+          {q.required && <span style={{ color: "#a65d00", marginLeft: "5px", fontSize: "9px" }}>★ required</span>}
+          {q.recommended && <span style={{ color: "#0a7a52", marginLeft: "5px", fontSize: "9px" }}>⊕ highly recommended</span>}
         </div>
-        <div style={{ fontSize: "10px", color: checked ? "rgba(0,212,255,0.55)" : "var(--text-muted)", lineHeight: 1.4 }}>
+        <div style={{ fontSize: "10px", color: checked ? "rgba(10,111,136,0.55)" : "var(--text-muted)", lineHeight: 1.4 }}>
           {q.desc}
         </div>
       </div>
@@ -368,14 +368,14 @@ function AcquisitionStep({ acquisitionType, setAcquisitionType, acquisitionDetai
           return (
             <button key={at.key} onClick={() => setAcquisitionType(at.key)} style={{
               padding: "10px 12px", borderRadius: "6px", textAlign: "left",
-              background: sel ? "rgba(0,212,255,0.07)" : "var(--bg-card)",
-              border: `1px solid ${sel ? "rgba(0,212,255,0.4)" : "var(--border)"}`,
+              background: sel ? "rgba(10,111,136,0.07)" : "var(--bg-card)",
+              border: `1px solid ${sel ? "rgba(10,111,136,0.4)" : "var(--border)"}`,
               color: sel ? "var(--cyan)" : "var(--text-dim)",
               transition: "all 0.15s",
             }}>
               <div style={{ fontSize: "18px", marginBottom: "4px" }}>{at.icon}</div>
               <div style={{ fontSize: "12px", fontWeight: sel ? 600 : 500, marginBottom: "2px" }}>{at.label}</div>
-              <div style={{ fontSize: "10px", color: sel ? "rgba(0,212,255,0.6)" : "var(--text-muted)", lineHeight: 1.4 }}>{at.desc}</div>
+              <div style={{ fontSize: "10px", color: sel ? "rgba(10,111,136,0.6)" : "var(--text-muted)", lineHeight: 1.4 }}>{at.desc}</div>
             </button>
           );
         })}
@@ -437,7 +437,7 @@ function AcquisitionStep({ acquisitionType, setAcquisitionType, acquisitionDetai
       )}
 
       {acquisitionType === "unknown" && (
-        <div style={{ padding: "10px 12px", background: "rgba(255,160,40,0.07)", border: "1px solid rgba(255,160,40,0.25)", borderRadius: "5px", fontSize: "11px", color: "#ffa028", lineHeight: 1.55 }}>
+        <div style={{ padding: "10px 12px", background: "rgba(166,93,0,0.07)", border: "1px solid rgba(166,93,0,0.25)", borderRadius: "5px", fontSize: "11px", color: "#a65d00", lineHeight: 1.55 }}>
           ⚠️ Unknown acquisition history significantly limits donation value. Most institutions require
           at least partial provenance documentation before accepting specimens into permanent collections.
           This evaluation will still complete, but donation prospects will be limited.
@@ -733,10 +733,10 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
             Country of Origin ★
           </div>
           {isDetecting && (
-            <span style={{ fontSize: "9px", color: "rgba(0,212,255,0.5)" }}>⟳ detecting…</span>
+            <span style={{ fontSize: "9px", color: "rgba(10,111,136,0.5)" }}>⟳ detecting…</span>
           )}
           {!isDetecting && autoSource.country && (
-            <span style={{ fontSize: "9px", color: "rgba(0,212,255,0.65)", display: "flex", alignItems: "center", gap: "3px" }}>
+            <span style={{ fontSize: "9px", color: "rgba(10,111,136,0.65)", display: "flex", alignItems: "center", gap: "3px" }}>
               <MapPin size={9} /> auto-detected
             </span>
           )}
@@ -823,7 +823,7 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
                 onClick={() => { setSearchInput(localityText); handleSearch(); }}
                 disabled={isGeocoding || !localityText.trim()}
                 title="Search this location on the map"
-                style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 10px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--bg-card)", color: isGeocoding ? "rgba(0,212,255,0.5)" : "var(--text-dim)", fontSize: "11px", cursor: isGeocoding ? "default" : "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
+                style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 10px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--bg-card)", color: isGeocoding ? "rgba(10,111,136,0.5)" : "var(--text-dim)", fontSize: "11px", cursor: isGeocoding ? "default" : "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
                 <Search size={11} /> {isGeocoding ? "…" : "Find"}
               </button>
             </div>
@@ -834,10 +834,10 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
 
           {/* Coords + detecting spinner */}
           {(location || isDetecting) && (
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "rgba(0,212,255,0.6)", fontFamily: "var(--mono)", padding: "5px 8px", background: "rgba(0,212,255,0.05)", borderRadius: "4px", border: "1px solid rgba(0,212,255,0.12)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "rgba(10,111,136,0.6)", fontFamily: "var(--mono)", padding: "5px 8px", background: "rgba(10,111,136,0.05)", borderRadius: "4px", border: "1px solid rgba(10,111,136,0.12)" }}>
               <MapPin size={10} />
               {location && `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`}
-              {isDetecting && <span style={{ fontFamily: "sans-serif", fontSize: "9px", color: "rgba(0,212,255,0.5)" }}>⟳ detecting…</span>}
+              {isDetecting && <span style={{ fontFamily: "sans-serif", fontSize: "9px", color: "rgba(10,111,136,0.5)" }}>⟳ detecting…</span>}
             </div>
           )}
 
@@ -916,10 +916,10 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
               Land Management Type ★
             </div>
             {isDetecting && (
-              <span style={{ fontSize: "9px", color: "rgba(0,212,255,0.5)" }}>⟳ detecting…</span>
+              <span style={{ fontSize: "9px", color: "rgba(10,111,136,0.5)" }}>⟳ detecting…</span>
             )}
             {!isDetecting && autoSource.landType && (
-              <span style={{ fontSize: "9px", color: "rgba(0,212,255,0.65)", display: "flex", alignItems: "center", gap: "3px" }}>
+              <span style={{ fontSize: "9px", color: "rgba(10,111,136,0.65)", display: "flex", alignItems: "center", gap: "3px" }}>
                 <MapPin size={9} /> {autoSource.landType} · click to override
               </span>
             )}
@@ -996,8 +996,8 @@ function UploadSlot({ slot, file, onFile }) {
   return (
     <div style={{
       padding: "10px 12px", borderRadius: "5px",
-      background: file ? "rgba(0,212,255,0.04)" : "var(--bg-card)",
-      border: `1px solid ${file ? "rgba(0,212,255,0.28)" : "var(--border)"}`,
+      background: file ? "rgba(10,111,136,0.04)" : "var(--bg-card)",
+      border: `1px solid ${file ? "rgba(10,111,136,0.28)" : "var(--border)"}`,
     }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -1006,7 +1006,7 @@ function UploadSlot({ slot, file, onFile }) {
           </div>
           <div style={{ fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.4 }}>{slot.desc}</div>
           {file && (
-            <div style={{ fontSize: "9px", color: "rgba(0,212,255,0.55)", fontFamily: "var(--mono)", marginTop: "4px" }}>
+            <div style={{ fontSize: "9px", color: "rgba(10,111,136,0.55)", fontFamily: "var(--mono)", marginTop: "4px" }}>
               📎 {file.name} · {(file.size / 1024).toFixed(0)} KB
             </div>
           )}
@@ -1016,8 +1016,8 @@ function UploadSlot({ slot, file, onFile }) {
           onClick={() => file ? onFile(null) : inputRef.current?.click()}
           style={{
             padding: "4px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: 500, whiteSpace: "nowrap",
-            background: file ? "rgba(255,80,80,0.07)" : "rgba(0,212,255,0.07)",
-            border: `1px solid ${file ? "rgba(255,80,80,0.25)" : "rgba(0,212,255,0.25)"}`,
+            background: file ? "rgba(255,80,80,0.07)" : "rgba(10,111,136,0.07)",
+            border: `1px solid ${file ? "rgba(255,80,80,0.25)" : "rgba(10,111,136,0.25)"}`,
             color: file ? "#ff8080" : "var(--cyan)", cursor: "pointer", flexShrink: 0,
           }}
         >
@@ -1044,7 +1044,7 @@ function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploa
           Documentation Checklist
         </h3>
         <p style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55 }}>
-          Check everything that applies. <span style={{ color: "#ffa028" }}>★ required</span> items are necessary for museum consideration. <span style={{ color: "#00c880" }}>⊕ highly recommended</span> items significantly strengthen the evaluation.
+          Check everything that applies. <span style={{ color: "#a65d00" }}>★ required</span> items are necessary for museum consideration. <span style={{ color: "#0a7a52" }}>⊕ highly recommended</span> items significantly strengthen the evaluation.
         </p>
       </div>
 
@@ -1069,7 +1069,7 @@ function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploa
         </div>
       )}
       {isSelf && landType === "unknown" && (
-        <div style={{ padding: "10px 12px", background: "rgba(255,160,40,0.07)", border: "1px solid rgba(255,160,40,0.25)", borderRadius: "5px", fontSize: "11px", color: "#ffa028", lineHeight: 1.5 }}>
+        <div style={{ padding: "10px 12px", background: "rgba(166,93,0,0.07)", border: "1px solid rgba(166,93,0,0.25)", borderRadius: "5px", fontSize: "11px", color: "#a65d00", lineHeight: 1.5 }}>
           ⚠️ Unknown collection locality severely limits donation value.
         </div>
       )}
@@ -1261,7 +1261,7 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
   const docBoost = Math.round((reqPassed.length / Math.max(required.length, 1)) * 20);
   const chainScore = Math.min(100, chainStrength.base + docBoost);
 
-  const statusColor = pct === 100 ? "#00c880" : pct >= 60 ? "#ffa028" : "#ff5050";
+  const statusColor = pct === 100 ? "#0a7a52" : pct >= 60 ? "#a65d00" : "#ff5050";
   const statusLabel = pct === 100
     ? "Ready for Museum Donation Consideration"
     : pct >= 60
@@ -1301,12 +1301,12 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
             {acquisitionDetails?.auctionHouse ? ` — ${acquisitionDetails.auctionHouse}` : ""}
             {acquisitionDetails?.donorName ? ` — ${acquisitionDetails.donorName}` : ""}
           </div>
-          <div style={{ fontSize: "13px", fontWeight: 700, color: chainScore >= 70 ? "#00c880" : chainScore >= 45 ? "#ffa028" : "#ff6060" }}>
+          <div style={{ fontSize: "13px", fontWeight: 700, color: chainScore >= 70 ? "#0a7a52" : chainScore >= 45 ? "#a65d00" : "#ff6060" }}>
             {chainScore}/100
           </div>
         </div>
         <div style={{ height: "4px", background: "var(--bg)", borderRadius: "2px", overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${chainScore}%`, background: chainScore >= 70 ? "#00c880" : chainScore >= 45 ? "#ffa028" : "#ff6060", borderRadius: "2px", transition: "width 0.4s" }} />
+          <div style={{ height: "100%", width: `${chainScore}%`, background: chainScore >= 70 ? "#0a7a52" : chainScore >= 45 ? "#a65d00" : "#ff6060", borderRadius: "2px", transition: "width 0.4s" }} />
         </div>
         <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>{chainStrength.label}</div>
       </div>
@@ -1340,10 +1340,10 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
       {/* Met requirements */}
       {reqPassed.length > 0 && (
         <div>
-          <div style={{ fontSize: "9px", letterSpacing: "0.18em", color: "#00c880", textTransform: "uppercase", marginBottom: "6px" }}>✓ Requirements Met</div>
+          <div style={{ fontSize: "9px", letterSpacing: "0.18em", color: "#0a7a52", textTransform: "uppercase", marginBottom: "6px" }}>✓ Requirements Met</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             {reqPassed.map(q => (
-              <div key={q.id} style={{ padding: "6px 10px", background: "rgba(0,200,128,0.05)", border: "1px solid rgba(0,200,128,0.18)", borderRadius: "4px", fontSize: "11px", color: "#00c880" }}>{q.label}</div>
+              <div key={q.id} style={{ padding: "6px 10px", background: "rgba(10,122,82,0.05)", border: "1px solid rgba(10,122,82,0.18)", borderRadius: "4px", fontSize: "11px", color: "#0a7a52" }}>{q.label}</div>
             ))}
           </div>
         </div>
@@ -1365,8 +1365,8 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
       <div style={{ borderTop: "1px solid var(--border-dim)", paddingTop: "14px" }}>
         <div style={{ fontSize: "9px", letterSpacing: "0.18em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Attestation</div>
         <div style={{
-          padding: "12px 14px", background: "rgba(0,212,255,0.03)",
-          border: "1px solid rgba(0,212,255,0.15)", borderRadius: "6px",
+          padding: "12px 14px", background: "rgba(10,111,136,0.03)",
+          border: "1px solid rgba(10,111,136,0.15)", borderRadius: "6px",
           fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.65,
           fontStyle: "italic", marginBottom: "10px",
         }}>
@@ -1397,7 +1397,7 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
                 .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); onExported?.(); })
                 .catch(() => {});
             }}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", padding: "7px 10px", borderRadius: "5px", fontSize: "10px", fontWeight: 500, cursor: "pointer", background: copied ? "rgba(0,200,128,0.09)" : "var(--bg-card)", border: `1px solid ${copied ? "rgba(0,200,128,0.4)" : "var(--border)"}`, color: copied ? "#00c880" : "var(--text-dim)", transition: "all 0.2s" }}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", padding: "7px 10px", borderRadius: "5px", fontSize: "10px", fontWeight: 500, cursor: "pointer", background: copied ? "rgba(10,122,82,0.09)" : "var(--bg-card)", border: `1px solid ${copied ? "rgba(10,122,82,0.4)" : "var(--border)"}`, color: copied ? "#0a7a52" : "var(--text-dim)", transition: "all 0.2s" }}
           >
             {copied ? <CheckCheck size={12} /> : <Copy size={12} />}
             {copied ? "Copied!" : "Copy Text"}
@@ -1532,8 +1532,8 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
             <div key={i} style={{
               flex: 1, padding: "9px 0", textAlign: "center",
               fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase",
-              color: i === step ? "var(--cyan)" : i < step ? "#00c880" : "var(--text-muted)",
-              borderBottom: `2px solid ${i === step ? "var(--cyan)" : i < step ? "#00c880" : "transparent"}`,
+              color: i === step ? "var(--cyan)" : i < step ? "#0a7a52" : "var(--text-muted)",
+              borderBottom: `2px solid ${i === step ? "var(--cyan)" : i < step ? "#0a7a52" : "transparent"}`,
               transition: "all 0.2s",
               fontWeight: i === step ? 600 : 400,
             }}>
@@ -1579,18 +1579,18 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
         {/* Unsaved warning banner */}
         {showLeaveWarning && (
           <div style={{
-            padding: "10px 18px", background: "rgba(255,160,40,0.09)",
-            borderTop: "1px solid rgba(255,160,40,0.35)",
+            padding: "10px 18px", background: "rgba(166,93,0,0.09)",
+            borderTop: "1px solid rgba(166,93,0,0.35)",
             display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
             flexShrink: 0,
           }}>
-            <div style={{ fontSize: "11px", color: "#ffa028", lineHeight: 1.4 }}>
+            <div style={{ fontSize: "11px", color: "#a65d00", lineHeight: 1.4 }}>
               ⚠️ <strong>Assessment not saved.</strong> Copy, download, or print the report before closing so it isn't lost.
             </div>
             <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
               <button
                 onClick={() => setShowLeaveWarning(false)}
-                style={{ padding: "4px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: 500, cursor: "pointer", background: "rgba(255,160,40,0.1)", border: "1px solid rgba(255,160,40,0.4)", color: "#ffa028" }}
+                style={{ padding: "4px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: 500, cursor: "pointer", background: "rgba(166,93,0,0.1)", border: "1px solid rgba(166,93,0,0.4)", color: "#a65d00" }}
               >Go back</button>
               <button
                 onClick={onClose}
@@ -1626,8 +1626,8 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
               style={{
                 display: "flex", alignItems: "center", gap: "5px",
                 padding: "7px 20px",
-                background: canAdvance() ? "rgba(0,212,255,0.09)" : "transparent",
-                border: `1px solid ${canAdvance() ? "rgba(0,212,255,0.4)" : "var(--border)"}`,
+                background: canAdvance() ? "rgba(10,111,136,0.09)" : "transparent",
+                border: `1px solid ${canAdvance() ? "rgba(10,111,136,0.4)" : "var(--border)"}`,
                 borderRadius: "4px",
                 color: canAdvance() ? "var(--cyan)" : "var(--text-muted)",
                 fontSize: "11px", fontWeight: 600, cursor: canAdvance() ? "pointer" : "default",
@@ -1640,10 +1640,10 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
               onClick={guardedClose}
               style={{
                 padding: "7px 20px",
-                background: exported ? "rgba(0,200,128,0.09)" : "rgba(255,160,40,0.07)",
-                border: `1px solid ${exported ? "rgba(0,200,128,0.4)" : "rgba(255,160,40,0.4)"}`,
+                background: exported ? "rgba(10,122,82,0.09)" : "rgba(166,93,0,0.07)",
+                border: `1px solid ${exported ? "rgba(10,122,82,0.4)" : "rgba(166,93,0,0.4)"}`,
                 borderRadius: "4px",
-                color: exported ? "#00c880" : "#ffa028",
+                color: exported ? "#0a7a52" : "#a65d00",
                 fontSize: "11px", fontWeight: 600, cursor: "pointer",
               }}
             >

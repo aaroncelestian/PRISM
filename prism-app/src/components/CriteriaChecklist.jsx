@@ -7,7 +7,7 @@ export default function CriteriaChecklist({ criteria, checked, onChange }) {
 
   const count = checked.filter(Boolean).length;
   const score = count * 20;
-  const scoreColor = score >= 80 ? "#00c880" : score >= 40 ? "var(--cyan)" : "var(--text-muted)";
+  const scoreColor = score >= 80 ? "#0a7a52" : score >= 40 ? "var(--cyan)" : "var(--text-muted)";
 
   return (
     <div>
@@ -18,8 +18,8 @@ export default function CriteriaChecklist({ criteria, checked, onChange }) {
             style={{
               display: "flex", alignItems: "flex-start", gap: "12px",
               padding: "10px 14px", borderRadius: "5px", cursor: "pointer",
-              background: checked[i] ? "rgba(0,212,255,0.07)" : "var(--bg-card)",
-              border: `1px solid ${checked[i] ? "rgba(0,212,255,0.38)" : "var(--border)"}`,
+              background: checked[i] ? "rgba(10,111,136,0.07)" : "var(--bg-card)",
+              border: `1px solid ${checked[i] ? "rgba(10,111,136,0.38)" : "var(--border)"}`,
               transition: "all 0.15s",
             }}
           >
@@ -44,7 +44,7 @@ export default function CriteriaChecklist({ criteria, checked, onChange }) {
               </div>
               <div style={{
                 fontSize: "11px", lineHeight: 1.45,
-                color: checked[i] ? "rgba(0,212,255,0.65)" : "var(--text-muted)",
+                color: checked[i] ? "rgba(10,111,136,0.65)" : "var(--text-muted)",
               }}>
                 {c.desc}
               </div>

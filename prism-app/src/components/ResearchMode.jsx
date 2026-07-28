@@ -432,7 +432,7 @@ function PhotoCapture({ value, onChange, urlValue, onUrlChange }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <div onClick={() => ref.current?.click()}
             style={{ height: "52px", border: "1px dashed var(--border)", borderRadius: "5px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", cursor: "pointer", color: "var(--text-muted)", fontSize: "11px", transition: "border-color 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.35)"}
+            onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.35)"}
             onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
           >
             <Camera size={15} /> Upload file
@@ -520,7 +520,7 @@ function CompForm({ initial = EMPTY_FORM, onSave, onCancel }) {
 
   return (
     <div style={{
-      background: "var(--bg-panel)", border: "1px solid rgba(0,212,255,0.25)",
+      background: "var(--bg-panel)", border: "1px solid rgba(10,111,136,0.25)",
       borderRadius: "8px", padding: "20px 22px", marginBottom: "20px",
     }}>
       <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--cyan)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "16px" }}>
@@ -552,8 +552,8 @@ function CompForm({ initial = EMPTY_FORM, onSave, onCancel }) {
           {form.sourceUrl?.trim() && autoFill !== "loading" && (
             <button onClick={handleExtract} style={{
               padding: "4px 11px", fontSize: "10px", borderRadius: "4px", border: "none",
-              background: autoFill === "done" ? "rgba(0,200,128,0.15)" : "rgba(0,212,255,0.1)",
-              color: autoFill === "done" ? "#00c880" : "var(--cyan)",
+              background: autoFill === "done" ? "rgba(10,122,82,0.15)" : "rgba(10,111,136,0.1)",
+              color: autoFill === "done" ? "#0a7a52" : "var(--cyan)",
               cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, fontWeight: 600,
             }}>
               {autoFill === "done" ? "✓ Done" : "⬇ Extract"}
@@ -565,14 +565,14 @@ function CompForm({ initial = EMPTY_FORM, onSave, onCancel }) {
             </span>
           )}
           {detectedSource && (
-            <span style={{ fontSize: "10px", color: "var(--cyan)", padding: "3px 9px", borderRadius: "3px", background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.3)", whiteSpace: "nowrap", flexShrink: 0 }}>
+            <span style={{ fontSize: "10px", color: "var(--cyan)", padding: "3px 9px", borderRadius: "3px", background: "rgba(10,111,136,0.08)", border: "1px solid rgba(10,111,136,0.3)", whiteSpace: "nowrap", flexShrink: 0 }}>
               ✓ {detectedSource}
             </span>
           )}
         </div>
         {fillSummary && (
           <div style={{ fontSize: "10px", marginTop: "5px",
-            color: autoFill === "done" ? "#00c880" : autoFill === "error" ? "#ff8060" : "var(--text-muted)" }}>
+            color: autoFill === "done" ? "#0a7a52" : autoFill === "error" ? "#ff8060" : "var(--text-muted)" }}>
             {fillSummary}
           </div>
         )}
@@ -669,7 +669,7 @@ function CompForm({ initial = EMPTY_FORM, onSave, onCancel }) {
           Cancel
         </button>
         <button onClick={() => canSave && onSave(form)} disabled={!canSave}
-          style={{ padding: "7px 20px", background: canSave ? "rgba(0,212,255,0.09)" : "transparent", border: `1px solid ${canSave ? "rgba(0,212,255,0.4)" : "var(--border)"}`, borderRadius: "4px", color: canSave ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", fontWeight: 600, cursor: canSave ? "pointer" : "default" }}>
+          style={{ padding: "7px 20px", background: canSave ? "rgba(10,111,136,0.09)" : "transparent", border: `1px solid ${canSave ? "rgba(10,111,136,0.4)" : "var(--border)"}`, borderRadius: "4px", color: canSave ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", fontWeight: 600, cursor: canSave ? "pointer" : "default" }}>
           {initial.species ? "Save Changes" : "Add Listing"}
         </button>
       </div>
@@ -717,7 +717,7 @@ function CompCard({ comp, onScore, onEdit, onDelete }) {
             {fmtPrice(comp.askingPrice)}
           </div>
           {comp.soldPrice && (
-            <div style={{ fontSize: "9px", color: "#00c880", marginTop: "2px" }}>Sold: {fmtPrice(comp.soldPrice)}</div>
+            <div style={{ fontSize: "9px", color: "#0a7a52", marginTop: "2px" }}>Sold: {fmtPrice(comp.soldPrice)}</div>
           )}
         </div>
       </div>
@@ -729,7 +729,7 @@ function CompCard({ comp, onScore, onEdit, onDelete }) {
         {comp.source && (
           comp.sourceUrl
             ? <a href={comp.sourceUrl} target="_blank" rel="noopener noreferrer"
-                style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "var(--bg-card)", border: "1px solid rgba(0,212,255,0.2)", color: "var(--cyan)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "3px", cursor: "pointer" }}>
+                style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "var(--bg-card)", border: "1px solid rgba(10,111,136,0.2)", color: "var(--cyan)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "3px", cursor: "pointer" }}>
                 {comp.source} <ExternalLink size={7} />
               </a>
             : <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>{comp.source}</span>
@@ -769,7 +769,7 @@ function CompCard({ comp, onScore, onEdit, onDelete }) {
           <div style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "6px" }}>Not yet scored with PRISM</div>
           <button onClick={() => onScore(comp)} style={{
             display: "inline-flex", alignItems: "center", gap: "5px",
-            padding: "5px 14px", background: "rgba(0,212,255,0.07)", border: "1px solid rgba(0,212,255,0.3)",
+            padding: "5px 14px", background: "rgba(10,111,136,0.07)", border: "1px solid rgba(10,111,136,0.3)",
             borderRadius: "4px", color: "var(--cyan)", fontSize: "11px", fontWeight: 600, cursor: "pointer",
           }}>
             <Award size={11} /> Score with PRISM
@@ -968,8 +968,8 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
             style={{
               padding: "5px 14px", borderRadius: "4px", fontSize: "11px", fontWeight: view === key ? 600 : 400,
               cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.4 : 1,
-              background: view === key ? "rgba(0,212,255,0.1)" : "transparent",
-              border: view === key ? "1px solid rgba(0,212,255,0.45)" : "1px solid var(--border)",
+              background: view === key ? "rgba(10,111,136,0.1)" : "transparent",
+              border: view === key ? "1px solid rgba(10,111,136,0.45)" : "1px solid var(--border)",
               color: view === key ? "var(--cyan)" : "var(--text-muted)",
               transition: "all 0.15s",
             }}>{label}</button>
@@ -998,7 +998,7 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
           </select>
         )}
         <button onClick={() => { setShowForm(true); setEditing(null); }}
-          style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 16px", background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.35)", borderRadius: "4px", color: "var(--cyan)", fontSize: "11px", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+          style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 16px", background: "rgba(10,111,136,0.08)", border: "1px solid rgba(10,111,136,0.35)", borderRadius: "4px", color: "var(--cyan)", fontSize: "11px", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
           <Plus size={13} /> Add Listing
         </button>
         {comps.length > 0 && (
@@ -1013,7 +1013,7 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
         {showImportMenu && <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={() => setShowImportMenu(false)} />}
         <div style={{ position: "relative", zIndex: 100 }}>
           <button onClick={() => setShowImportMenu(v => !v)}
-            style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: showImportMenu ? "rgba(0,212,255,0.06)" : "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
+            style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", background: showImportMenu ? "rgba(10,111,136,0.06)" : "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
             <Upload size={13} /> Import ▾
           </button>
           {showImportMenu && (
@@ -1066,11 +1066,11 @@ export default function ResearchMode({ comps, onAdd, onUpdate, onDelete, onScore
       )}
 
       {showStorageWarning && (
-        <div style={{ padding: "9px 13px", borderRadius: "5px", border: "1px solid rgba(255,160,40,0.35)", background: "rgba(255,160,40,0.06)", marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-          <div style={{ fontSize: "11px", color: "#ffa028", lineHeight: 1.5 }}>
+        <div style={{ padding: "9px 13px", borderRadius: "5px", border: "1px solid rgba(166,93,0,0.35)", background: "rgba(166,93,0,0.06)", marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+          <div style={{ fontSize: "11px", color: "#a65d00", lineHeight: 1.5 }}>
             <strong>Storage {Math.round(storageRatio * 100)}% full</strong> — photos may fail to save. Export a backup or remove listings with photos to free space.
           </div>
-          <button onClick={handleSave} style={{ flexShrink: 0, padding: "4px 12px", background: "rgba(255,160,40,0.1)", border: "1px solid rgba(255,160,40,0.4)", borderRadius: "4px", color: "#ffa028", fontSize: "10px", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+          <button onClick={handleSave} style={{ flexShrink: 0, padding: "4px 12px", background: "rgba(166,93,0,0.1)", border: "1px solid rgba(166,93,0,0.4)", borderRadius: "4px", color: "#a65d00", fontSize: "10px", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
             Save backup
           </button>
         </div>
@@ -1157,7 +1157,7 @@ Rules:
               <pre style={{ flex: 1, overflowY: "auto", margin: 0, padding: "16px 20px", fontSize: "11px", fontFamily: "var(--mono)", color: "var(--text-dim)", lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word", background: "var(--bg-input)" }}>{PROMPT}</pre>
               <div style={{ padding: "12px 20px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end" }}>
                 <button onClick={handleCopy}
-                  style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 18px", background: promptCopied ? "rgba(0,200,128,0.12)" : "rgba(124,92,252,0.12)", border: `1px solid ${promptCopied ? "rgba(0,200,128,0.5)" : "rgba(124,92,252,0.5)"}`, borderRadius: "5px", color: promptCopied ? "#00c880" : "#a07cfc", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
+                  style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 18px", background: promptCopied ? "rgba(10,122,82,0.12)" : "rgba(124,92,252,0.12)", border: `1px solid ${promptCopied ? "rgba(10,122,82,0.5)" : "rgba(124,92,252,0.5)"}`, borderRadius: "5px", color: promptCopied ? "#0a7a52" : "#a07cfc", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
                   {promptCopied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy Prompt</>}
                 </button>
               </div>
@@ -1200,7 +1200,7 @@ Rules:
             Score each one with PRISM and instantly see <em>why</em> a Red Cloud specimen costs more than an Old Yuma Mine piece.
           </div>
           <button onClick={() => setShowForm(true)}
-            style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "10px 22px", background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.35)", borderRadius: "5px", color: "var(--cyan)", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
+            style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "10px 22px", background: "rgba(10,111,136,0.08)", border: "1px solid rgba(10,111,136,0.35)", borderRadius: "5px", color: "var(--cyan)", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
             <Plus size={15} /> Add your first listing
           </button>
         </div>
@@ -1231,7 +1231,7 @@ Rules:
 
       {/* Data quality progress */}
       {comps.length > 0 && comps.length < 40 && (
-        <div style={{ padding: "12px 14px", background: "rgba(0,212,255,0.03)", border: "1px solid rgba(0,212,255,0.12)", borderRadius: "6px", display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ padding: "12px 14px", background: "rgba(10,111,136,0.03)", border: "1px solid rgba(10,111,136,0.12)", borderRadius: "6px", display: "flex", flexDirection: "column", gap: "8px" }}>
           <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>📡 Analysis Quality</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
             {[
@@ -1242,7 +1242,7 @@ Rules:
               { threshold: 40, label: "Statistically reliable averages",    unlocked: comps.length >= 40 },
             ].map(({ label, unlocked }) => (
               <div key={label} style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "10px" }}>
-                <span style={{ color: unlocked ? "#00c880" : "var(--border)", fontSize: "11px", flexShrink: 0 }}>{unlocked ? "✓" : "○"}</span>
+                <span style={{ color: unlocked ? "#0a7a52" : "var(--border)", fontSize: "11px", flexShrink: 0 }}>{unlocked ? "✓" : "○"}</span>
                 <span style={{ color: unlocked ? "var(--text-dim)" : "var(--text-muted)" }}>{label}</span>
               </div>
             ))}

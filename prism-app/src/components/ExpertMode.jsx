@@ -12,12 +12,12 @@ const EXPERT_SPECTRUM = ["#ff0000", "#ff7f00", "#ffff00", "#00ff00", "#0000ff", 
 function AestheticsSubSliders({ subScores, onChange }) {
   const vals = Object.values(subScores);
   const computed = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
-  const computedColor = computed >= 75 ? "#00c880" : computed >= 50 ? "var(--cyan)" : "var(--text-label)";
+  const computedColor = computed >= 75 ? "#0a7a52" : computed >= 50 ? "var(--cyan)" : "var(--text-label)";
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingTop: "4px" }}>
       {AESTHETICS_SUB_DIMS.map(sub => {
         const val = subScores[sub.key] ?? 0;
-        const barColor = val >= 75 ? "#00c880" : val >= 50 ? "var(--cyan)" : "var(--text-label)";
+        const barColor = val >= 75 ? "#0a7a52" : val >= 50 ? "var(--cyan)" : "var(--text-label)";
         return (
           <div key={sub.key} style={{ paddingLeft: "8px", borderLeft: "2px solid var(--border-dim)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "2px" }}>
@@ -37,7 +37,7 @@ function AestheticsSubSliders({ subScores, onChange }) {
           </div>
         );
       })}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 10px", background: "rgba(0,212,255,0.04)", border: "1px solid var(--border-dim)", borderRadius: "4px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 10px", background: "rgba(10,111,136,0.04)", border: "1px solid var(--border-dim)", borderRadius: "4px" }}>
         <span style={{ fontSize: "10px", color: "var(--text-muted)" }}>Computed aesthetics score</span>
         <span style={{ fontFamily: "var(--mono)", fontSize: "14px", fontWeight: 600, color: computedColor }}>{computed}</span>
       </div>
@@ -80,7 +80,14 @@ function TreatmentFlagsSection({ flags, onChange }) {
             }}>
               <input
                 type="checkbox" checked={checked}
-                onChange={e => onChange({ ...flags, [tf.key]: e.target.checked })}
+                onChange={e => {
+                  const on = e.target.checked;
+                  if (tf.key === "other") {
+                    onChange({ ...flags, other: on, ...(on ? {} : { otherNote: "" }) });
+                  } else {
+                    onChange({ ...flags, [tf.key]: on });
+                  }
+                }}
                 style={{ margin: 0, accentColor: tf.severity === "critical" ? "#ff6060" : "#ffaa00" }}
               />
               {tf.label}
@@ -88,6 +95,20 @@ function TreatmentFlagsSection({ flags, onChange }) {
           );
         })}
       </div>
+      {flags.other && (
+        <input
+          type="text"
+          value={flags.otherNote || ""}
+          onChange={e => onChange({ ...flags, otherNote: e.target.value })}
+          placeholder="Describe the treatment or enhancement…"
+          style={{
+            marginTop: "6px", width: "100%", boxSizing: "border-box",
+            fontSize: "11px", padding: "6px 8px",
+            border: "1px solid rgba(255,170,0,0.35)", borderRadius: "4px",
+            background: "rgba(255,170,0,0.04)", color: "var(--text-dim)",
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -126,14 +147,14 @@ function DocumentationSection({ spec, setSpec }) {
         }}>
           Documentation History {count > 0 ? `(${count})` : ""}
         </span>
-        <span style={{ fontSize: "10px", color: "rgba(0,212,255,0.45)" }}>{open ? "▲" : "▼"}</span>
+        <span style={{ fontSize: "10px", color: "rgba(10,111,136,0.45)" }}>{open ? "▲" : "▼"}</span>
       </button>
       {open && (
         <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "16px" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
               <span style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Exhibition History</span>
-              <button onClick={addExhibition} style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: "3px", color: "var(--cyan)", cursor: "pointer" }}>+ Add</button>
+              <button onClick={addExhibition} style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(10,111,136,0.06)", border: "1px solid rgba(10,111,136,0.25)", borderRadius: "3px", color: "var(--cyan)", cursor: "pointer" }}>+ Add</button>
             </div>
             {exhibitions.length === 0 && (
               <div style={{ fontSize: "10px", color: "var(--text-muted)", fontStyle: "italic", padding: "4px 0" }}>No exhibition history — add shows, museum displays, or competitive events.</div>
@@ -149,7 +170,7 @@ function DocumentationSection({ spec, setSpec }) {
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
               <span style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Literature Citations</span>
-              <button onClick={addLit} style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: "3px", color: "var(--cyan)", cursor: "pointer" }}>+ Add</button>
+              <button onClick={addLit} style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(10,111,136,0.06)", border: "1px solid rgba(10,111,136,0.25)", borderRadius: "3px", color: "var(--cyan)", cursor: "pointer" }}>+ Add</button>
             </div>
             {literatureRefs.length === 0 && (
               <div style={{ fontSize: "10px", color: "var(--text-muted)", fontStyle: "italic", padding: "4px 0" }}>No citations — add published references featuring this specimen or its locality.</div>
@@ -169,7 +190,7 @@ function DocumentationSection({ spec, setSpec }) {
 
 function DimRow({ dim, score, weight, onChange, criteriaValues, onCriteriaChange, subScores, onSubScoresChange }) {
   const [open, setOpen] = useState(false);
-  const barColor = score >= 75 ? "#00c880" : score >= 50 ? "var(--cyan)" : "var(--text-label)";
+  const barColor = score >= 75 ? "#0a7a52" : score >= 50 ? "var(--cyan)" : "var(--text-label)";
 
   return (
     <div style={{
@@ -270,7 +291,7 @@ function DimRow({ dim, score, weight, onChange, criteriaValues, onCriteriaChange
             }} />
             <div style={{
               position: "absolute", width: "1px", height: "7px",
-              background: "rgba(0,212,255,0.4)", top: "-2px",
+              background: "rgba(10,111,136,0.4)", top: "-2px",
               left: `${Math.round(weight * 100)}%`,
             }} />
           </div>
@@ -345,7 +366,7 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
                 {quickGrade.label}
               </span>
             </div>
-            <span style={{ fontSize: "10px", color: "rgba(0,212,255,0.55)", letterSpacing: "0.06em" }}>View Score ›</span>
+            <span style={{ fontSize: "10px", color: "rgba(10,111,136,0.55)", letterSpacing: "0.06em" }}>View Score ›</span>
           </button>
         )}
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
@@ -354,20 +375,20 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
         {scoringComp && (
           <div style={{
             padding: "8px 12px", marginBottom: "12px",
-            background: "rgba(0,212,255,0.05)",
-            border: "1px solid rgba(0,212,255,0.2)",
+            background: "rgba(10,111,136,0.05)",
+            border: "1px solid rgba(10,111,136,0.2)",
             borderRadius: "5px",
             display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px",
           }}>
-            <div style={{ fontSize: "11px", color: "rgba(0,212,255,0.8)" }}>
+            <div style={{ fontSize: "11px", color: "rgba(10,111,136,0.8)" }}>
               Scoring comp: <strong>{scoringComp.species}</strong>
               {scoringComp.locality && <span style={{ color: "var(--text-muted)" }}> — {scoringComp.locality}</span>}
             </div>
             <button
               onClick={onSaveToComp}
               style={{
-                padding: "4px 12px", background: "rgba(0,212,255,0.1)",
-                border: "1px solid rgba(0,212,255,0.45)", borderRadius: "4px",
+                padding: "4px 12px", background: "rgba(10,111,136,0.1)",
+                border: "1px solid rgba(10,111,136,0.45)", borderRadius: "4px",
                 color: "var(--cyan)", fontSize: "10px", fontWeight: 700,
                 letterSpacing: "0.06em", cursor: "pointer", whiteSpace: "nowrap",
               }}
@@ -425,7 +446,7 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
           display: "flex", alignItems: "center", gap: "8px",
         }}>
           Sub-score Inputs
-          <span style={{ color: "rgba(0,212,255,0.45)", fontWeight: 400 }}>
+          <span style={{ color: "rgba(10,111,136,0.45)", fontWeight: 400 }}>
             · hover <span style={{ fontSize: "8px" }}>?</span> for context weights
           </span>
         </div>
@@ -466,8 +487,8 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
             style={{
               flex: 1,
               padding: "8px 14px",
-              background: "rgba(0,212,255,0.07)",
-              border: "1px solid rgba(0,212,255,0.35)",
+              background: "rgba(10,111,136,0.07)",
+              border: "1px solid rgba(10,111,136,0.35)",
               borderRadius: "5px",
               color: "var(--cyan)",
               fontSize: "11px",
@@ -491,10 +512,10 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
             style={{
               flex: 1,
               padding: "8px 14px",
-              background: saveFlash ? "rgba(0,200,128,0.12)" : "rgba(0,212,255,0.04)",
-              border: `1px solid ${saveFlash ? "rgba(0,200,128,0.5)" : "var(--border)"}`,
+              background: saveFlash ? "rgba(10,122,82,0.12)" : "rgba(10,111,136,0.04)",
+              border: `1px solid ${saveFlash ? "rgba(10,122,82,0.5)" : "var(--border)"}`,
               borderRadius: "5px",
-              color: saveFlash ? "#00c880" : "var(--text-muted)",
+              color: saveFlash ? "#0a7a52" : "var(--text-muted)",
               fontSize: "11px",
               fontWeight: 600,
               letterSpacing: "0.07em",

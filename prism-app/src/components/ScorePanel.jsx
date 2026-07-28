@@ -231,10 +231,10 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
         {!primaryCtx.passes && (
           <div style={{
             margin: "0 14px 10px", padding: "10px 13px", borderRadius: "5px",
-            border: "1px solid rgba(255,160,40,0.35)",
-            background: "rgba(255,160,40,0.05)",
+            border: "1px solid rgba(166,93,0,0.35)",
+            background: "rgba(166,93,0,0.08)",
           }}>
-            <div style={{ fontSize: "11px", color: "#ffa028", lineHeight: 1.5, marginBottom: "4px" }}>
+            <div style={{ fontSize: "11px", color: "var(--warn)", lineHeight: 1.5, marginBottom: "4px" }}>
               <strong>+{THRESHOLD - primaryCtx.score} pts needed</strong> to reach {GRADE_FOR[primaryCtx.key].label} grade.
             </div>
             {primaryCtx.bottleneck && (
@@ -256,11 +256,11 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
             {inconsistencies.map(w => (
               <div key={w.key} style={{
                 padding: "8px 11px", borderRadius: "4px",
-                border: `1px solid ${w.level === "warn" ? "rgba(255,160,40,0.4)" : "rgba(120,180,255,0.3)"}`,
-                background: w.level === "warn" ? "rgba(255,160,40,0.06)" : "rgba(120,180,255,0.05)",
+                border: `1px solid ${w.level === "warn" ? "rgba(166,93,0,0.4)" : "rgba(10,111,136,0.3)"}`,
+                background: w.level === "warn" ? "rgba(166,93,0,0.08)" : "rgba(10,111,136,0.06)",
                 display: "flex", alignItems: "flex-start", gap: "7px",
               }}>
-                <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: w.level === "warn" ? "#ffa028" : "#6090c8", flexShrink: 0, marginTop: "4px", display: "inline-block" }} />
+                <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: w.level === "warn" ? "var(--warn)" : "var(--cyan)", flexShrink: 0, marginTop: "4px", display: "inline-block" }} />
                 <span style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.5 }}>{w.msg}</span>
               </div>
             ))}
@@ -306,9 +306,9 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
                 <div key={c.key} style={{
                   display: "flex", alignItems: "flex-start", gap: "9px",
                   padding: "9px 12px", marginBottom: "5px", borderRadius: "5px",
-                  background: c.passes ? `${c.grade.color}1e` : isSelected ? "rgba(0,212,255,0.04)" : "transparent",
-                  border: `1px solid ${c.passes ? c.grade.color + "55" : isSelected ? "rgba(0,212,255,0.30)" : "var(--border-dim)"}`,
-                  boxShadow: c.passes ? `inset 3px 0 0 ${c.grade.color}` : isSelected ? "inset 3px 0 0 rgba(0,212,255,0.4)" : "none",
+                  background: c.passes ? `${c.grade.color}1e` : isSelected ? "rgba(10,111,136,0.04)" : "transparent",
+                  border: `1px solid ${c.passes ? c.grade.color + "55" : isSelected ? "rgba(10,111,136,0.30)" : "var(--border-dim)"}`,
+                  boxShadow: c.passes ? `inset 3px 0 0 ${c.grade.color}` : isSelected ? "inset 3px 0 0 rgba(10,111,136,0.4)" : "none",
                   transition: "background 0.25s, border-color 0.25s",
                 }}>
                   <span style={{ fontFamily: "var(--mono)", fontSize: "11px", flexShrink: 0, marginTop: "2px", color: c.passes ? c.grade.color : "var(--text-muted)" }}>
@@ -332,7 +332,7 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
                       </span>
                     </div>
                     <div style={{ height: "4px", background: "var(--border-dim)", borderRadius: "2px", overflow: "hidden" }}>
-                      <div style={{ height: "100%", borderRadius: "2px", transition: "width 0.35s", background: c.passes ? c.grade.color : isSelected ? "rgba(0,212,255,0.35)" : "var(--border)", width: `${c.score}%` }} />
+                      <div style={{ height: "100%", borderRadius: "2px", transition: "width 0.35s", background: c.passes ? c.grade.color : isSelected ? "rgba(10,111,136,0.35)" : "var(--border)", width: `${c.score}%` }} />
                     </div>
                     {openCtxTip === c.key && (
                       <div style={{ marginTop: "7px", padding: "8px 10px", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "4px", fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.55 }}>
@@ -364,7 +364,7 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
                 <div style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.5 }}>
-                  <span style={{ color: "#00c880" }}>↑</span>{" "}
+                  <span style={{ color: "var(--success)" }}>↑</span>{" "}
                   <strong style={{ color: "var(--text)" }}>{narrative.topDim.label}</strong>{" "}
                   is {narrative.strengthAdj} at {narrative.topDim.score} — top driver ({Math.round(narrative.topDim.weight * 100)}% weight).
                 </div>
@@ -395,11 +395,11 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
                       <span style={{ fontSize: "12px", color: "var(--text-dim)" }}>{d.label}</span>
                       <span style={{ fontSize: "11px", fontFamily: "var(--mono)", color: "var(--text)" }}>
                         {v} <span style={{ fontSize: "9px", color: "var(--text-muted)" }}>×{Math.round(w * 100)}%</span>{" "}
-                        <span style={{ color: "rgba(0,212,255,0.8)", fontWeight: 600 }}>= {Math.round(v * w)}</span>
+                        <span style={{ color: "rgba(10,111,136,0.8)", fontWeight: 600 }}>= {Math.round(v * w)}</span>
                       </span>
                     </div>
                     <div style={{ height: "4px", background: "var(--border-dim)", borderRadius: "2px", overflow: "hidden" }}>
-                      <div style={{ height: "100%", borderRadius: "2px", transition: "width 0.35s", background: v >= 70 ? "#00c880" : v >= 50 ? "#3070b0" : "rgba(0,212,255,0.3)", width: `${v}%` }} />
+                      <div style={{ height: "100%", borderRadius: "2px", transition: "width 0.35s", background: v >= 70 ? "var(--success)" : v >= 50 ? "#2a5fd0" : "rgba(10,111,136,0.35)", width: `${v}%` }} />
                     </div>
                   </div>
                 );
@@ -435,10 +435,10 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
                 <div key={d.key} style={{ marginBottom: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
                     <span style={{ fontSize: "12px", color: "var(--text-dim)" }}>{d.label}</span>
-                    <span style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "rgba(0,212,255,0.7)" }}>{Math.round(W[d.key] * 100)}%</span>
+                    <span style={{ fontFamily: "var(--mono)", fontSize: "11px", color: "rgba(10,111,136,0.7)" }}>{Math.round(W[d.key] * 100)}%</span>
                   </div>
                   <div style={{ height: "3px", background: "var(--border-dim)", borderRadius: "2px" }}>
-                    <div style={{ height: "100%", borderRadius: "2px", width: `${Math.round(W[d.key] * 100)}%`, background: "rgba(0,212,255,0.4)", transition: "width 0.35s ease" }} />
+                    <div style={{ height: "100%", borderRadius: "2px", width: `${Math.round(W[d.key] * 100)}%`, background: "rgba(10,111,136,0.4)", transition: "width 0.35s ease" }} />
                   </div>
                 </div>
               ))}

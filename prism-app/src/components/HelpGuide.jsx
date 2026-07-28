@@ -40,7 +40,7 @@ function Step({ n, title, children }) {
   return (
     <div style={{ display: "flex", gap: "12px", marginBottom: "14px" }}>
       <div style={{ width: "22px", height: "22px", borderRadius: "50%", flexShrink: 0,
-        background: "rgba(0,212,255,0.12)", border: "1px solid rgba(0,212,255,0.35)",
+        background: "rgba(10,111,136,0.12)", border: "1px solid rgba(10,111,136,0.35)",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: "var(--mono)", fontSize: "10px", fontWeight: 700, color: "var(--cyan)" }}>
         {n}
@@ -104,7 +104,7 @@ function TabWhy() {
           lower in urgency than human remains, cultural artifacts, or vertebrate specimens — but they
           are held to exactly the same institutional standards.
         </P>
-        <Callout icon="⚖️" color="#ffa028">
+        <Callout icon="⚖️" color="#a65d00">
           PRISM is designed to stay ahead of where museum accession standards are heading — not just
           where they are today. The heavy weight given to provenance and scientific value in the Museum
           context is intentional. That is the direction this field is moving, rapidly.
@@ -183,7 +183,7 @@ function TabWhy() {
           an insurance appraisal. The scoring framework is the same one institutional curators use
           to evaluate donation candidates.
         </Callout>
-        <Callout icon="💰" color="#ffb347">
+        <Callout icon="💰" color="#b87a18">
           <strong>Before selling</strong> — use your PRISM score to justify your asking price.
           Use the Sell/Trade tool to estimate fair market value and identify where your specimen
           sits relative to the market.
@@ -392,7 +392,7 @@ function TabResearch() {
           price compares to the expected price from the regression. The % column tells you immediately
           whether a listing is a potential deal or overpriced.
         </Callout>
-        <Callout icon="🔵" color="#ffb347">
+        <Callout icon="🔵" color="#b87a18">
           <strong>Price Drivers scatter</strong> — X-axis is physical size, Y-axis is price, dot size
           is condition quality. Switch "Color by" to <strong>Vendor</strong> to see if a particular
           dealer consistently prices higher across all sizes.
@@ -463,8 +463,8 @@ export default function HelpGuide({ onClose }) {
           <span style={{ fontSize: "10px", color: "var(--text-muted)", opacity: 0.6 }}>
             PRISM is a research and planning tool — scores are structured estimates, not certified appraisals. Museum acceptance decisions are made by curators on a case-by-case basis.
           </span>
-          <button onClick={onClose} style={{ padding: "5px 16px", background: "rgba(0,212,255,0.08)",
-            border: "1px solid rgba(0,212,255,0.3)", borderRadius: "4px", color: "var(--cyan)",
+          <button onClick={onClose} style={{ padding: "5px 16px", background: "rgba(10,111,136,0.08)",
+            border: "1px solid rgba(10,111,136,0.3)", borderRadius: "4px", color: "var(--cyan)",
             fontSize: "11px", cursor: "pointer" }}>
             Close
           </button>

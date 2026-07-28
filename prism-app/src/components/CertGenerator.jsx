@@ -157,7 +157,7 @@ function ReviewStep({ scores, spec, sizeClass, setSizeClass, allCtxData, primary
               <span style={{ width: "16px", textAlign: "center", fontSize: "13px" }}>{d.icon}</span>
               <span style={{ flex: 1, fontSize: "11px", color: "var(--text-dim)" }}>{d.label}</span>
               <div style={{ width: "100px", height: "5px", background: "var(--bg)", borderRadius: "2px", overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${v}%`, background: v >= 70 ? "#00c880" : v >= 50 ? "#90c0f0" : "#7090a0", borderRadius: "2px" }} />
+                <div style={{ height: "100%", width: `${v}%`, background: v >= 70 ? "#0a7a52" : v >= 50 ? "#90c0f0" : "#7090a0", borderRadius: "2px" }} />
               </div>
               <span style={{ width: "28px", textAlign: "right", fontSize: "11px", fontFamily: "var(--mono)", color: "var(--text)" }}>{v}</span>
             </div>
@@ -172,8 +172,8 @@ function ReviewStep({ scores, spec, sizeClass, setSizeClass, allCtxData, primary
           {SIZE_CLASSES.map(sz => (
             <button key={sz.key} onClick={() => setSizeClass(sz.key)} style={{
               padding: "8px 10px", borderRadius: "5px", textAlign: "left", cursor: "pointer",
-              background: sizeClass === sz.key ? "rgba(0,212,255,0.07)" : "var(--bg-panel)",
-              border: `1px solid ${sizeClass === sz.key ? "rgba(0,212,255,0.4)" : "var(--border)"}`,
+              background: sizeClass === sz.key ? "rgba(10,111,136,0.07)" : "var(--bg-panel)",
+              border: `1px solid ${sizeClass === sz.key ? "rgba(10,111,136,0.4)" : "var(--border)"}`,
               color: sizeClass === sz.key ? "var(--cyan)" : "var(--text-dim)",
             }}>
               <div style={{ fontSize: "11px", fontWeight: 600 }}>{sz.label}</div>
@@ -210,7 +210,7 @@ function DocumentationStep({ scores, spec, docData: initDocData, setDocData, pho
       </div>
 
       {/* Already captured from PRISM */}
-      <div style={{ padding: "10px 12px", background: "rgba(0,212,255,0.04)", border: "1px solid rgba(0,212,255,0.18)", borderRadius: "6px" }}>
+      <div style={{ padding: "10px 12px", background: "rgba(10,111,136,0.04)", border: "1px solid rgba(10,111,136,0.18)", borderRadius: "6px" }}>
         <div style={{ fontSize: "9px", letterSpacing: "0.12em", color: "var(--cyan)", textTransform: "uppercase", marginBottom: "6px" }}>Captured from PRISM Scoring — already on certificate</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px" }}>
           {spec.name && (
@@ -393,8 +393,8 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
             title="Why do I have to attest to these?"
             style={{
               width: "18px", height: "18px", borderRadius: "50%",
-              background: showWhy ? "rgba(0,212,255,0.15)" : "rgba(0,212,255,0.06)",
-              border: "1px solid rgba(0,212,255,0.35)",
+              background: showWhy ? "rgba(10,111,136,0.15)" : "rgba(10,111,136,0.06)",
+              border: "1px solid rgba(10,111,136,0.35)",
               color: "var(--cyan)", fontSize: "11px", fontWeight: 700,
               cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
               flexShrink: 0, lineHeight: 1,
@@ -409,8 +409,8 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
 
       {showWhy && (
         <div style={{
-          padding: "14px 16px", background: "rgba(0,212,255,0.04)",
-          border: "1px solid rgba(0,212,255,0.2)", borderRadius: "6px",
+          padding: "14px 16px", background: "rgba(10,111,136,0.04)",
+          border: "1px solid rgba(10,111,136,0.2)", borderRadius: "6px",
           fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.7,
           display: "flex", flexDirection: "column", gap: "8px",
         }}>
@@ -443,14 +443,14 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
           return (
             <button key={key} onClick={() => toggle(key)} style={{
               display: "flex", alignItems: "flex-start", gap: "10px", padding: "10px 12px",
-              background: checked ? "rgba(0,200,128,0.06)" : "var(--bg-panel)",
-              border: `1px solid ${checked ? "rgba(0,200,128,0.3)" : "var(--border)"}`,
+              background: checked ? "rgba(10,122,82,0.06)" : "var(--bg-panel)",
+              border: `1px solid ${checked ? "rgba(10,122,82,0.3)" : "var(--border)"}`,
               borderRadius: "5px", cursor: "pointer", textAlign: "left",
             }}>
               <div style={{
                 width: "16px", height: "16px", borderRadius: "3px", flexShrink: 0, marginTop: "1px",
-                border: `1px solid ${checked ? "#00c880" : "var(--border)"}`,
-                background: checked ? "#00c880" : "transparent",
+                border: `1px solid ${checked ? "#0a7a52" : "var(--border)"}`,
+                background: checked ? "#0a7a52" : "transparent",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 {checked && <span style={{ color: "white", fontSize: "11px", lineHeight: 1 }}>✓</span>}
@@ -470,8 +470,8 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
           <div key={ca.id} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
             <button onClick={() => toggleCustom(ca.id)} style={{
               width: "16px", height: "16px", borderRadius: "3px", flexShrink: 0,
-              border: `1px solid ${ca.checked ? "#00c880" : "var(--border)"}`,
-              background: ca.checked ? "#00c880" : "transparent",
+              border: `1px solid ${ca.checked ? "#0a7a52" : "var(--border)"}`,
+              background: ca.checked ? "#0a7a52" : "transparent",
               display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
             }}>
               {ca.checked && <span style={{ color: "white", fontSize: "11px", lineHeight: 1 }}>✓</span>}
@@ -487,8 +487,8 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
             style={{ ...textareaStyle, flex: 1, padding: "6px 10px", resize: "none" }} />
           <button onClick={addCustom} disabled={!newText.trim()} style={{
             padding: "6px 12px",
-            background: newText.trim() ? "rgba(0,212,255,0.08)" : "transparent",
-            border: `1px solid ${newText.trim() ? "rgba(0,212,255,0.35)" : "var(--border)"}`,
+            background: newText.trim() ? "rgba(10,111,136,0.08)" : "transparent",
+            border: `1px solid ${newText.trim() ? "rgba(10,111,136,0.35)" : "var(--border)"}`,
             borderRadius: "4px", color: newText.trim() ? "var(--cyan)" : "var(--text-muted)",
             fontSize: "11px", cursor: newText.trim() ? "pointer" : "default", whiteSpace: "nowrap",
           }}>+ Add</button>
@@ -496,7 +496,7 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
       </div>
 
       {!allChecked && (
-        <div style={{ fontSize: "10px", color: "#ffa028", padding: "7px 10px", background: "rgba(255,160,40,0.06)", border: "1px solid rgba(255,160,40,0.2)", borderRadius: "4px" }}>
+        <div style={{ fontSize: "10px", color: "#a65d00", padding: "7px 10px", background: "rgba(166,93,0,0.06)", border: "1px solid rgba(166,93,0,0.2)", borderRadius: "4px" }}>
           All standard attestations must be confirmed to generate the certificate.
         </div>
       )}
@@ -600,7 +600,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
           <button onClick={handleCopyId} style={btnStyle}>
             <Copy size={12} /> {copied ? "Copied!" : "Copy ID"}
           </button>
-          <button onClick={handlePrint} style={{ ...btnStyle, background: "rgba(0,200,128,0.1)", border: "1px solid rgba(0,200,128,0.4)", color: "#00c880" }}>
+          <button onClick={handlePrint} style={{ ...btnStyle, background: "rgba(10,122,82,0.1)", border: "1px solid rgba(10,122,82,0.4)", color: "#0a7a52" }}>
             <FileDown size={12} /> Save as PDF
           </button>
         </div>
@@ -819,9 +819,9 @@ function SpecimenPickerScreen({ initScores, initSpec, records, onSelect, onClose
             <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Current Evaluation</div>
             <button
               onClick={() => onSelect(initScores, initSpec)}
-              style={{ width: "100%", textAlign: "left", padding: "12px 14px", background: "rgba(0,212,255,0.04)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: "7px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.5)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.25)"}
+              style={{ width: "100%", textAlign: "left", padding: "12px 14px", background: "rgba(10,111,136,0.04)", border: "1px solid rgba(10,111,136,0.25)", borderRadius: "7px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.5)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.25)"}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>
@@ -860,7 +860,7 @@ function SpecimenPickerScreen({ initScores, initSpec, records, onSelect, onClose
                       key={rec.id}
                       onClick={() => onSelect(rec.scores, rec.spec)}
                       style={{ width: "100%", textAlign: "left", padding: "10px 14px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.3)"}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.3)"}
                       onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -1018,8 +1018,8 @@ export default function CertGenerator({ scores: initScores, spec: initSpec, reco
           {step < STEPS.length - 1 ? (
             <button onClick={() => setStep(s => s + 1)} disabled={!canAdvance()} style={{
               ...btnStyle,
-              background: canAdvance() ? "rgba(0,212,255,0.08)" : "transparent",
-              border: `1px solid ${canAdvance() ? "rgba(0,212,255,0.4)" : "var(--border)"}`,
+              background: canAdvance() ? "rgba(10,111,136,0.08)" : "transparent",
+              border: `1px solid ${canAdvance() ? "rgba(10,111,136,0.4)" : "var(--border)"}`,
               color: canAdvance() ? "var(--cyan)" : "var(--border)",
               cursor: canAdvance() ? "pointer" : "not-allowed",
             }}>
@@ -1028,15 +1028,15 @@ export default function CertGenerator({ scores: initScores, spec: initSpec, reco
           ) : (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
               {showDoneWarn && !certSaved && (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", color: "#ffa028", background: "rgba(255,160,40,0.07)", border: "1px solid rgba(255,160,40,0.28)", borderRadius: "5px", padding: "6px 10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", color: "#a65d00", background: "rgba(166,93,0,0.07)", border: "1px solid rgba(166,93,0,0.28)", borderRadius: "5px", padding: "6px 10px" }}>
                   <AlertTriangle size={12} style={{ flexShrink: 0 }} />
                   <span>Save as PDF before closing — this certificate cannot be recovered.</span>
-                  <button onClick={onClose} style={{ background: "none", border: "none", color: "#ffa028", textDecoration: "underline", cursor: "pointer", fontSize: "11px", whiteSpace: "nowrap", padding: 0 }}>Close anyway</button>
+                  <button onClick={onClose} style={{ background: "none", border: "none", color: "#a65d00", textDecoration: "underline", cursor: "pointer", fontSize: "11px", whiteSpace: "nowrap", padding: 0 }}>Close anyway</button>
                 </div>
               )}
               <button
                 onClick={() => { if (!certSaved) { setShowDoneWarn(true); } else { onClose(); } }}
-                style={{ ...btnStyle, background: certSaved ? "rgba(0,200,128,0.08)" : "var(--bg-panel)", border: `1px solid ${certSaved ? "rgba(0,200,128,0.35)" : "var(--border)"}`, color: certSaved ? "#00c880" : "var(--text-muted)" }}>
+                style={{ ...btnStyle, background: certSaved ? "rgba(10,122,82,0.08)" : "var(--bg-panel)", border: `1px solid ${certSaved ? "rgba(10,122,82,0.35)" : "var(--border)"}`, color: certSaved ? "#0a7a52" : "var(--text-muted)" }}>
                 Done
               </button>
             </div>

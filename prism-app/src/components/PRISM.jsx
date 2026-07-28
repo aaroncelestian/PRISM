@@ -18,6 +18,9 @@ import { APP_VERSION } from "../version.js";
 import { useComparables } from "../hooks/useComparables.js";
 import ResearchMode from "./ResearchMode.jsx";
 
+// WIP: set true to re-enable Meteorite ID in the Tools menu
+const SHOW_METEORITE_ID = false;
+
 function getPreferredScoringMode() {
   try {
     const saved = localStorage.getItem("prism_scoringMode");
@@ -49,7 +52,7 @@ const DEFAULT_SCORES = {
 };
 
 const DEFAULT_AESTHETICS_SUB = { color: 0, form: 0, presentation: 0, luster: 0 };
-const DEFAULT_TREATMENT_FLAGS = { synthetic: false, crystals_added: false, matrix_altered: false, coated: false, oiled: false, filled: false, lapidary: false, repaired: false, irradiated: false, heated: false };
+const DEFAULT_TREATMENT_FLAGS = { synthetic: false, crystals_added: false, matrix_altered: false, coated: false, oiled: false, filled: false, lapidary: false, repaired: false, irradiated: false, heated: false, other: false, otherNote: "" };
 
 function initAestheticsSub(aestheticsScore) {
   const v = aestheticsScore ?? 0;
@@ -66,7 +69,7 @@ function ToolMenuItems({ items, isMobile }) {
           </div>
         ) : (
           <button key={item.label} onClick={item.action} style={{ display: "block", width: "100%", textAlign: "left", padding: isMobile ? "12px 16px" : "9px 16px", background: "none", border: "none", color: "var(--text-dim)", fontSize: isMobile ? "13px" : "12px", cursor: "pointer", transition: "background 0.1s" }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(0,212,255,0.06)"}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(10,111,136,0.06)"}
             onMouseLeave={e => e.currentTarget.style.background = "none"}>
             {item.label}
           </button>
@@ -110,10 +113,12 @@ export default function PRISM() {
     { type: "header", label: "Reference" },
     { label: "❓ Help / Guide",        action: () => { setShowHelp(true);        setShowTools(false); } },
     { label: "🎓 Buyer Guide",         action: () => { setShowBuyerGuide(true);  setShowTools(false); } },
-    { label: "☄️ Meteorite ID",        action: () => { setShowMeteoriteID(true); setShowTools(false); } },
+    ...(SHOW_METEORITE_ID
+      ? [{ label: "☄️ Meteorite ID", action: () => { setShowMeteoriteID(true); setShowTools(false); } }]
+      : []),
     { type: "header", label: "Valuation" },
     { label: "📤 Quick Summary",       action: () => { setShowExport(true);      setShowTools(false); } },
-    { label: "📜 Formal Certificate",  action: () => { setShowCert(true);        setShowTools(false); } },
+    { label: "📜 PRISM Certificate",  action: () => { setShowCert(true);        setShowTools(false); } },
     { label: "💰 Sell / Trade",        action: () => { setShowPricing(true);     setShowTools(false); } },
     { label: "🏛️ Donate to Museum",   action: () => { setShowDonation(true);    setShowTools(false); } },
   ];
@@ -210,7 +215,7 @@ export default function PRISM() {
     setSciCriteria([false, false, false, false, false]);
     setCulturalCriteria([false, false, false, false, false]);
     setAestheticsSubScores(comp.aestheticsSub || initAestheticsSub(loadedScores.aesthetics));
-    setTreatmentFlags(comp.treatmentFlags || DEFAULT_TREATMENT_FLAGS);
+    setTreatmentFlags({ ...DEFAULT_TREATMENT_FLAGS, ...(comp.treatmentFlags || {}) });
     if (comp.ctx) setCtx(comp.ctx);
     setMode(getPreferredScoringMode());
   };
@@ -264,7 +269,7 @@ export default function PRISM() {
               </span>
             )}
             {spSource && (
-              <span style={{ fontSize: "9px", padding: "2px 8px", borderRadius: "3px", background: "rgba(0,200,128,0.1)", border: "1px solid rgba(0,200,128,0.3)", color: "#00c880", letterSpacing: "0.1em", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: "9px", padding: "2px 8px", borderRadius: "3px", background: "rgba(10,122,82,0.1)", border: "1px solid rgba(10,122,82,0.3)", color: "#0a7a52", letterSpacing: "0.1em", whiteSpace: "nowrap" }}>
                 ↳ {isMobile ? "SP" : `SpecimenPro${spSource.name ? ": " + spSource.name : ""}`}
               </span>
             )}
@@ -288,7 +293,7 @@ export default function PRISM() {
                 }} style={{
                   display: "flex", alignItems: "center", gap: "4px",
                   padding: isMobile ? "5px 8px" : "5px 12px",
-                  background: mode === key ? "rgba(0,212,255,0.1)" : "transparent", border: "none",
+                  background: mode === key ? "rgba(10,111,136,0.1)" : "transparent", border: "none",
                   borderRight: i < arr.length - 1 ? "1px solid var(--border)" : "none",
                   color: mode === key ? "var(--cyan)" : "var(--text-muted)",
                   fontSize: "11px", fontWeight: mode === key ? 600 : 400, letterSpacing: "0.06em", transition: "all 0.15s",
@@ -307,14 +312,14 @@ export default function PRISM() {
               <>
 {mode !== "research" && (
                 <button onClick={() => setShowHistory(true)} title="Collection history"
-                  style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: records.length > 0 ? "rgba(0,212,255,0.06)" : "transparent", border: `1px solid ${records.length > 0 ? "rgba(0,212,255,0.25)" : "var(--border)"}`, borderRadius: "5px", color: records.length > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.2s" }}>
+                  style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: records.length > 0 ? "rgba(10,111,136,0.06)" : "transparent", border: `1px solid ${records.length > 0 ? "rgba(10,111,136,0.25)" : "var(--border)"}`, borderRadius: "5px", color: records.length > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.2s" }}>
                   📚{records.length > 0 ? ` ${records.length}` : ""} History
                 </button>
               )}
                 {/* Tools dropdown */}
                 <div data-tools-menu style={{ position: "relative" }}>
                   <button onClick={() => setShowTools(t => !t)}
-                    style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: showTools ? "rgba(0,212,255,0.08)" : "transparent", border: `1px solid ${showTools ? "rgba(0,212,255,0.35)" : "var(--border)"}`, borderRadius: "5px", color: showTools ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.15s" }}>
+                    style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: showTools ? "rgba(10,111,136,0.08)" : "transparent", border: `1px solid ${showTools ? "rgba(10,111,136,0.35)" : "var(--border)"}`, borderRadius: "5px", color: showTools ? "var(--cyan)" : "var(--text-muted)", fontSize: "11px", letterSpacing: "0.06em", transition: "all 0.15s" }}>
                     🛠️ Tools ▾
                   </button>
                   {showTools && (
@@ -362,19 +367,19 @@ export default function PRISM() {
           <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 14px 8px", overflowX: "auto", borderTop: "1px solid var(--border-dim)", scrollbarWidth: "none" }}>
             <button onClick={handleSaveToCollection}
               style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", whiteSpace: "nowrap", fontSize: "12px",
-                background: savedFlash === "saved" ? "rgba(0,200,128,0.15)" : savedFlash === "already" ? "rgba(170,170,170,0.07)" : "transparent",
-                border: `1px solid ${savedFlash === "saved" ? "rgba(0,200,128,0.5)" : savedFlash === "already" ? "rgba(170,170,170,0.3)" : "var(--border)"}`,
-                color: savedFlash === "saved" ? "#00c880" : "var(--text-muted)" }}>
+                background: savedFlash === "saved" ? "rgba(10,122,82,0.15)" : savedFlash === "already" ? "rgba(170,170,170,0.07)" : "transparent",
+                border: `1px solid ${savedFlash === "saved" ? "rgba(10,122,82,0.5)" : savedFlash === "already" ? "rgba(170,170,170,0.3)" : "var(--border)"}`,
+                color: savedFlash === "saved" ? "#0a7a52" : "var(--text-muted)" }}>
               {savedFlash === "saved" ? "✓" : savedFlash === "already" ? "↩" : "💾"} Save
             </button>
 {mode !== "research" && (
             <button onClick={() => setShowHistory(true)}
-              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: records.length > 0 ? "rgba(0,212,255,0.06)" : "transparent", border: `1px solid ${records.length > 0 ? "rgba(0,212,255,0.25)" : "var(--border)"}`, color: records.length > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
+              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: records.length > 0 ? "rgba(10,111,136,0.06)" : "transparent", border: `1px solid ${records.length > 0 ? "rgba(10,111,136,0.25)" : "var(--border)"}`, color: records.length > 0 ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
               📚{records.length > 0 ? ` ${records.length}` : ""} History
             </button>
             )}
             <button onClick={() => setShowTools(t => !t)}
-              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: showTools ? "rgba(0,212,255,0.08)" : "transparent", border: `1px solid ${showTools ? "rgba(0,212,255,0.35)" : "var(--border)"}`, color: showTools ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
+              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: showTools ? "rgba(10,111,136,0.08)" : "transparent", border: `1px solid ${showTools ? "rgba(10,111,136,0.35)" : "var(--border)"}`, color: showTools ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
               🛠️ Tools ▾
             </button>
           </div>
@@ -429,7 +434,7 @@ export default function PRISM() {
             const culturalCount = Math.round((loadedScores.culturalSignificance ?? 0) / 20);
             setCulturalCriteria(Array(5).fill(false).map((_, i) => i < culturalCount));
             setAestheticsSubScores(rec.aestheticsSub && Object.keys(rec.aestheticsSub).length > 0 ? rec.aestheticsSub : initAestheticsSub(loadedScores.aesthetics));
-            setTreatmentFlags(rec.treatmentFlags || DEFAULT_TREATMENT_FLAGS);
+            setTreatmentFlags({ ...DEFAULT_TREATMENT_FLAGS, ...(rec.treatmentFlags || {}) });
             setScoringCompId(null);
             setSpSource(null);
             setMode(getPreferredScoringMode());

@@ -30,9 +30,9 @@ function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
           <div>
             <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Current Evaluation</div>
             <button onClick={() => onSelect(initScores, initSpec)}
-              style={{ width: "100%", textAlign: "left", padding: "12px 14px", background: "rgba(0,212,255,0.04)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: "7px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.5)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.25)"}>
+              style={{ width: "100%", textAlign: "left", padding: "12px 14px", background: "rgba(10,111,136,0.04)", border: "1px solid rgba(10,111,136,0.25)", borderRadius: "7px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.5)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.25)"}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>{initSpec.name || initSpec.species || "Unnamed Specimen"}</div>
                 {(initSpec.species || initSpec.locality) && <div style={{ fontSize: "10px", color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{[initSpec.species, initSpec.locality].filter(Boolean).join(" \u00b7 ")}</div>}
@@ -56,7 +56,7 @@ function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
                   return (
                     <button key={rec.id} onClick={() => onSelect(rec.scores, rec.spec)}
                       style={{ width: "100%", textAlign: "left", padding: "10px 14px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.3)"}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.3)"}
                       onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>{rec.spec?.name || rec.spec?.species || "Unnamed Specimen"}</div>
@@ -349,9 +349,9 @@ export default function QuickExport({ scores: initScores, spec: initSpec, spSour
           <button onClick={handleExportToSpecimenPro} style={{
             width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
             padding: "10px", borderRadius: "5px", cursor: "pointer", fontSize: "12px", fontWeight: 600,
-            background: spSource ? "rgba(0,200,128,0.1)" : "var(--bg-panel)",
-            border: `1px solid ${spSource ? "rgba(0,200,128,0.45)" : "var(--border)"}`,
-            color: spSource ? "#00c880" : "var(--text-muted)",
+            background: spSource ? "rgba(10,122,82,0.1)" : "var(--bg-panel)",
+            border: `1px solid ${spSource ? "rgba(10,122,82,0.45)" : "var(--border)"}`,
+            color: spSource ? "#0a7a52" : "var(--text-muted)",
           }}>
             Export to SpecimenPro (.prism.json)
           </button>
@@ -366,7 +366,7 @@ export default function QuickExport({ scores: initScores, spec: initSpec, spSour
             </button>
             <button onClick={handlePrint} style={{
               flex: 2, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-              padding: "8px", background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.35)",
+              padding: "8px", background: "rgba(10,111,136,0.08)", border: "1px solid rgba(10,111,136,0.35)",
               borderRadius: "5px", color: "var(--cyan)", fontSize: "11px", fontWeight: 600, cursor: "pointer",
             }}>
               <Printer size={12} /> Print / Save PDF

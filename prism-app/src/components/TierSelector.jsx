@@ -12,8 +12,8 @@ export default function TierSelector({ tiers, value, onChange }) {
               alignItems: "baseline",
               gap: "10px",
               padding: "9px 12px",
-              background: selected ? "rgba(0,212,255,0.08)" : "var(--bg-card)",
-              border: `1px solid ${selected ? "rgba(0,212,255,0.45)" : "var(--border)"}`,
+              background: selected ? "rgba(10,111,136,0.08)" : "var(--bg-card)",
+              border: `1px solid ${selected ? "rgba(10,111,136,0.45)" : "var(--border)"}`,
               borderRadius: "5px",
               textAlign: "left",
               width: "100%",
@@ -37,7 +37,7 @@ export default function TierSelector({ tiers, value, onChange }) {
             </span>
             <span style={{
               fontSize: "11px", lineHeight: 1.45,
-              color: selected ? "rgba(0,212,255,0.85)" : "var(--text-dim)",
+              color: selected ? "rgba(10,111,136,0.85)" : "var(--text-dim)",
             }}>
               {tier.desc}
             </span>

@@ -83,7 +83,7 @@ const SIZE_NUM   = { thumbnail: 1, miniature: 2, small_cab: 3, cabinet: 4, large
 const SIZE_SHORT = { 1: "Thumb", 2: "Mini", 3: "S.Cab", 4: "Cabinet", 5: "L.Cab", 6: "Museum" };
 const COND_RANK  = { pristine: 5, excellent: 4, good: 3, repaired: 2, damaged: 1 };
 const COND_LABEL = { pristine: "Pristine", excellent: "Display", good: "Minor chips", repaired: "Repaired", damaged: "Damaged" };
-const BUBBLE_PALETTE = ["#00d4ff", "#7c5cfc", "#00c880", "#ffb347", "#ff8060", "#a0c4ff", "#f472b6"];
+const BUBBLE_PALETTE = ["#00d4ff", "#7c5cfc", "#0a7a52", "#b87a18", "#ff8060", "#a0c4ff", "#f472b6"];
 const SPECIES_CURVE_COLORS = ["#00d4ff", "#ff6b9d", "#a78bfa", "#fbbf24", "#22d3ee", "#e879f9", "#f97316"];
 
 function BubbleDot({ cx, cy, r, color }) {
@@ -96,8 +96,9 @@ function BubbleDot({ cx, cy, r, color }) {
 }
 
 const CUSTOM_TOOLTIP_STYLE = {
-  background: "#0d1625", border: "1px solid #2a3a50", borderRadius: "6px",
-  padding: "8px 12px", fontSize: "11px", color: "#cdd6e0",
+  background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px",
+  padding: "8px 12px", fontSize: "11px", color: "var(--text)",
+  boxShadow: "0 4px 16px rgba(21,32,43,0.12)",
 };
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -427,9 +428,9 @@ export default function ResearchAnalysis({ comps }) {
           <SectionTitle>Smart Insights</SectionTitle>
           <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
             {insights.map((tip, i) => {
-              const borderColor = tip.level === "warn" ? "rgba(255,160,40,0.35)" : tip.level === "tip" ? "rgba(167,139,250,0.3)" : "rgba(0,212,255,0.2)";
-              const bgColor    = tip.level === "warn" ? "rgba(255,160,40,0.04)"  : tip.level === "tip" ? "rgba(167,139,250,0.05)" : "rgba(0,212,255,0.04)";
-              const dotColor   = tip.level === "warn" ? "#ffa028"               : tip.level === "tip" ? "#a78bfa"               : "var(--cyan)";
+              const borderColor = tip.level === "warn" ? "rgba(166,93,0,0.35)" : tip.level === "tip" ? "rgba(167,139,250,0.3)" : "rgba(10,111,136,0.2)";
+              const bgColor    = tip.level === "warn" ? "rgba(166,93,0,0.04)"  : tip.level === "tip" ? "rgba(167,139,250,0.05)" : "rgba(10,111,136,0.04)";
+              const dotColor   = tip.level === "warn" ? "#a65d00"               : tip.level === "tip" ? "#a78bfa"               : "var(--cyan)";
               return (
                 <div key={i} style={{
                   display: "flex", gap: "10px", padding: "9px 12px",
@@ -469,7 +470,7 @@ export default function ResearchAnalysis({ comps }) {
                 <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>single price</div>
               )}
             </div>
-            <StatCard label="Scored"      value={scored.length}   sub={`of ${comps.length} total`} color={scored.length ? "#00c880" : "var(--text-muted)"} />
+            <StatCard label="Scored"      value={scored.length}   sub={`of ${comps.length} total`} color={scored.length ? "#0a7a52" : "var(--text-muted)"} />
             {avgScore != null && <StatCard label="Avg PRISM" value={avgScore} sub="out of 100" color="#7c5cfc" />}
           </div>
         )}
@@ -485,7 +486,7 @@ export default function ResearchAnalysis({ comps }) {
               <XAxis type="number" dataKey="avg" tickFormatter={fmtK} tick={{ fill: "#6a7f94", fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis type="category" dataKey="species" width={110} tick={{ fill: "#8899aa", fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip
-                cursor={{ fill: "rgba(0,212,255,0.04)" }}
+                cursor={{ fill: "rgba(10,111,136,0.04)" }}
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const d = payload[0].payload;
@@ -501,7 +502,7 @@ export default function ResearchAnalysis({ comps }) {
               />
               <Bar dataKey="avg" radius={[0, 3, 3, 0]}>
                 {bySpecies.map((_, i) => (
-                  <Cell key={i} fill={i === 0 ? "#00d4ff" : `rgba(0,212,255,${0.65 - i * 0.05})`} />
+                  <Cell key={i} fill={i === 0 ? "#00d4ff" : `rgba(10,111,136,${0.65 - i * 0.05})`} />
                 ))}
               </Bar>
             </BarChart>
@@ -519,7 +520,7 @@ export default function ResearchAnalysis({ comps }) {
               <XAxis type="number" dataKey="avg" tickFormatter={fmtK} tick={{ fill: "#6a7f94", fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis type="category" dataKey="short" width={110} tick={{ fill: "#8899aa", fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip
-                cursor={{ fill: "rgba(0,212,255,0.04)" }}
+                cursor={{ fill: "rgba(10,111,136,0.04)" }}
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const d = payload[0].payload;
@@ -553,7 +554,7 @@ export default function ResearchAnalysis({ comps }) {
               <XAxis dataKey="size" tick={{ fill: "#8899aa", fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis tickFormatter={fmtK} tick={{ fill: "#6a7f94", fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip
-                cursor={{ fill: "rgba(0,212,255,0.04)" }}
+                cursor={{ fill: "rgba(10,111,136,0.04)" }}
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
                   const d = payload[0].payload;
@@ -583,7 +584,7 @@ export default function ResearchAnalysis({ comps }) {
               {[["log", "Log"], ["linear", "Linear"]].map(([val, label]) => (
                 <button key={val} onClick={() => setPriceScale(val)} style={{
                   padding: "2px 9px", fontSize: "10px", border: "none",
-                  background: priceScale === val ? "rgba(0,212,255,0.12)" : "transparent",
+                  background: priceScale === val ? "rgba(10,111,136,0.12)" : "transparent",
                   color: priceScale === val ? "var(--cyan)" : "var(--text-muted)",
                   fontWeight: priceScale === val ? 600 : 400,
                   borderRight: val === "log" ? "1px solid var(--border)" : "none",
@@ -594,8 +595,8 @@ export default function ResearchAnalysis({ comps }) {
           </div>
           <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "6px" }}>
             {priceScale === "log"
-              ? <><em>Log scale</em>: straight lines per species confirm exponential growth. <span style={{ color: "#00c880" }}>Below</span> = underpriced · <span style={{ color: "#ff8060" }}>Above</span> = premium.</>
-              : <><em>Linear scale</em>: each curve shows exponential price growth for that species. <span style={{ color: "#00c880" }}>Below</span> = underpriced · <span style={{ color: "#ff8060" }}>Above</span> = premium.</>
+              ? <><em>Log scale</em>: straight lines per species confirm exponential growth. <span style={{ color: "#0a7a52" }}>Below</span> = underpriced · <span style={{ color: "#ff8060" }}>Above</span> = premium.</>
+              : <><em>Linear scale</em>: each curve shows exponential price growth for that species. <span style={{ color: "#0a7a52" }}>Below</span> = underpriced · <span style={{ color: "#ff8060" }}>Above</span> = premium.</>
             }
           </div>
           {hasSpeciesCurves && (
@@ -646,7 +647,7 @@ export default function ResearchAnalysis({ comps }) {
                   ))
                 : regCurve && (
                     <Scatter data={regCurve} fill="transparent"
-                      line={{ stroke: "rgba(0,212,255,0.4)", strokeWidth: 1.5, strokeDasharray: "5 3" }}
+                      line={{ stroke: "rgba(10,111,136,0.4)", strokeWidth: 1.5, strokeDasharray: "5 3" }}
                       shape={() => <g />} isAnimationActive={false}
                     />
                   )
@@ -658,7 +659,7 @@ export default function ResearchAnalysis({ comps }) {
                   const activeReg = spEntry?.reg || reg;
                   const neutralColor = spEntry?.color || "#00d4ff";
                   const expected = activeReg ? Math.exp(activeReg.slope * p.x + activeReg.intercept) : p.y;
-                  const color = p.y < expected * 0.9 ? "#00c880" : p.y > expected * 1.1 ? "#ff8060" : neutralColor;
+                  const color = p.y < expected * 0.9 ? "#0a7a52" : p.y > expected * 1.1 ? "#ff8060" : neutralColor;
                   return <Cell key={i} fill={color} />;
                 })}
               </Scatter>
@@ -685,7 +686,7 @@ export default function ResearchAnalysis({ comps }) {
                 background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px",
                 fontSize: "11px", cursor: "pointer", transition: "border-color 0.15s",
               }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.35)"}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.35)"}
               onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
                 <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   <span style={{ color: "var(--text)", fontWeight: 600 }}>{c.species || "Unknown"}</span>
@@ -699,9 +700,9 @@ export default function ResearchAnalysis({ comps }) {
                     <span style={{
                       padding: "2px 7px", borderRadius: "3px", fontFamily: "var(--mono)", fontWeight: 600,
                       fontSize: "10px",
-                      background: c.pct < -10 ? "rgba(0,200,128,0.12)" : c.pct > 10 ? "rgba(255,128,96,0.12)" : "rgba(170,170,170,0.08)",
-                      color:      c.pct < -10 ? "#00c880"              : c.pct > 10 ? "#ff8060"              : "#8899aa",
-                      border:     `1px solid ${c.pct < -10 ? "rgba(0,200,128,0.3)" : c.pct > 10 ? "rgba(255,128,96,0.3)" : "var(--border)"}`,
+                      background: c.pct < -10 ? "rgba(10,122,82,0.12)" : c.pct > 10 ? "rgba(255,128,96,0.12)" : "rgba(170,170,170,0.08)",
+                      color:      c.pct < -10 ? "#0a7a52"              : c.pct > 10 ? "#ff8060"              : "#8899aa",
+                      border:     `1px solid ${c.pct < -10 ? "rgba(10,122,82,0.3)" : c.pct > 10 ? "rgba(255,128,96,0.3)" : "var(--border)"}`,
                     }}>
                       {c.pct > 0 ? "+" : ""}{c.pct}%
                     </span>
@@ -711,7 +712,7 @@ export default function ResearchAnalysis({ comps }) {
             ))}
           </div>
           <div style={{ display: "flex", gap: "16px", marginTop: "8px", fontSize: "10px", color: "var(--text-muted)" }}>
-            <span><span style={{ color: "#00c880" }}>●</span> &gt;10% below expected — potentially underpriced</span>
+            <span><span style={{ color: "#0a7a52" }}>●</span> &gt;10% below expected — potentially underpriced</span>
             <span><span style={{ color: "#ff8060" }}>●</span> &gt;10% above — priced at a premium</span>
           </div>
         </div>
@@ -728,13 +729,13 @@ export default function ResearchAnalysis({ comps }) {
               predicts for that PRISM score — so Tsumeb Wulfenite is always benchmarked against other
               Wulfenite, never mixed with Rhodochrosite. The % shown is the average deviation across
               all scored specimens from that locality (min. 2 required).
-              <span style={{ color: "#00c880" }}> Green</span> = priced below species expectation ·
+              <span style={{ color: "#0a7a52" }}> Green</span> = priced below species expectation ·
               <span style={{ color: "#ff8060" }}> Orange</span> = locality commands a premium.
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
               {byLocality.map(l => {
                 const pct = l.avgPremium ?? 0;
-                const color = pct > 10 ? "#ff8060" : pct < -10 ? "#00c880" : "#8899aa";
+                const color = pct > 10 ? "#ff8060" : pct < -10 ? "#0a7a52" : "#8899aa";
                 const cappedPct = Math.max(-maxAbs, Math.min(maxAbs, pct));
                 const halfW = (Math.abs(cappedPct) / maxAbs) * 48;
                 const barStyle = cappedPct >= 0
@@ -746,7 +747,7 @@ export default function ResearchAnalysis({ comps }) {
                       <div style={{ fontSize: "11px", color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={l.loc}>{l.loc}</div>
                       <div style={{ display: "flex", gap: "3px", marginTop: "2px", flexWrap: "wrap" }}>
                         {l.species.map(sp => (
-                          <span key={sp} style={{ fontSize: "8px", padding: "0px 4px", background: "rgba(0,212,255,0.07)", border: "1px solid rgba(0,212,255,0.18)", borderRadius: "2px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{sp}</span>
+                          <span key={sp} style={{ fontSize: "8px", padding: "0px 4px", background: "rgba(10,111,136,0.07)", border: "1px solid rgba(10,111,136,0.18)", borderRadius: "2px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{sp}</span>
                         ))}
                       </div>
                     </div>
@@ -784,11 +785,11 @@ export default function ResearchAnalysis({ comps }) {
             <SectionTitle>By Source</SectionTitle>
             <div style={{ display: "flex", gap: "14px", marginBottom: "8px", fontSize: "10px", color: "var(--text-muted)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                <div style={{ width: "18px", height: "8px", background: "rgba(0,212,255,0.5)", borderRadius: "2px" }} />
+                <div style={{ width: "18px", height: "8px", background: "rgba(10,111,136,0.5)", borderRadius: "2px" }} />
                 <span>Avg price (relative)</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                <div style={{ width: "18px", height: "4px", background: "rgba(0,212,255,0.2)", borderRadius: "2px" }} />
+                <div style={{ width: "18px", height: "4px", background: "rgba(10,111,136,0.2)", borderRadius: "2px" }} />
                 <span>Listing share</span>
               </div>
             </div>
@@ -806,8 +807,8 @@ export default function ResearchAnalysis({ comps }) {
                   <div key={s.source} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "11px" }}>
                     <div style={{ width: "110px", flexShrink: 0, color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.source}</div>
                     <div style={{ flex: 1, height: "8px", background: "var(--border-dim)", borderRadius: "4px", overflow: "hidden", position: "relative" }}>
-                      <div style={{ height: "100%", width: `${avgPct}%`, background: "rgba(0,212,255,0.5)", borderRadius: "4px" }} />
-                      <div style={{ position: "absolute", top: "2px", left: 0, height: "4px", width: `${countPct}%`, background: "rgba(0,212,255,0.2)", borderRadius: "2px" }} />
+                      <div style={{ height: "100%", width: `${avgPct}%`, background: "rgba(10,111,136,0.5)", borderRadius: "4px" }} />
+                      <div style={{ position: "absolute", top: "2px", left: 0, height: "4px", width: `${countPct}%`, background: "rgba(10,111,136,0.2)", borderRadius: "2px" }} />
                     </div>
                     <div style={{ width: "28px", textAlign: "right", color: "var(--text-muted)", fontSize: "10px", fontFamily: "var(--mono)" }}>{s.count}</div>
                     <div style={{ width: "56px", textAlign: "right", color: "var(--text-muted)", fontSize: "10px", fontFamily: "var(--mono)" }}>{fmtK(s.avg)}</div>
@@ -828,13 +829,13 @@ export default function ResearchAnalysis({ comps }) {
             <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "10px", lineHeight: 1.6 }}>
               Actual price vs the species-specific regression expectation, grouped by condition.
               Answers whether "pristine" listings truly command more beyond what their PRISM score already predicts.
-              <span style={{ color: "#00c880" }}> Green</span> = priced below expectation ·
+              <span style={{ color: "#0a7a52" }}> Green</span> = priced below expectation ·
               <span style={{ color: "#ff8060" }}> Orange</span> = condition carries a real premium.
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
               {byCondition.map(item => {
                 const pct = item.avgPremium ?? 0;
-                const color = pct > 10 ? "#ff8060" : pct < -10 ? "#00c880" : "#8899aa";
+                const color = pct > 10 ? "#ff8060" : pct < -10 ? "#0a7a52" : "#8899aa";
                 const cappedPct = Math.max(-maxAbs, Math.min(maxAbs, pct));
                 const halfW = (Math.abs(cappedPct) / maxAbs) * 48;
                 const barStyle = cappedPct >= 0
@@ -884,7 +885,7 @@ export default function ResearchAnalysis({ comps }) {
             <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
               {byHeritage.map(item => {
                 const pct = item.avgPremium ?? 0;
-                const color = pct > 10 ? "#ff8060" : pct < -10 ? "#00c880" : "#8899aa";
+                const color = pct > 10 ? "#ff8060" : pct < -10 ? "#0a7a52" : "#8899aa";
                 const cappedPct = Math.max(-maxAbs, Math.min(maxAbs, pct));
                 const halfW = (Math.abs(cappedPct) / maxAbs) * 48;
                 const barStyle = cappedPct >= 0
@@ -934,7 +935,7 @@ export default function ResearchAnalysis({ comps }) {
             borderRadius: "10px", overflow: "hidden", boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
           }}>
             {(selectedComp.photo || selectedComp.photoUrl) && (
-              <div style={{ position: "relative", height: "200px", background: "#0a111c" }}>
+              <div style={{ position: "relative", height: "200px", background: "var(--bg-card)" }}>
                 <img src={selectedComp.photo || selectedComp.photoUrl} alt="specimen"
                   style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                   onError={e => { e.currentTarget.parentElement.style.display = "none"; }} />
@@ -960,9 +961,9 @@ export default function ResearchAnalysis({ comps }) {
                   ["Asking Price", fmt(selectedComp.askingPrice), "var(--cyan)"],
                   ["PRISM Score",  selectedComp.prismScore != null ? `${selectedComp.prismScore} / 100` : "—", "#7c5cfc"],
                   ["Expected",     selectedComp.expectedPrice ? fmt(selectedComp.expectedPrice) : "—",
-                    selectedComp.pct < -10 ? "#00c880" : selectedComp.pct > 10 ? "#ff8060" : "var(--text-dim)"],
+                    selectedComp.pct < -10 ? "#0a7a52" : selectedComp.pct > 10 ? "#ff8060" : "var(--text-dim)"],
                 ].map(([label, value, color]) => (
-                  <div key={label} style={{ background: "rgba(0,0,0,0.25)", border: "1px solid var(--border)", borderRadius: "6px", padding: "8px 10px" }}>
+                  <div key={label} style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "6px", padding: "8px 10px" }}>
                     <div style={{ fontSize: "8px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "3px" }}>{label}</div>
                     <div style={{ fontSize: "14px", fontWeight: 700, fontFamily: "var(--mono)", color }}>{value}</div>
                   </div>
@@ -973,9 +974,9 @@ export default function ResearchAnalysis({ comps }) {
                 <div style={{ marginBottom: "10px" }}>
                   <span style={{
                     padding: "3px 9px", borderRadius: "4px", fontSize: "10px", fontFamily: "var(--mono)", fontWeight: 600,
-                    background: selectedComp.pct < -10 ? "rgba(0,200,128,0.12)" : selectedComp.pct > 10 ? "rgba(255,128,96,0.12)" : "rgba(170,170,170,0.08)",
-                    color:      selectedComp.pct < -10 ? "#00c880"              : selectedComp.pct > 10 ? "#ff8060"              : "#8899aa",
-                    border:     `1px solid ${selectedComp.pct < -10 ? "rgba(0,200,128,0.3)" : selectedComp.pct > 10 ? "rgba(255,128,96,0.3)" : "var(--border)"}`,
+                    background: selectedComp.pct < -10 ? "rgba(10,122,82,0.12)" : selectedComp.pct > 10 ? "rgba(255,128,96,0.12)" : "rgba(170,170,170,0.08)",
+                    color:      selectedComp.pct < -10 ? "#0a7a52"              : selectedComp.pct > 10 ? "#ff8060"              : "#8899aa",
+                    border:     `1px solid ${selectedComp.pct < -10 ? "rgba(10,122,82,0.3)" : selectedComp.pct > 10 ? "rgba(255,128,96,0.3)" : "var(--border)"}`,
                   }}>
                     {selectedComp.pct > 0 ? "+" : ""}{selectedComp.pct}% vs expected
                   </span>
@@ -985,7 +986,7 @@ export default function ResearchAnalysis({ comps }) {
               <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" }}>
                 {selectedComp.sizeClass && <span style={{ fontSize: "10px", padding: "2px 7px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: "3px", color: "var(--text-muted)" }}>{selectedComp.sizeClass.replace("_"," ")}</span>}
                 {selectedComp.condition  && <span style={{ fontSize: "10px", padding: "2px 7px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: "3px", color: "var(--text-muted)" }}>{selectedComp.condition}</span>}
-                {selectedComp.source     && <span style={{ fontSize: "10px", padding: "2px 7px", background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.2)", borderRadius: "3px", color: "var(--cyan)" }}>{selectedComp.source}</span>}
+                {selectedComp.source     && <span style={{ fontSize: "10px", padding: "2px 7px", background: "rgba(10,111,136,0.06)", border: "1px solid rgba(10,111,136,0.2)", borderRadius: "3px", color: "var(--cyan)" }}>{selectedComp.source}</span>}
                 {selectedComp.grade && <span style={{ fontSize: "10px", padding: "2px 7px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: "3px", color: "var(--text-muted)" }}>{selectedComp.grade}</span>}
               </div>
 
@@ -995,7 +996,7 @@ export default function ResearchAnalysis({ comps }) {
 
               {selectedComp.sourceUrl && (
                 <a href={selectedComp.sourceUrl} target="_blank" rel="noopener noreferrer"
-                  style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "rgba(0,212,255,0.7)", textDecoration: "none" }}>
+                  style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "rgba(10,111,136,0.7)", textDecoration: "none" }}>
                   <ExternalLink size={11} /> View original listing
                 </a>
               )}

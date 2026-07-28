@@ -5,15 +5,15 @@
 // status:       "closed" | "active" | "limited"
 
 export const SIGNIFICANCE = {
-  world_class: { label: "World-Class",  color: "#e8b840", desc: "Top 20–30 localities globally. Material commands major premiums." },
-  exceptional: { label: "Exceptional",  color: "#90c0f0", desc: "Well-known among serious collectors. Locality clearly adds value." },
-  notable:     { label: "Notable",      color: "#00c880", desc: "Recognized locality with documented collector interest." },
+  world_class: { label: "World-Class",  color: "#8a6a14", desc: "Top 20–30 localities globally. Material commands major premiums." },
+  exceptional: { label: "Exceptional",  color: "#2f6fa8", desc: "Well-known among serious collectors. Locality clearly adds value." },
+  notable:     { label: "Notable",      color: "#0a7a52", desc: "Recognized locality with documented collector interest." },
 };
 
 export const STATUS_LOC = {
-  closed:  { label: "Closed / Exhausted", color: "#e8b840", icon: "🔒" },
-  limited: { label: "Limited Production", color: "#ffa028", icon: "⚠️" },
-  active:  { label: "Active Mine",        color: "#00c880", icon: "⛏️" },
+  closed:  { label: "Closed / Exhausted", color: "#8a6a14", icon: "🔒" },
+  limited: { label: "Limited Production", color: "#a65d00", icon: "⚠️" },
+  active:  { label: "Active Mine",        color: "#0a7a52", icon: "⛏️" },
 };
 
 export const LOCALITIES = [

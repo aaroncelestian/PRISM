@@ -44,8 +44,8 @@ function AnchorButton({ anchor, selected, onClick }) {
       style={{
         width: "100%",
         padding: "12px 14px",
-        background: selected ? "rgba(0,212,255,0.08)" : "var(--bg-card)",
-        border: `1px solid ${selected ? "rgba(0,212,255,0.45)" : "var(--border)"}`,
+        background: selected ? "rgba(10,111,136,0.08)" : "var(--bg-card)",
+        border: `1px solid ${selected ? "rgba(10,111,136,0.45)" : "var(--border)"}`,
         borderRadius: "6px",
         color: selected ? "var(--cyan)" : "var(--text-dim)",
         textAlign: "left",
@@ -60,7 +60,7 @@ function AnchorButton({ anchor, selected, onClick }) {
         <div style={{ fontSize: "13px", fontWeight: selected ? 600 : 400, marginBottom: "2px" }}>
           {anchor.label}
         </div>
-        <div style={{ fontSize: "11px", color: selected ? "rgba(0,212,255,0.6)" : "var(--text-muted)", lineHeight: 1.4 }}>
+        <div style={{ fontSize: "11px", color: selected ? "rgba(10,111,136,0.6)" : "var(--text-muted)", lineHeight: 1.4 }}>
           {anchor.hint}
         </div>
       </div>
@@ -169,11 +169,11 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
         {scoringComp && (
           <div style={{
             padding: "8px 22px", flexShrink: 0,
-            background: "rgba(0,212,255,0.05)",
-            borderBottom: "1px solid rgba(0,212,255,0.15)",
+            background: "rgba(10,111,136,0.05)",
+            borderBottom: "1px solid rgba(10,111,136,0.15)",
             display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px",
           }}>
-            <div style={{ fontSize: "11px", color: "rgba(0,212,255,0.8)" }}>
+            <div style={{ fontSize: "11px", color: "rgba(10,111,136,0.8)" }}>
               🔬 Scoring comp: <strong>{scoringComp.species}</strong>
               {scoringComp.locality && <span style={{ color: "var(--text-muted)" }}> — {scoringComp.locality}</span>}
             </div>
@@ -195,7 +195,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             {currentDim && (
-              <span style={{ fontSize: "10px", color: "rgba(0,212,255,0.5)", letterSpacing: "0.08em" }}>
+              <span style={{ fontSize: "10px", color: "rgba(10,111,136,0.5)", letterSpacing: "0.08em" }}>
                 {currentDim.icon} {currentDim.label}
               </span>
             )}
@@ -268,7 +268,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                   style={{
                     display: "inline-flex", alignItems: "center", gap: "5px",
                     background: "none", border: "none",
-                    color: "rgba(0,212,255,0.6)", fontSize: "11px", padding: 0,
+                    color: "rgba(10,111,136,0.6)", fontSize: "11px", padding: 0,
                   }}
                 >
                   <HelpCircle size={13} />
@@ -320,7 +320,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                       <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>Fine-tune:</span>
                       <span style={{
                         fontFamily: "var(--mono)", fontSize: "20px", fontWeight: 600,
-                        color: scores[currentDim.key] >= 75 ? "#00c880" : scores[currentDim.key] >= 50 ? "var(--cyan)" : "var(--text-muted)",
+                        color: scores[currentDim.key] >= 75 ? "#0a7a52" : scores[currentDim.key] >= 50 ? "var(--cyan)" : "var(--text-muted)",
                         transition: "color 0.2s",
                       }}>
                         {scores[currentDim.key]}
@@ -365,8 +365,8 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                     onClick={onSwitchToExpert}
                     style={{
                       width: "220px", padding: "11px 20px",
-                      background: "rgba(0,212,255,0.12)",
-                      border: "1px solid rgba(0,212,255,0.5)",
+                      background: "rgba(10,111,136,0.12)",
+                      border: "1px solid rgba(10,111,136,0.5)",
                       borderRadius: "6px", color: "var(--cyan)",
                       fontSize: "12px", fontWeight: 700,
                       letterSpacing: "0.08em", cursor: "pointer",
@@ -381,8 +381,8 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                     onClick={onSaveToComp}
                     style={{
                       width: "220px", padding: "11px 20px",
-                      background: "rgba(0,212,255,0.12)",
-                      border: "1px solid rgba(0,212,255,0.5)",
+                      background: "rgba(10,111,136,0.12)",
+                      border: "1px solid rgba(10,111,136,0.5)",
                       borderRadius: "6px", color: "var(--cyan)",
                       fontSize: "12px", fontWeight: 700,
                       letterSpacing: "0.08em", cursor: "pointer",
@@ -396,8 +396,8 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                   onClick={() => onExport?.()}
                   style={{
                     width: "220px", padding: "11px 20px",
-                    background: "rgba(0,212,255,0.08)",
-                    border: "1px solid rgba(0,212,255,0.4)",
+                    background: "rgba(10,111,136,0.08)",
+                    border: "1px solid rgba(10,111,136,0.4)",
                     borderRadius: "6px", color: "var(--cyan)",
                     fontSize: "12px", fontWeight: 600,
                     letterSpacing: "0.08em", cursor: "pointer",
@@ -414,10 +414,10 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                   }}
                   style={{
                     width: "220px", padding: "11px 20px",
-                    background: saveFlash ? "rgba(0,200,128,0.12)" : "rgba(0,212,255,0.04)",
-                    border: `1px solid ${saveFlash ? "rgba(0,200,128,0.5)" : "var(--border)"}`,
+                    background: saveFlash ? "rgba(10,122,82,0.12)" : "rgba(10,111,136,0.04)",
+                    border: `1px solid ${saveFlash ? "rgba(10,122,82,0.5)" : "var(--border)"}`,
                     borderRadius: "6px",
-                    color: saveFlash ? "#00c880" : "var(--text-muted)",
+                    color: saveFlash ? "#0a7a52" : "var(--text-muted)",
                     fontSize: "12px", fontWeight: 600,
                     letterSpacing: "0.08em", cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
@@ -476,7 +476,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                 {quickGrade.emoji} {quickGrade.label}
               </span>
             </div>
-            <span style={{ fontSize: "10px", color: "rgba(0,212,255,0.55)", letterSpacing: "0.06em" }}>View Score ›</span>
+            <span style={{ fontSize: "10px", color: "rgba(10,111,136,0.55)", letterSpacing: "0.06em" }}>View Score ›</span>
           </button>
         )}
 
@@ -539,8 +539,8 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
               style={{
                 display: "flex", alignItems: "center", gap: "5px",
                 padding: "8px 20px",
-                background: canAdvance ? "rgba(0,212,255,0.09)" : "transparent",
-                border: `1px solid ${canAdvance ? "rgba(0,212,255,0.4)" : "var(--border)"}`,
+                background: canAdvance ? "rgba(10,111,136,0.09)" : "transparent",
+                border: `1px solid ${canAdvance ? "rgba(10,111,136,0.4)" : "var(--border)"}`,
                 borderRadius: "4px",
                 color: canAdvance ? "var(--cyan)" : "var(--text-muted)",
                 fontSize: "12px", fontWeight: 600,

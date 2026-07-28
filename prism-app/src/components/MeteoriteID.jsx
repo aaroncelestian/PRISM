@@ -50,7 +50,7 @@ const CLASS_Q = [
 ];
 
 const METEORITE_TYPES = [
-  { name: "Stony — Chondrite",       freq: "86% of falls", fc: "#00c880",
+  { name: "Stony — Chondrite",       freq: "86% of falls", fc: "#0a7a52",
     desc: "Most abundant class. Rock-like with fusion crust and variable magnetic response. Chondrules visible on fresh break. H, L, LL groups most common.",
     notable: "Allende (Mexico, 1969) · Murchison (Australia, 1969) · Chelyabinsk (Russia, 2013)" },
   { name: "Stony — Achondrite",      freq: "8% of falls",  fc: "#7ab0e0",
@@ -94,7 +94,7 @@ const METEORWRONGS = [
 const LEGAL_NOTES = [
   { zone: "US Federal Public Land", detail: "BLM · USFS · NPS · BOR", status: "restricted", color: "#e06a2a",
     text: "Collecting meteorites on federal land is illegal without authorization under ARPA and federal land regulations (43 CFR 8365). The meteorite is property of the US government. Penalties include significant fines and criminal charges." },
-  { zone: "US Private Land", detail: "With landowner permission", status: "allowed", color: "#00c880",
+  { zone: "US Private Land", detail: "With landowner permission", status: "allowed", color: "#0a7a52",
     text: "A meteorite found on private land belongs to the surface property owner, not the finder — unless they are the same person. Courts have consistently applied this. Obtain written permission before searching and document the find with GPS and photographs." },
   { zone: "US State Land", detail: "Parks, state forests, trust land", status: "variable", color: "#f5c842",
     text: "Regulations vary by state. Some prohibit collection entirely; others allow it under conditions. Contact the relevant state land management agency or state geological survey before collecting." },
@@ -139,7 +139,7 @@ function computeScore(fa, sa) {
 }
 
 function getVerdict(score) {
-  if (score >= 12) return { label: "Strong Candidate",    color: "#00c880", pct: Math.min(100, Math.round(score / 16 * 100)),
+  if (score >= 12) return { label: "Strong Candidate",    color: "#0a7a52", pct: Math.min(100, Math.round(score / 16 * 100)),
     desc: "Multiple key meteorite indicators are present. Professional verification is strongly recommended." };
   if (score >= 6)  return { label: "Possible Candidate",  color: "#f5c842", pct: Math.round(score / 16 * 100),
     desc: "Some characteristics are consistent with a meteorite, but common terrestrial rocks or slag can share these traits. Further testing is advised." };
@@ -162,8 +162,8 @@ function inferType(fa, cq) {
 
 function TriRadio({ value, onChange, yesLabel = "Yes", noLabel = "No" }) {
   const opts = [
-    { v: "yes",    label: yesLabel,  bg: "rgba(0,200,128,0.15)",  border: "rgba(0,200,128,0.5)",  fg: "#00c880" },
-    { v: "unsure", label: "Not sure", bg: "rgba(0,212,255,0.1)",   border: "rgba(0,212,255,0.35)", fg: "var(--cyan)" },
+    { v: "yes",    label: yesLabel,  bg: "rgba(10,122,82,0.15)",  border: "rgba(10,122,82,0.5)",  fg: "#0a7a52" },
+    { v: "unsure", label: "Not sure", bg: "rgba(10,111,136,0.1)",   border: "rgba(10,111,136,0.35)", fg: "var(--cyan)" },
     { v: "no",     label: noLabel,   bg: "rgba(224,48,64,0.12)",  border: "rgba(224,48,64,0.4)",  fg: "#e03040" },
   ];
   return (
@@ -194,14 +194,14 @@ function QuestionCard({ q, answer, onAnswer }) {
 function CheckCard({ q, checked, onToggle }) {
   return (
     <div onClick={onToggle} style={{
-      padding: "12px 16px", background: checked ? "rgba(0,212,255,0.06)" : "var(--bg-card)",
-      border: `1px solid ${checked ? "rgba(0,212,255,0.35)" : "var(--border)"}`,
+      padding: "12px 16px", background: checked ? "rgba(10,111,136,0.06)" : "var(--bg-card)",
+      border: `1px solid ${checked ? "rgba(10,111,136,0.35)" : "var(--border)"}`,
       borderRadius: "6px", marginBottom: "8px", cursor: "pointer", transition: "all 0.15s",
     }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
         <div style={{
           width: "14px", height: "14px", borderRadius: "3px", flexShrink: 0, marginTop: "1px",
-          background: checked ? "rgba(0,212,255,0.25)" : "transparent",
+          background: checked ? "rgba(10,111,136,0.25)" : "transparent",
           border: `1px solid ${checked ? "var(--cyan)" : "var(--border)"}`,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
@@ -218,28 +218,28 @@ function CheckCard({ q, checked, onToggle }) {
 
 function StepBar({ step }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", padding: "10px 20px", gap: "4px", borderBottom: "1px solid var(--border-dim)", background: "rgba(0,0,0,0.1)" }}>
+    <div style={{ display: "flex", alignItems: "center", padding: "10px 20px", gap: "4px", borderBottom: "1px solid var(--border-dim)", background: "var(--bg-card)" }}>
       {STEPS.map((s, i) => (
         <div key={s.id} style={{ display: "flex", alignItems: "center", flex: i < STEPS.length - 1 ? "1 1 auto" : "0 0 auto" }}>
           <div style={{
             display: "flex", alignItems: "center", gap: "5px",
             padding: "3px 8px", borderRadius: "3px", flexShrink: 0,
-            background: i === step ? "rgba(0,212,255,0.1)" : "transparent",
+            background: i === step ? "rgba(10,111,136,0.1)" : "transparent",
           }}>
             <div style={{
               width: "16px", height: "16px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-              background: i < step ? "rgba(0,200,128,0.2)" : i === step ? "rgba(0,212,255,0.2)" : "transparent",
-              border: `1px solid ${i < step ? "rgba(0,200,128,0.4)" : i === step ? "rgba(0,212,255,0.45)" : "var(--border)"}`,
-              fontSize: "8px", color: i < step ? "#00c880" : i === step ? "var(--cyan)" : "var(--text-muted)",
+              background: i < step ? "rgba(10,122,82,0.2)" : i === step ? "rgba(10,111,136,0.2)" : "transparent",
+              border: `1px solid ${i < step ? "rgba(10,122,82,0.4)" : i === step ? "rgba(10,111,136,0.45)" : "var(--border)"}`,
+              fontSize: "8px", color: i < step ? "#0a7a52" : i === step ? "var(--cyan)" : "var(--text-muted)",
             }}>
               {i < step ? "✓" : i + 1}
             </div>
-            <span style={{ fontSize: "9px", letterSpacing: "0.07em", color: i === step ? "var(--cyan)" : i < step ? "#00c880" : "var(--text-muted)", fontWeight: i === step ? 600 : 400, whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: "9px", letterSpacing: "0.07em", color: i === step ? "var(--cyan)" : i < step ? "#0a7a52" : "var(--text-muted)", fontWeight: i === step ? 600 : 400, whiteSpace: "nowrap" }}>
               {s.label}
             </span>
           </div>
           {i < STEPS.length - 1 && (
-            <div style={{ flex: 1, height: "1px", background: i < step ? "rgba(0,200,128,0.25)" : "var(--border-dim)", margin: "0 4px" }} />
+            <div style={{ flex: 1, height: "1px", background: i < step ? "rgba(10,122,82,0.25)" : "var(--border-dim)", margin: "0 4px" }} />
           )}
         </div>
       ))}
@@ -371,7 +371,7 @@ function StepVerdict({ score, fa, cq }) {
 
       {/* Likely type */}
       {type && (
-        <div style={{ padding: "12px 16px", background: "rgba(0,212,255,0.05)", border: "1px solid rgba(0,212,255,0.2)", borderRadius: "6px", marginBottom: "14px" }}>
+        <div style={{ padding: "12px 16px", background: "rgba(10,111,136,0.05)", border: "1px solid rgba(10,111,136,0.2)", borderRadius: "6px", marginBottom: "14px" }}>
           <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "5px" }}>Most likely type if confirmed</div>
           <div style={{ fontSize: "13px", color: "var(--cyan)", fontWeight: 600, marginBottom: "4px" }}>{type.name}</div>
           <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.5 }}>{type.desc}</div>
@@ -466,7 +466,7 @@ export default function MeteoriteID({ onClose }) {
           {step < STEPS.length - 1 ? (
             <button onClick={() => setStep(s => s + 1)} style={{
               display: "flex", alignItems: "center", gap: "5px", padding: "6px 14px",
-              background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.35)", borderRadius: "5px",
+              background: "rgba(10,111,136,0.08)", border: "1px solid rgba(10,111,136,0.35)", borderRadius: "5px",
               color: "var(--cyan)", fontSize: "11px", cursor: "pointer", letterSpacing: "0.06em",
             }}>
               Next <ChevronRight size={13} />
@@ -474,8 +474,8 @@ export default function MeteoriteID({ onClose }) {
           ) : (
             <button onClick={onClose} style={{
               display: "flex", alignItems: "center", gap: "5px", padding: "6px 14px",
-              background: "rgba(0,200,128,0.1)", border: "1px solid rgba(0,200,128,0.35)", borderRadius: "5px",
-              color: "#00c880", fontSize: "11px", cursor: "pointer", letterSpacing: "0.06em",
+              background: "rgba(10,122,82,0.1)", border: "1px solid rgba(10,122,82,0.35)", borderRadius: "5px",
+              color: "#0a7a52", fontSize: "11px", cursor: "pointer", letterSpacing: "0.06em",
             }}>
               Done
             </button>

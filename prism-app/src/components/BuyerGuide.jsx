@@ -10,25 +10,25 @@ function CrystalSVG({ level }) {
   // level: "gem" | "fine" | "good" | "rough" | "damaged"
   const configs = {
     gem: {
-      edgeColor: "#00d4ff", bodyFill: "#0d2535", termFill: "#122d40",
+      edgeColor: "#0a6f88", bodyFill: "#d8eef4", termFill: "#c5e4ed",
       lustreOpacity: 0.55, chips: [], faceLuster: true, termComplete: true, roughRight: false,
     },
     fine: {
-      edgeColor: "#90c0f0", bodyFill: "#0d2030", termFill: "#112838",
+      edgeColor: "#2f6fa8", bodyFill: "#dce8f4", termFill: "#c8dceb",
       lustreOpacity: 0.35, chips: [{ x: 68, y: 70, size: 7 }], faceLuster: true, termComplete: true, roughRight: false,
     },
     good: {
-      edgeColor: "#00c880", bodyFill: "#0d201a", termFill: "#102518",
+      edgeColor: "#0a7a52", bodyFill: "#d8efe6", termFill: "#c5e6d8",
       lustreOpacity: 0.18, chips: [{ x: 20, y: 105, size: 8 }, { x: 68, y: 65, size: 7 }, { x: 60, y: 148, size: 6 }],
       faceLuster: false, termComplete: true, roughRight: false,
     },
     rough: {
-      edgeColor: "#b0a060", bodyFill: "#201c08", termFill: "#251f06",
+      edgeColor: "#8a7a30", bodyFill: "#efe8d0", termFill: "#e6dcb8",
       lustreOpacity: 0, chips: [{ x: 20, y: 95, size: 10 }, { x: 65, y: 70, size: 9 }, { x: 18, y: 140, size: 10 }, { x: 62, y: 140, size: 8 }],
       faceLuster: false, termComplete: false, roughRight: true,
     },
     damaged: {
-      edgeColor: "#b05050", bodyFill: "#201010", termFill: "#251212",
+      edgeColor: "#a04040", bodyFill: "#f0d8d8", termFill: "#e8c8c8",
       lustreOpacity: 0, chips: [], faceLuster: false, termComplete: false, roughRight: false, majorBreak: true,
     },
   };
@@ -128,7 +128,7 @@ const CRYSTAL_LEVELS = [
   { key: "fine",    score: "65–84",  label: "Very Fine",        color: "#90c0f0",
     traits: ["One or two trivial chips on secondary edges", "Main display face fully intact", "Crystal faces largely lustrous", "Termination complete"],
     redFlags: ["'Minor chip' that actually cleaves through a main face", "Contact along the display face called 'trivial'"] },
-  { key: "good",    score: "40–64",  label: "Good / Collector", color: "#00c880",
+  { key: "good",    score: "40–64",  label: "Good / Collector", color: "#0a7a52",
     traits: ["Several chips, visible without loupe", "Some faces etched or frosted", "Termination may be slightly off-center or worn", "Still clearly identifiable crystal form"],
     redFlags: ["Described as 'fine' when chips are obvious to the naked eye", "Random frosting across all surfaces called 'natural etching' — true etching follows crystallographic patterns, not random wear"] },
   { key: "rough",   score: "20–39",  label: "Rough / Study",    color: "#b0a060",
@@ -227,7 +227,7 @@ const PROVENANCE_GUIDE = [
     has: ["Original collection label with collector name", "Date and specific locality", "Acquisition receipt or auction catalog"],
     ask: ["Who was the original collector?", "Is the collection label present?", "Was this in an auction? Can you show the catalog?"],
     redFlag: "Verbal attribution only — 'this was from the [Famous] collection' with no label" },
-  { tier: "T3", label: "Dealer with Documentation", color: "#00c880",
+  { tier: "T3", label: "Dealer with Documentation", color: "#0a7a52",
     has: ["Dealer label with locality", "Approximate acquisition date", "Invoice or receipt"],
     ask: ["Can I have a signed receipt with full locality details?", "How long have you had this piece?"],
     redFlag: "'I've had it for years but I don't have paperwork'" },
@@ -558,14 +558,14 @@ export default function BuyerGuide({ onClose }) {
 
               {/* Natural Character section */}
               <div style={{ marginTop: "6px" }}>
-                <div style={{ padding: "10px 14px", background: "rgba(0,200,128,0.06)", border: "1px solid rgba(0,200,128,0.25)", borderRadius: "6px", marginBottom: "12px" }}>
-                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#00c880", marginBottom: "5px" }}>Natural Character vs. Mechanical Damage</div>
+                <div style={{ padding: "10px 14px", background: "rgba(10,122,82,0.06)", border: "1px solid rgba(10,122,82,0.25)", borderRadius: "6px", marginBottom: "12px" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#0a7a52", marginBottom: "5px" }}>Natural Character vs. Mechanical Damage</div>
                   <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6 }}>
                     The most important skill in specimen evaluation is distinguishing <strong style={{ color: "var(--text)" }}>natural geological processes</strong> from <strong style={{ color: "#ff8080" }}>physical damage</strong>. Natural features follow <em>crystallographic rules</em> — they are symmetric, orderly, and repeat across the specimen. Damage is random, sharp-edged, and appears on corners and edges.
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "10px" }}>
-                    <div style={{ padding: "8px 10px", background: "rgba(0,200,128,0.07)", borderRadius: "4px", border: "1px solid rgba(0,200,128,0.2)" }}>
-                      <div style={{ fontSize: "10px", fontWeight: 700, color: "#00c880", marginBottom: "5px" }}>✓ Natural Features</div>
+                    <div style={{ padding: "8px 10px", background: "rgba(10,122,82,0.07)", borderRadius: "4px", border: "1px solid rgba(10,122,82,0.2)" }}>
+                      <div style={{ fontSize: "10px", fontWeight: 700, color: "#0a7a52", marginBottom: "5px" }}>✓ Natural Features</div>
                       {["Follows crystal symmetry","Consistent across the specimen","Found on crystal faces (not edges)","Seen across whole suites from same locality","Cannot be replicated in a lab accidentally"].map(t => (
                         <div key={t} style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.55 }}>· {t}</div>
                       ))}
@@ -588,7 +588,7 @@ export default function BuyerGuide({ onClose }) {
                         <span style={{ fontSize: "12px", fontWeight: 700, color: feat.color }}>{feat.label}</span>
                         <span style={{ marginLeft: "8px", fontSize: "9px", color: "var(--text-muted)", fontStyle: "italic" }}>{feat.examples}</span>
                       </div>
-                      <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "rgba(0,200,128,0.1)", border: "1px solid rgba(0,200,128,0.25)", color: "#00c880" }}>NATURAL</span>
+                      <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "3px", background: "rgba(10,122,82,0.1)", border: "1px solid rgba(10,122,82,0.25)", color: "#0a7a52" }}>NATURAL</span>
                     </div>
                     <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: "6px" }}>
                       <strong style={{ color: "var(--text-muted)", fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Looks like: </strong>{feat.looks}
@@ -640,7 +640,7 @@ export default function BuyerGuide({ onClose }) {
                   { key: "all",         label: "All" },
                 ].map(({ key, label }) => {
                   const active = localitySigFilter === key;
-                  const col = key === "world_class" ? "#e8b840" : key === "exceptional" ? "#90c0f0" : key === "notable" ? "#00c880" : "var(--text-muted)";
+                  const col = key === "world_class" ? "#8a6a14" : key === "exceptional" ? "#2f6fa8" : key === "notable" ? "#0a7a52" : "var(--text-muted)";
                   return (
                     <button key={key} onClick={() => setLocalitySigFilter(key)} style={{
                       padding: "4px 10px", borderRadius: "4px", fontSize: "10px", cursor: "pointer",
@@ -735,7 +735,7 @@ export default function BuyerGuide({ onClose }) {
                 />
               </div>
 
-              <div style={{ padding: "8px 12px", background: "rgba(255,160,40,0.06)", border: "1px solid rgba(255,160,40,0.25)", borderRadius: "5px", fontSize: "11px", color: "#ffa028", lineHeight: 1.5 }}>
+              <div style={{ padding: "8px 12px", background: "rgba(166,93,0,0.06)", border: "1px solid rgba(166,93,0,0.25)", borderRadius: "5px", fontSize: "11px", color: "#a65d00", lineHeight: 1.5 }}>
                 ⚠️ The species below should score <strong>10–30</strong> on Species Rarity regardless of how impressive the crystal is. A gem-quality fluorite cube is a beautiful crystal — but fluorite is not a rare species.
               </div>
 
@@ -806,7 +806,7 @@ export default function BuyerGuide({ onClose }) {
                 </div>
               ))}
 
-              <div style={{ padding: "10px 12px", background: "rgba(0,200,128,0.05)", border: "1px solid rgba(0,200,128,0.2)", borderRadius: "5px", fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6 }}>
+              <div style={{ padding: "10px 12px", background: "rgba(10,122,82,0.05)", border: "1px solid rgba(10,122,82,0.2)", borderRadius: "5px", fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6 }}>
                 💡 <strong style={{ color: "var(--text)" }}>The golden rule:</strong> A legitimate dealer will always have a paper receipt, a label, or a collection record. If they can't produce any documentation and the price reflects documented provenance, walk away or price it at T4–T5 levels.
               </div>
             </>
@@ -845,7 +845,7 @@ export default function BuyerGuide({ onClose }) {
                             <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>{r.text}</div>
                           </div>
                         ))}
-                        <div style={{ fontSize: "10px", color: "var(--cyan)", lineHeight: 1.5, padding: "7px 10px", background: "rgba(0,212,255,0.05)", borderRadius: "4px", border: "1px solid rgba(0,212,255,0.15)", marginTop: "4px" }}>
+                        <div style={{ fontSize: "10px", color: "var(--cyan)", lineHeight: 1.5, padding: "7px 10px", background: "rgba(10,111,136,0.05)", borderRadius: "4px", border: "1px solid rgba(10,111,136,0.15)", marginTop: "4px" }}>
                           💡 {factor.tip}
                         </div>
                       </div>
@@ -927,7 +927,7 @@ export default function BuyerGuide({ onClose }) {
                     </button>
                     {open && (
                       <div style={{ padding: "0 15px 14px" }}>
-                        <div style={{ fontSize: "10px", color: "var(--cyan)", lineHeight: 1.5, marginBottom: "10px", padding: "6px 10px", background: "rgba(0,212,255,0.05)", borderRadius: "4px", border: "1px solid rgba(0,212,255,0.15)" }}>
+                        <div style={{ fontSize: "10px", color: "var(--cyan)", lineHeight: 1.5, marginBottom: "10px", padding: "6px 10px", background: "rgba(10,111,136,0.05)", borderRadius: "4px", border: "1px solid rgba(10,111,136,0.15)" }}>
                           💡 {dim.note}
                         </div>
                         {dim.ranges.map((r, i) => (
@@ -952,7 +952,7 @@ export default function BuyerGuide({ onClose }) {
                 );
               })}
 
-              <div style={{ padding: "10px 12px", background: "rgba(255,160,40,0.06)", border: "1px solid rgba(255,160,40,0.2)", borderRadius: "5px", fontSize: "11px", color: "#ffa028", lineHeight: 1.6 }}>
+              <div style={{ padding: "10px 12px", background: "rgba(166,93,0,0.06)", border: "1px solid rgba(166,93,0,0.2)", borderRadius: "5px", fontSize: "11px", color: "#a65d00", lineHeight: 1.6 }}>
                 ⚠️ <strong style={{ color: "var(--text)" }}>Calibration principle:</strong> Two evaluators scoring the same specimen should arrive within 10 points of each other on each dimension. If you’re frequently using the full 0–100 range, you’re likely over-scoring extremes. Most real specimens land in the 30–70 range per dimension.
               </div>
             </>

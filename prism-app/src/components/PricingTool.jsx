@@ -25,9 +25,9 @@ function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
           <div>
             <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Current Evaluation</div>
             <button onClick={() => onSelect(initScores, initSpec)}
-              style={{ width: "100%", textAlign: "left", padding: "12px 14px", background: "rgba(0,212,255,0.04)", border: "1px solid rgba(0,212,255,0.25)", borderRadius: "7px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.5)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.25)"}>
+              style={{ width: "100%", textAlign: "left", padding: "12px 14px", background: "rgba(10,111,136,0.04)", border: "1px solid rgba(10,111,136,0.25)", borderRadius: "7px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.5)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.25)"}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>{initSpec.name || initSpec.species || "Unnamed Specimen"}</div>
                 {(initSpec.species || initSpec.locality) && <div style={{ fontSize: "10px", color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{[initSpec.species, initSpec.locality].filter(Boolean).join(" \u00b7 ")}</div>}
@@ -51,7 +51,7 @@ function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
                   return (
                     <button key={rec.id} onClick={() => onSelect(rec.scores, rec.spec)}
                       style={{ width: "100%", textAlign: "left", padding: "10px 14px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(0,212,255,0.3)"}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.3)"}
                       onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>{rec.spec?.name || rec.spec?.species || "Unnamed Specimen"}</div>
@@ -222,12 +222,12 @@ function getGrade(score) {
 
 // Market position tiers — where this specimen sits among comparable size-class pieces
 const POSITION_TIERS = [
-  { min: 88, label: "Trophy",          color: "#ff9040", bar: "linear-gradient(90deg, #ff9040, #e8b840)", desc: "Among the finest examples of this size class on the market. Exceptional by any measure." },
-  { min: 72, label: "Investment Grade",color: "#e8b840", bar: "linear-gradient(90deg, #e8b840, #d4c060)", desc: "Top quartile for this size class. Serious collectors and institutions take notice." },
-  { min: 55, label: "Premium",         color: "#00c880", bar: "linear-gradient(90deg, #00c880, #40d0a0)", desc: "Well above average. Strong collector demand; commands above-market pricing for its size." },
-  { min: 38, label: "Above Average",   color: "#90c0f0", bar: "linear-gradient(90deg, #90c0f0, #70a0d0)", desc: "Better than most in this size class. Broad appeal at fair market pricing." },
-  { min: 22, label: "Standard",        color: "#7090a0", bar: "linear-gradient(90deg, #7090a0, #607080)", desc: "Typical for this size class. Moves at market pricing with a reasonable buyer pool." },
-  { min:  0, label: "Entry / Bulk",    color: "#506070", bar: "linear-gradient(90deg, #506070, #405060)", desc: "Below average for this size class. Competes on price rather than quality." },
+  { min: 88, label: "Trophy",          color: "#c45a18", bar: "linear-gradient(90deg, #c45a18, #a88618)", desc: "Among the finest examples of this size class on the market. Exceptional by any measure." },
+  { min: 72, label: "Investment Grade",color: "#8a6a18", bar: "linear-gradient(90deg, #8a6a18, #7a7018)", desc: "Top quartile for this size class. Serious collectors and institutions take notice." },
+  { min: 55, label: "Premium",         color: "#0a7a52", bar: "linear-gradient(90deg, #0a7a52, #1a8a62)", desc: "Well above average. Strong collector demand; commands above-market pricing for its size." },
+  { min: 38, label: "Above Average",   color: "#2f6fa8", bar: "linear-gradient(90deg, #2f6fa8, #3a7ab8)", desc: "Better than most in this size class. Broad appeal at fair market pricing." },
+  { min: 22, label: "Standard",        color: "#4a6a7a", bar: "linear-gradient(90deg, #4a6a7a, #3a5a6a)", desc: "Typical for this size class. Moves at market pricing with a reasonable buyer pool." },
+  { min:  0, label: "Entry / Bulk",    color: "#4a4a58", bar: "linear-gradient(90deg, #4a4a58, #3a3a48)", desc: "Below average for this size class. Competes on price rather than quality." },
 ];
 
 
@@ -256,15 +256,15 @@ function SelectGrid({ items, selected, onSelect, cols = 2 }) {
         return (
           <button key={item.key} onClick={() => onSelect(item.key)} style={{
             padding: "10px 12px", borderRadius: "6px", textAlign: "left",
-            background: sel ? "rgba(0,212,255,0.07)" : "var(--bg-card)",
-            border: `1px solid ${sel ? "rgba(0,212,255,0.4)" : "var(--border)"}`,
+            background: sel ? "rgba(10,111,136,0.07)" : "var(--bg-card)",
+            border: `1px solid ${sel ? "rgba(10,111,136,0.4)" : "var(--border)"}`,
             color: sel ? "var(--cyan)" : "var(--text-dim)",
             transition: "all 0.15s",
           }}>
             {item.icon && <div style={{ fontSize: "18px", marginBottom: "4px" }}>{item.icon}</div>}
             <div style={{ fontSize: "12px", fontWeight: sel ? 600 : 500, marginBottom: "2px" }}>{item.label}</div>
-            {item.range && <div style={{ fontSize: "10px", color: sel ? "rgba(0,212,255,0.7)" : "var(--text-muted)" }}>{item.range}</div>}
-            {item.fees  && <div style={{ fontSize: "10px", color: sel ? "rgba(0,212,255,0.7)" : "var(--text-muted)" }}>Fees: {item.fees}</div>}
+            {item.range && <div style={{ fontSize: "10px", color: sel ? "rgba(10,111,136,0.7)" : "var(--text-muted)" }}>{item.range}</div>}
+            {item.fees  && <div style={{ fontSize: "10px", color: sel ? "rgba(10,111,136,0.7)" : "var(--text-muted)" }}>Fees: {item.fees}</div>}
           </button>
         );
       })}
@@ -328,8 +328,8 @@ function ConditionStep({ condition, setCondition }) {
             <button key={c.key} onClick={() => setCondition(c.key)} style={{
               display: "flex", alignItems: "center", gap: "12px",
               padding: "10px 14px", borderRadius: "6px", textAlign: "left",
-              background: sel ? "rgba(0,212,255,0.06)" : "var(--bg-card)",
-              border: `1px solid ${sel ? "rgba(0,212,255,0.4)" : "var(--border)"}`,
+              background: sel ? "rgba(10,111,136,0.06)" : "var(--bg-card)",
+              border: `1px solid ${sel ? "rgba(10,111,136,0.4)" : "var(--border)"}`,
               transition: "all 0.15s",
             }}>
               <span style={{ fontSize: "18px", flexShrink: 0 }}>{c.icon}</span>
@@ -340,7 +340,7 @@ function ConditionStep({ condition, setCondition }) {
                     {Math.round(c.mult * 100)}% of pristine value
                   </span>
                 </div>
-                <div style={{ fontSize: "10px", color: sel ? "rgba(0,212,255,0.6)" : "var(--text-muted)", lineHeight: 1.4 }}>{c.desc}</div>
+                <div style={{ fontSize: "10px", color: sel ? "rgba(10,111,136,0.6)" : "var(--text-muted)", lineHeight: 1.4 }}>{c.desc}</div>
               </div>
             </button>
           );
@@ -348,7 +348,7 @@ function ConditionStep({ condition, setCondition }) {
       </div>
 
       {condition === "repaired" && (
-        <div style={{ padding: "10px 12px", background: "rgba(255,160,40,0.08)", border: "1px solid rgba(255,160,40,0.3)", borderRadius: "5px", fontSize: "11px", color: "#ffa028", lineHeight: 1.6 }}>
+        <div style={{ padding: "10px 12px", background: "rgba(166,93,0,0.08)", border: "1px solid rgba(166,93,0,0.3)", borderRadius: "5px", fontSize: "11px", color: "#a65d00", lineHeight: 1.6 }}>
           ⚠️ <strong>Disclosure required.</strong> Repair or restoration must be disclosed in every listing and in-person sale.
           Failure to disclose is considered fraudulent misrepresentation in the mineral collector community
           and can result in forced returns, reputation damage, and legal liability.
@@ -377,8 +377,8 @@ function ChannelStep({ channel, setChannel }) {
             <button key={c.key} onClick={() => setChannel(c.key)} style={{
               display: "flex", alignItems: "flex-start", gap: "12px",
               padding: "10px 14px", borderRadius: "6px", textAlign: "left",
-              background: isSel ? "rgba(0,212,255,0.06)" : "var(--bg-card)",
-              border: `1px solid ${isSel ? "rgba(0,212,255,0.4)" : "var(--border)"}`,
+              background: isSel ? "rgba(10,111,136,0.06)" : "var(--bg-card)",
+              border: `1px solid ${isSel ? "rgba(10,111,136,0.4)" : "var(--border)"}`,
               transition: "all 0.15s",
             }}>
               <span style={{ fontSize: "18px", flexShrink: 0, marginTop: "1px" }}>{c.icon}</span>
@@ -387,10 +387,10 @@ function ChannelStep({ channel, setChannel }) {
                   <span style={{ fontSize: "12px", fontWeight: isSel ? 600 : 500, color: isSel ? "var(--cyan)" : "var(--text)" }}>{c.label}</span>
                   <span style={{ fontSize: "10px", color: "var(--text-muted)", fontFamily: "var(--mono)" }}>{c.time}</span>
                 </div>
-                <div style={{ fontSize: "10px", color: isSel ? "rgba(0,212,255,0.6)" : "var(--text-muted)", lineHeight: 1.4 }}>
+                <div style={{ fontSize: "10px", color: isSel ? "rgba(10,111,136,0.6)" : "var(--text-muted)", lineHeight: 1.4 }}>
                   {c.desc}
                 </div>
-                <div style={{ marginTop: "3px", fontSize: "9px", color: isSel ? "rgba(0,212,255,0.5)" : "var(--border)", letterSpacing: "0.08em" }}>
+                <div style={{ marginTop: "3px", fontSize: "9px", color: isSel ? "rgba(10,111,136,0.5)" : "var(--border)", letterSpacing: "0.08em" }}>
                   FEES: {c.fees}
                 </div>
               </div>
@@ -578,14 +578,14 @@ function AdvertisingStep({ score, sizeClass, condition, channel, scores, spec })
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px" }}>
         <button
           onClick={copyText}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "9px 12px", borderRadius: "5px", fontSize: "11px", fontWeight: 600, cursor: "pointer", background: copied ? "rgba(0,200,128,0.09)" : "rgba(0,212,255,0.07)", border: `1px solid ${copied ? "rgba(0,200,128,0.4)" : "rgba(0,212,255,0.3)"}`, color: copied ? "#00c880" : "var(--cyan)", transition: "all 0.2s" }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "9px 12px", borderRadius: "5px", fontSize: "11px", fontWeight: 600, cursor: "pointer", background: copied ? "rgba(10,122,82,0.09)" : "rgba(10,111,136,0.07)", border: `1px solid ${copied ? "rgba(10,122,82,0.4)" : "rgba(10,111,136,0.3)"}`, color: copied ? "#0a7a52" : "var(--cyan)", transition: "all 0.2s" }}
         >
           {copied ? <CheckCheck size={12} /> : <Copy size={12} />}
           {copied ? "Copied!" : "Copy Text"}
         </button>
         <button
           onClick={printDoc}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "9px 12px", borderRadius: "5px", fontSize: "11px", fontWeight: 600, cursor: "pointer", background: "rgba(0,212,255,0.07)", border: "1px solid rgba(0,212,255,0.3)", color: "var(--cyan)" }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "9px 12px", borderRadius: "5px", fontSize: "11px", fontWeight: 600, cursor: "pointer", background: "rgba(10,111,136,0.07)", border: "1px solid rgba(10,111,136,0.3)", color: "var(--cyan)" }}
         >
           <Printer size={12} /> Print / Save PDF
         </button>
@@ -702,8 +702,8 @@ export default function PricingTool({ scores: initScores, spec: initSpec, record
             <div key={i} style={{
               flex: 1, padding: "8px 0", textAlign: "center",
               fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase",
-              color: i === step ? "var(--cyan)" : i < step ? "#00c880" : "var(--text-muted)",
-              borderBottom: `2px solid ${i === step ? "var(--cyan)" : i < step ? "#00c880" : "transparent"}`,
+              color: i === step ? "var(--cyan)" : i < step ? "#0a7a52" : "var(--text-muted)",
+              borderBottom: `2px solid ${i === step ? "var(--cyan)" : i < step ? "#0a7a52" : "transparent"}`,
               transition: "all 0.2s", fontWeight: i === step ? 600 : 400,
             }}>
               {i < step ? "✓ " : `${i + 1}. `}{s}
@@ -745,8 +745,8 @@ export default function PricingTool({ scores: initScores, spec: initSpec, record
               style={{
                 display: "flex", alignItems: "center", gap: "5px",
                 padding: "7px 20px",
-                background: canAdvance() ? "rgba(0,212,255,0.09)" : "transparent",
-                border: `1px solid ${canAdvance() ? "rgba(0,212,255,0.4)" : "var(--border)"}`,
+                background: canAdvance() ? "rgba(10,111,136,0.09)" : "transparent",
+                border: `1px solid ${canAdvance() ? "rgba(10,111,136,0.4)" : "var(--border)"}`,
                 borderRadius: "4px",
                 color: canAdvance() ? "var(--cyan)" : "var(--text-muted)",
                 fontSize: "11px", fontWeight: 600,
@@ -760,8 +760,8 @@ export default function PricingTool({ scores: initScores, spec: initSpec, record
               onClick={onClose}
               style={{
                 padding: "7px 20px",
-                background: "rgba(0,212,255,0.09)",
-                border: "1px solid rgba(0,212,255,0.4)",
+                background: "rgba(10,111,136,0.09)",
+                border: "1px solid rgba(10,111,136,0.4)",
                 borderRadius: "4px",
                 color: "var(--cyan)",
                 fontSize: "11px", fontWeight: 600, cursor: "pointer",
