@@ -219,23 +219,27 @@ const NATURAL_CHARACTER = [
 ];
 
 const PROVENANCE_GUIDE = [
-  { tier: "T1", label: "Type Locality / Institutional", color: "#e8b840",
-    has: ["Published scientific literature citing specimen", "Museum deaccession with catalog number", "Type locality documentation"],
-    ask: ["Can you show me the original institutional label?", "Is there a literature citation for this piece?"],
-    redFlag: "None of these exist but price reflects 'museum grade'" },
-  { tier: "T2", label: "Named Collection", color: "#90c0f0",
-    has: ["Original collection label with collector name", "Date and specific locality", "Acquisition receipt or auction catalog"],
-    ask: ["Who was the original collector?", "Is the collection label present?", "Was this in an auction? Can you show the catalog?"],
-    redFlag: "Verbal attribution only — 'this was from the [Famous] collection' with no label" },
-  { tier: "T3", label: "Dealer with Documentation", color: "#0a7a52",
-    has: ["Dealer label with locality", "Approximate acquisition date", "Invoice or receipt"],
+  { tier: "T1", label: "Field + Legal Chain", color: "#e8b840", score: 100,
+    has: ["Original field label", "Full chain of custody", "Legal collection documentation (permit, BLM form, or landowner permission)"],
+    ask: ["Can you show the original field label?", "Is there a permit or landowner permission on file?"],
+    redFlag: "Price reflects 'documented legal collection' but no paperwork exists" },
+  { tier: "TH", label: "Historical Collection", color: "#d4a840", score: 85,
+    has: ["Named collection catalog", "Estate or auction lot records", "Museum deaccession documentation (often pre-1960 attribution)"],
+    ask: ["Is there a catalog number or auction lot reference?", "Can you show the estate or deaccession paperwork?"],
+    redFlag: "Verbal 'famous collection' claim with no label, catalog, or lot number" },
+  { tier: "T2", label: "Original Label, Partial Chain", color: "#90c0f0", score: 75,
+    has: ["Original collection or dealer label", "Locality verified", "Partial ownership chain"],
+    ask: ["Who was the original collector?", "Is the original label present?", "Was this in an auction? Can you show the catalog?"],
+    redFlag: "Label present but locality unverifiable, or chain stops with no prior owners named" },
+  { tier: "T3", label: "Known Locality, Dealer Attribution", color: "#0a7a52", score: 50,
+    has: ["Known locality and approximate date", "No original label", "Dealer attribution"],
     ask: ["Can I have a signed receipt with full locality details?", "How long have you had this piece?"],
     redFlag: "'I've had it for years but I don't have paperwork'" },
-  { tier: "T4", label: "Locality Known, Unverified", color: "#7090a0",
-    has: ["Locality stated verbally by seller", "No documentation to support it"],
+  { tier: "T4", label: "Locality Stated, Undocumented", color: "#7090a0", score: 25,
+    has: ["Locality stated verbally or on a generic label", "Purchased from dealer", "No chain of custody"],
     ask: ["What evidence supports this locality attribution?"],
     redFlag: "Locality is a famous name that would add value — incentive to misattribute" },
-  { tier: "T5", label: "Unknown Origin", color: "#506070",
+  { tier: "T5", label: "Unknown Origin", color: "#506070", score: 0,
     has: ["No locality information", "No chain of custody"],
     ask: ["Where exactly did this come from?", "Why is there no label?"],
     redFlag: "Common for bulk purchased, re-labeled, or recently looted material" },
@@ -368,24 +372,24 @@ const SCORE_CALIBRATION = [
   },
   {
     key: "localityRarity", label: "Locality Rarity", icon: "📍", color: "#90d070",
-    note: "Score the locality's prestige and scarcity, not your confidence that the locality is correct.",
+    note: "Score how scarce material from this specific mine is on the market today — mine status, pocket frequency, auction appearance — not locality prestige alone.",
     ranges: [
-      { band: "80–100", label: "World-Class / Closed", text: "Iconic locality — Tsumeb, Herja, Broken Hill, Minas Gerais classic pockets. Often exhausted. Immediately recognised by any serious collector." },
-      { band: "60–79",  label: "Notable Classic",      text: "Well-documented locality with strong collector recognition. May still be active but associated with quality material." },
-      { band: "40–59",  label: "Recognised",           text: "Known locality but not famous. Moderate collector interest and modest locality premium." },
-      { band: "20–39",  label: "Generic Location",     text: "Province or country known but no specific locality. Minimal premium — evaluate on crystal quality alone." },
-      { band: "0–19",   label: "Unknown",              text: "No verified locality. Cannot exceed 20 regardless of visual quality." },
+      { band: "80–100", label: "Exhausted / Irreplaceable", text: "Mine closed or single known pocket. Essentially no new material. Tsumeb classics, unique finds, old-stock that cannot be replaced." },
+      { band: "60–79",  label: "Limited Production",      text: "Pockets rare or mine intermittently active. Strong scarcity premium; material does not appear regularly at shows." },
+      { band: "40–59",  label: "Occasional Supply",       text: "Known locality with moderate availability. Some collector interest; modest scarcity premium." },
+      { band: "20–39",  label: "Active / Common Pockets", text: "Material appears regularly at shows and auctions. Evaluate mainly on crystal quality and aesthetics." },
+      { band: "0–19",   label: "Unknown / Unverified",    text: "No verified locality. Cannot score scarcity meaningfully — keep this low and document the gap." },
     ],
   },
   {
     key: "provenance", label: "Provenance", icon: "📜", color: "#e8b840",
-    note: "Provenance cannot be invented after the fact — only discovered. Default to the lowest tier you can prove.",
+    note: "Provenance cannot be invented after the fact — only discovered. Default to the lowest tier you can prove. Use the T1–T5 / TH tiers in Expert Mode.",
     ranges: [
-      { band: "80–100", label: "Fully Documented",  text: "Original mine labels, auction catalogue, or museum deaccession with complete verifiable chain of custody." },
-      { band: "60–79",  label: "Strong",            text: "Named collection with labels, invoices, or photographs. At least one traceable ownership link." },
-      { band: "40–59",  label: "Dealer Documented", text: "Dealer label with locality and approximate date. No prior ownership chain but current purchase documented." },
-      { band: "20–39",  label: "Locality Stated",   text: "Locality stated verbally or via generic label. No chain of custody. Common for show purchases." },
-      { band: "0–19",   label: "Unknown",           text: "No information. Apply maximum scepticism for any price reflecting documented provenance." },
+      { band: "80–100", label: "T1 / TH",  text: "T1: original field label + full chain + legal collection docs (100). TH: named historical collection, estate/auction, or museum deaccession records (85)." },
+      { band: "60–79",  label: "T2",            text: "Original label, locality verified, partial ownership chain (75). Traceable but incomplete documentation." },
+      { band: "40–59",  label: "T3", text: "Known locality and approximate date with dealer attribution; no original label (50)." },
+      { band: "20–39",  label: "T4",   text: "Locality stated verbally or on a generic label; purchased from dealer; no chain of custody (25)." },
+      { band: "0–19",   label: "T5",           text: "Locality unknown or unverifiable (0). Apply maximum scepticism for any price reflecting documented provenance." },
     ],
   },
   {
@@ -401,10 +405,10 @@ const SCORE_CALIBRATION = [
   },
   {
     key: "cultural", label: "Cultural / Historical Significance", icon: "🏺", color: "#d4a840",
-    note: "Most specimens score 0–10 here — that is normal and expected. Score rises only when there is documented historical attribution, named collection provenance, or verifiable cultural connection.",
+    note: "Most specimens score 0–20 here — that is normal. Score rises only with verified criteria: media/exhibition recognition, named historical collection, major publication, show award, or notable ownership.",
     ranges: [
-      { band: "80–100", label: "Historically Documented", text: "Named historical collection with verified chain of custody, museum deaccession record, or documented connection to a significant historical figure, institution, or event." },
-      { band: "60–79",  label: "Published / Attribution", text: "Cited in historical literature, part of a documented estate or auction record, or attributable to a named historical collector with supporting evidence." },
+      { band: "80–100", label: "Multiple Verified Criteria", text: "Several checklist items apply — e.g. named collection plus publication or show award. Documented, attributable heritage." },
+      { band: "60–79",  label: "Strong Attribution", text: "Named historical collection with attribution, major publication reference, or Best-of-Show / first-place award at a recognized international show." },
       { band: "40–59",  label: "Partial Record",          text: "Some historical context with partial evidence. Old collection attribution with approximate documentation." },
       { band: "20–39",  label: "Reported",               text: "Seller reports old collection origin or approximate age with no verifiable documentation." },
       { band: "0–19",   label: "None",                    text: "No cultural or historical significance. Contemporary specimen or undocumented heritage. Normal for the vast majority of specimens." },
@@ -412,7 +416,7 @@ const SCORE_CALIBRATION = [
   },
   {
     key: "scientific", label: "Scientific Value", icon: "🔬", color: "#5090ff",
-    note: "Most collector specimens score 0–20 here. That is normal and expected — not a failure.",
+    note: "Most collector specimens score 0–20 here. That is normal — not a failure. In Expert Mode, score via checklist: type locality, emerging science, paragenesis, literature citation, compositional significance (20 pts each).",
     ranges: [
       { band: "80–100", label: "Publication Quality", text: "Type locality material, exceptional pseudomorph, or feature that represents undocumented science. Publishable interest." },
       { band: "60–79",  label: "Research Interest",   text: "Unusual habit, well-documented paragenesis, or historically significant mine with original labels." },
@@ -447,6 +451,7 @@ export default function BuyerGuide({ onClose }) {
     { key: "provenance", label: "Provenance" },
     { key: "aesthetics", label: "Aesthetics" },
     { key: "scientific", label: "Scientific" },
+    { key: "size",       label: "Size" },
     { key: "calibration",label: "Score Guide" },
   ];
 
@@ -782,7 +787,7 @@ export default function BuyerGuide({ onClose }) {
           {tab === "provenance" && (
             <>
               <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, padding: "10px 12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-                <strong style={{ color: "var(--text)" }}>Why provenance matters:</strong> Provenance is the documented history of ownership and origin. It can never be invented after the fact — only discovered. In PRISM, provenance is the single highest-weighted dimension for museum-grade evaluation. No label = significantly lower score.
+                <strong style={{ color: "var(--text)" }}>Why provenance matters:</strong> Provenance is the documented history of ownership and origin. It can never be invented after the fact — only discovered. In PRISM’s Museum context, locality rarity (23%) and provenance (22%) dominate the weight — aesthetics barely register at 4%. No label = significantly lower museum-context score.
               </div>
 
               {PROVENANCE_GUIDE.map(tier => (
@@ -790,6 +795,9 @@ export default function BuyerGuide({ onClose }) {
                   <div style={{ display: "flex", alignItems: "center", gap: "9px", marginBottom: "8px" }}>
                     <span style={{ fontSize: "12px", fontWeight: 700, color: tier.color, fontFamily: "var(--mono)" }}>{tier.tier}</span>
                     <span style={{ fontSize: "12px", fontWeight: 600, color: tier.color }}>{tier.label}</span>
+                    <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: tier.color, background: `${tier.color}18`, padding: "2px 7px", borderRadius: "3px", marginLeft: "auto" }}>
+                      Score {tier.score}
+                    </span>
                   </div>
                   <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "6px" }}>
                     <strong style={{ color: "var(--text-dim)" }}>Has:</strong> {tier.has.join(" · ")}
@@ -860,7 +868,7 @@ export default function BuyerGuide({ onClose }) {
           {tab === "scientific" && (
             <>
               <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, padding: "10px 12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-                <strong style={{ color: "var(--text)" }}>What scientific value measures:</strong> Documentation quality, locality significance for the species, and any features of scientific interest. Most collector specimens score 0–20 here — that is normal. This dimension drives Museum-context scores.
+                <strong style={{ color: "var(--text)" }}>What scientific value measures:</strong> Objective research interest via checklist criteria — type locality, emerging science applications, paragenetic complexity, literature citation, and compositional significance. Most collector specimens score 0–20 here — that is normal. This dimension is weighted heavily in Study (40%) and modestly in Museum (12%).
               </div>
 
               <div style={{ padding: "8px 12px", background: "rgba(80,144,255,0.06)", border: "1px solid rgba(80,144,255,0.2)", borderRadius: "5px", fontSize: "11px", color: "#78a8ff", lineHeight: 1.5 }}>
@@ -903,11 +911,76 @@ export default function BuyerGuide({ onClose }) {
             </>
           )}
 
+          {/* ── SIZE TAB ── */}
+          {tab === "size" && (
+            <>
+              <div style={{ padding: "12px 14px", background: "rgba(10,122,82,0.06)", border: "1px solid rgba(10,122,82,0.28)", borderRadius: "7px" }}>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "#0a7a52", marginBottom: "6px" }}>
+                  Size is a pricing variable, not a quality variable
+                </div>
+                <div style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.7 }}>
+                  <strong style={{ color: "var(--text)" }}>PRISM scores quality.</strong> A perfect 2&nbsp;mm Red Cloud wulfenite and a perfect 4&nbsp;cm Red Cloud wulfenite are equal in quality — the larger one is worth more money. Those are different measurements of different things. Size class is recorded for market comparison only; it never enters the score.
+                </div>
+              </div>
+
+              <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase" }}>Why size is excluded on purpose</div>
+
+              {[
+                {
+                  title: "Quality is not volume",
+                  text: "A gem-quality thumbnail can outrank a damaged museum piece on crystal quality, aesthetics, rarity, and provenance. Folding size into the score would punish small masterpieces and inflate large mediocre rocks — the opposite of transparent evaluation.",
+                },
+                {
+                  title: "Size already shows up in price",
+                  text: "Dealers and the market price size separately. PRISM scores the first measurement (quality). Research Mode and Sell/Trade account for the second (price). Conflating them is an elementary category error — size is what you pay for volume; the score is what you get for quality.",
+                },
+                {
+                  title: "Contexts stay honest",
+                  text: "Museum, display, collector, and science contexts weight documentation, rarity, and visual quality — not centimeters. A size bonus would let a large specimen clear “museum” thresholds it never earned on provenance or science.",
+                },
+                {
+                  title: "Apples-to-apples collecting",
+                  text: "Collectors specialize at every scale. Thumbnail specialists and cabinet collectors should be able to use the same language. Size class labels the comparison group; the score describes the specimen.",
+                },
+              ].map(item => (
+                <div key={item.title} style={{ padding: "12px 14px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text)", marginBottom: "4px" }}>{item.title}</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.65 }}>{item.text}</div>
+                </div>
+              ))}
+
+              <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase" }}>Size classes (metadata only)</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                {[
+                  { label: "Thumbnail", range: "< 2.5 cm" },
+                  { label: "Miniature", range: "2.5–4.5 cm" },
+                  { label: "Small Cabinet", range: "4.5–7.5 cm" },
+                  { label: "Cabinet", range: "7.5–12 cm" },
+                  { label: "Large Cabinet", range: "12–25 cm" },
+                  { label: "Museum", range: "> 25 cm" },
+                ].map(sz => (
+                  <div key={sz.label} style={{ padding: "10px 12px", background: "var(--bg-panel)", border: "1px solid var(--border-dim)", borderRadius: "5px" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)" }}>{sz.label}</div>
+                    <div style={{ fontSize: "10px", color: "var(--text-muted)", fontFamily: "var(--mono)", marginTop: "2px" }}>{sz.range}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ padding: "10px 12px", background: "rgba(166,93,0,0.06)", border: "1px solid rgba(166,93,0,0.22)", borderRadius: "5px", fontSize: "11px", color: "#a65d00", lineHeight: 1.6 }}>
+                ⚠ <strong style={{ color: "var(--text)" }}>Dealer red flag:</strong> “Museum size” is not a quality grade. A large specimen with no documentation is still low on provenance and museum-context score. Ask what earned the price — size alone is not an answer.
+              </div>
+
+              <div style={{ padding: "10px 12px", background: "rgba(10,111,136,0.05)", border: "1px solid rgba(10,111,136,0.2)", borderRadius: "5px", fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6 }}>
+                💡 On a <strong style={{ color: "var(--text)" }}>PRISM Record</strong>, size class appears as specimen information next to species and locality. It identifies the piece; it does not certify quality.
+              </div>
+            </>
+          )}
+
           {/* ── SCORE CALIBRATION TAB ── */}
           {tab === "calibration" && (
             <>
               <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, padding: "10px 12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-                <strong style={{ color: "var(--text)" }}>How to use this guide:</strong> For each dimension, find the description that best matches what you observe. Use the corresponding score band as your starting point, then fine-tune within that band. When in doubt, score conservatively.
+                <strong style={{ color: "var(--text)" }}>How to use this guide:</strong> For each dimension, find the description that best matches what you observe. Use the corresponding score band as your starting point, then fine-tune within that band. When in doubt, score conservatively. Size is not a dimension — see the Size tab.
               </div>
 
               {SCORE_CALIBRATION.map(dim => {

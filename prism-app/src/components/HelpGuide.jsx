@@ -206,24 +206,25 @@ function TabHowTo() {
           Switch to <strong>Expert</strong> mode to see and adjust all eight dimensions at once with live feedback.
           Use <strong>Research</strong> mode to build a market intelligence database of comparable listings.
         </Step>
-        <Step n="2" title="Six evaluation contexts scored simultaneously">
-          PRISM evaluates your specimen against six evaluation contexts at once: Display/Show,
+        <Step n="2" title="Seven evaluation contexts scored simultaneously">
+          PRISM evaluates your specimen against six visible contexts at once: Display/Show,
           Collector’s Piece, Cultural/Historical, Scientific Study, Systematic/Type, and
           Teaching/Educational — plus a hidden Museum context that feeds compound grades.
           The score panel shows all scores live as you adjust sliders.
         </Step>
-        <Step n="3" title="Score the specimen name &amp; locality">
-          Enter the mineral species, variety, and locality. These feed directly into several of the eight dimensions.
+        <Step n="3" title="Enter specimen identity &amp; size class">
+          Enter the mineral species, variety, locality, and optional size class. Species and locality
+          inform several dimensions. Size class is metadata only — it never enters the score.
         </Step>
         <Step n="4" title="Score each dimension">
-          Rate crystal quality (0–100), species rarity, variety/form uniqueness, locality significance,
+          Rate crystal quality (0–100), species rarity, variety/form uniqueness, locality rarity,
           aesthetics, provenance, scientific value, and cultural/historical significance. Each slider
           has descriptive anchor labels to guide calibration.
         </Step>
         <Step n="5" title="Read the result">
           Your PRISM score appears live on the right panel with a grade (Museum / Exhibition / Collector /
-          Study / General) and any earned compound grades (e.g., “Full Spectrum”, “Institutional Display”,
-          “Display Collection”).
+          Study / General / Bulk) and any earned compound grades (e.g., “Full Spectrum”, “Institutional Display”,
+          “Display Collection”). Compound labels name which contexts pass — not prestige or price.
         </Step>
         <Step n="6" title="Save &amp; use the tools">
           Hit <strong>Save</strong> to add the result to your collection history. Use the
@@ -233,7 +234,12 @@ function TabHowTo() {
       </Section>
 
       <Section title="Tips">
-        <Callout icon="">
+        <Callout icon="📐" color="#0a7a52">
+          <strong>Size is not scored.</strong> Thumbnail through Museum size class is recorded for
+          comparison and market research only. It never adjusts the PRISM score — a fine miniature
+          and a fine cabinet piece can earn the same grade.
+        </Callout>
+        <Callout icon="🧭">
           In Guided mode, work through each dimension step by step. In Expert mode, click any dimension row to expand detailed guidance, anchor descriptions, and calibration tips.
         </Callout>
         <Callout icon="🔁">
@@ -253,45 +259,49 @@ function TabDimensions() {
   return (
     <>
       <Section title="The Eight Scoring Dimensions">
-        <P>Every PRISM score is built from these eight factors, each rated 0–100:</P>
-        <DimCard icon="" name="Crystal Quality"
-          weight="22–42% weight (highest in Exhibition)"
+        <P>Every PRISM score is built from these eight factors, each rated 0–100. Size class is not among them.</P>
+        <DimCard icon="💠" name="Crystal Quality"
+          weight="6–41% weight (highest in Display/Show)"
           desc="The physical perfection of the crystals: terminations, luster, clarity, lack of damage. A gem-quality terminated crystal with vitreous luster scores 90+. A broken, dull, or corroded specimen scores below 30." />
-        <DimCard icon="" name="Species Rarity"
-          weight="4–26% weight (highest in Collector)"
-          desc="How rare the mineral species is globally. Common minerals like quartz or calcite score low. Ultra-rare species known from only one or two localities score 90–100. Check the MINDAT occurrence count as a guide." />
-        <DimCard icon="" name="Variety / Form Uniqueness"
+        <DimCard icon="🌍" name="Species Rarity"
+          weight="4–15% weight (highest in Teaching / Collector)"
+          desc="How rare the mineral species is globally. Common minerals like quartz or calcite score low. Ultra-rare species known from only one or two localities score 90–100. Check the MINDAT occurrence count as a guide. Do not fold variety into this score — that is a separate dimension." />
+        <DimCard icon="🔷" name="Variety / Form Uniqueness"
           weight="2–13% weight (highest in Collector)"
           desc="How rare this specific variety, form, color, or crystal habit is — independent of species rarity. A metallic-blue almandine from a single locality scores 90+ here even though almandine as a species is common. Typical prism habits score low regardless of species." />
-        <DimCard icon="" name="Locality Significance"
-          weight="8–26% weight (highest in Collector)"
-          desc="The prestige and production history of the specific mine. World-class localities (Tsumeb, Broken Hill, Herja) score 80–100. Obscure or poorly documented localities score 20–40. Classic closed mines often score higher than currently active ones." />
-        <DimCard icon="" name="Provenance &amp; Documentation"
-          weight="6–35% weight (highest for Museum)"
-          desc="The chain of ownership, collection history, and documentation. A specimen with a numbered label from a major collection, acquisition records, and publication history scores 90+. A specimen with no history scores near 0. This dimension matters enormously for museum and insurance contexts." />
-        <DimCard icon="" name="Aesthetics &amp; Display"
-          weight="6–30% weight (highest in Exhibition)"
-          desc="Overall visual appeal: color saturation, contrast against matrix, natural presentation angle, self-standing or display-ready. Stunning color combinations and natural displays score 80+. Dull, matrix-heavy, or awkwardly shaped specimens score lower." />
-        <DimCard icon="" name="Scientific Value"
-          weight="3–42% weight (highest in Study)"
-          desc="Specimens with unusual crystal habits, rare associations, twinning, pseudomorphs, or documented research significance score high. Use the checklist to select applicable scientific criteria — each adds 20 points up to 100." />
-        <DimCard icon="" name="Cultural / Historical Significance"
-          weight="2–20% weight (highest in Cultural/Historical context)"
-          desc="Documents heritage value: named collection attribution, estate or institutional provenance, exhibition history, publication record, or indigenous cultural significance. Scored via a criteria checklist — each verified item raises the score. Most specimens score 0–20 here; that is expected." />
+        <DimCard icon="📍" name="Locality Rarity"
+          weight="8–24% weight (highest in Collector)"
+          desc="How available this specific mine’s material is today: mine status, pocket frequency, auction appearance. Exhausted classic localities and single-pocket finds score high. Active mines with common pockets score low. Prestige alone is not the metric — scarcity of supply is." />
+        <DimCard icon="📜" name="Provenance"
+          weight="5–30% weight (highest in Systematic / Cultural)"
+          desc="Documented chain of custody and collection history, scored by provenance tier (T1–T5). Original field labels with legal collection documentation score highest. Unknown or unverifiable locality scores near 0. Critical for museum, insurance, and donation contexts." />
+        <DimCard icon="🎨" name="Aesthetics"
+          weight="2–29% weight (highest in Display/Show)"
+          desc="Overall visual appeal: color saturation, form expression, presentation, and luster. In Expert mode these four sub-scores average to the aesthetics dimension. Stunning color and composition score 80+. Dull or awkwardly presented pieces score lower." />
+        <DimCard icon="🔬" name="Scientific Value"
+          weight="3–40% weight (highest in Scientific Study)"
+          desc="Scored by checklist: type locality, emerging science applications, paragenetic complexity, literature citation, and compositional significance. Each verified criterion adds 20 points up to 100. Most collector specimens score 0–20 here — that is normal." />
+        <DimCard icon="🏺" name="Cultural / Historical"
+          weight="2–20% weight (highest in Cultural/Historical)"
+          desc="Heritage value beyond mineralogy: media or public exhibition, named historical collection, major publication, show award, or notable ownership. Scored via checklist — each verified item adds 20 points. Most specimens score 0–20 here; that is expected." />
       </Section>
 
       <Section title="How the Score is Calculated">
         <P>
-          Your final PRISM score is the weighted average of all eight dimensions, with non-linear
-          transforms applied to reward excellence. Weights vary by evaluation context (see the Contexts
-          tab). A score of 90+ earns Museum grade; 75–89 is Exhibition; 60–74 is Collector; 45–59
-          is Study; 20–44 is General; below 20 is Bulk.
+          Each evaluation context computes a weighted average of the eight dimensions, with non-linear
+          transforms applied to reward excellence. Weights vary by context (see the Contexts tab).
+          Grade bands: 90+ Museum · 75–89 Exhibition · 60–74 Collector · 45–59 Study · 20–44 General · below 20 Bulk.
         </P>
-        <Callout icon="">
-          <strong>Compound grades</strong> describe which evaluation contexts all pass the
-          70-point threshold simultaneously. Passing Museum + Exhibition earns “Institutional Display”;
-          Museum + Collector earns “Institutional Collection”; Museum + Study earns “Institutional Science”.
-          Labels name the evaluative profile — not prestige or monetary value.
+        <Callout icon="🏷️">
+          <strong>Compound grades</strong> name which contexts all pass the 70-point threshold at once.
+          They describe evaluative profile — not prestige or monetary value.
+          “Institutional …” means the hidden Museum context passed. “Full Spectrum” means all seven
+          contexts passed. Examples: Museum + Display → Institutional Display; Museum + Collection →
+          Institutional Collection; Collection + Display → Display Collection.
+        </Callout>
+        <Callout icon="📐" color="#0a7a52">
+          Physical size never multiplies or boosts any dimension. A size class on a PRISM Record is
+          for identification and comparables only.
         </Callout>
       </Section>
     </>
@@ -311,33 +321,47 @@ function TabContexts() {
       </Section>
 
       <Section title="Evaluation Contexts">
-        <CtxCard name="Display / Show"
+        <CtxCard icon="✨" name="Display / Show"
           focus="Crystal 41% · Aesthetics 29% · Locality 12%"
-          use="For display-quality specimens destined for gem shows, showcases, or exhibitions. Crystal perfection and visual impact dominate. Famous localities add show-floor prestige." />
-        <CtxCard name="Collector’s Piece"
-          focus="Crystal 22% · Species/Variety 26% · Locality 24%"
-          use="The classic collector context. Rarity drives value — species scarcity, variety uniqueness, and locality prestige together account for over half the score." />
-        <CtxCard name="Cultural / Historical"
+          use="For display-quality specimens destined for gem shows, showcases, or exhibitions. Crystal perfection and visual impact dominate. Locality scarcity adds show-floor relevance." />
+        <CtxCard icon="💎" name="Collector’s Piece"
+          focus="Crystal 22% · Species 13% · Variety 13% · Locality 24%"
+          use="The classic collector context. Rarity drives the score — species scarcity, variety uniqueness, and locality rarity together account for half the weight." />
+        <CtxCard icon="📜" name="Cultural / Historical"
           focus="Provenance 27% · Cultural Significance 20% · Locality 13%"
           use="For specimens with documented historical significance: named collection attribution, estate records, museum deaccession, or heritage provenance. Documentation is everything." />
-        <CtxCard name="Scientific Study"
+        <CtxCard icon="🔬" name="Scientific Study"
           focus="Scientific 40% · Provenance 26% · Locality 8%"
-          use="For research, reference, and teaching specimens. A well-documented specimen with research relevance outscores a beautiful piece with no scientific context." />
-        <CtxCard name="Systematic / Type"
+          use="For research and reference specimens. A well-documented piece with research relevance outscores a beautiful specimen with no scientific context." />
+        <CtxCard icon="🗂️" name="Systematic / Type"
           focus="Scientific 33% · Provenance 30% · Locality 15%"
-          use="For holotypes, paratypes, and systematic reference material. Documentation and scientific significance account for nearly two thirds of the score. The standard for species-defining specimens." />
-        <CtxCard name="Teaching / Educational"
+          use="For holotypes, paratypes, and systematic reference material. Documentation and scientific significance account for nearly two thirds of the score." />
+        <CtxCard icon="🎓" name="Teaching / Educational"
           focus="Aesthetics 22% · Crystal 20% · Scientific 18% · Species 15%"
-          use="For classroom, outreach, and educational collections. Visual engagement and species clarity drive usefulness — a good example of the species that engages students." />
+          use="For classroom, outreach, and educational collections. Visual engagement and species clarity drive usefulness — a clear example of the species that engages students." />
       </Section>
       <Section title="The Hidden Museum Context">
         <P>
           Museum scoring is calculated behind the scenes but not shown as a standalone context.
-          It contributes to compound grades only — any museum-inclusive compound grade requires the
-          hidden museum score to pass 70. Museum weights favor locality rarity (23%), provenance (22%),
-          species and variety rarity (10% each), scientific value (12%), and cultural significance (7%)
-          with aesthetics at just 4%.
+          It contributes to compound grades only — any “Institutional …” compound grade requires the
+          hidden museum score to pass 70. Museum weights: locality rarity 23%, provenance 22%,
+          crystal 12%, scientific 12%, species and variety rarity 10% each, cultural significance 7%,
+          aesthetics 4%.
         </P>
+      </Section>
+      <Section title="Compound Grade Naming">
+        <P>
+          Compound labels are descriptive profiles, not trophies. Naming follows a simple rule:
+        </P>
+        <ul style={{ paddingLeft: "18px", margin: "0 0 10px" }}>
+          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.85 }}><strong style={{ color: "var(--text)" }}>Institutional …</strong> — Museum context passed, combined with other contexts (e.g. Institutional Display, Institutional Science)</li>
+          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.85 }}><strong style={{ color: "var(--text)" }}>Full Spectrum / Core Spectrum</strong> — broad multi-context profiles (all seven, or the four core contexts)</li>
+          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.85 }}><strong style={{ color: "var(--text)" }}>Display / Collection / Heritage / Type / Science</strong> — pairs or triples of non-museum contexts that all clear 70</li>
+        </ul>
+        <Callout icon="📜" color="#b87a18">
+          A <strong>PRISM Record</strong> documents a self-evaluation with attestations and a verifiable QR
+          payload. It is not a third-party lab certificate and does not certify authenticity or value.
+        </Callout>
       </Section>
     </>
   );
@@ -460,8 +484,8 @@ export default function HelpGuide({ onClose }) {
         {/* Footer */}
         <div style={{ padding: "10px 18px", borderTop: "1px solid var(--border-dim)", flexShrink: 0,
           display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: "10px", color: "var(--text-muted)", opacity: 0.6 }}>
-            PRISM is a research and planning tool — scores are structured estimates, not certified appraisals. Museum acceptance decisions are made by curators on a case-by-case basis.
+          <span style={{ fontSize: "10px", color: "var(--text-muted)", opacity: 0.75, lineHeight: 1.45, maxWidth: "78%" }}>
+            Size is a pricing variable, not a quality variable. PRISM scores quality. Scores are structured estimates — not appraisals or authenticity certificates.
           </span>
           <button onClick={onClose} style={{ padding: "5px 16px", background: "rgba(10,111,136,0.08)",
             border: "1px solid rgba(10,111,136,0.3)", borderRadius: "4px", color: "var(--cyan)",

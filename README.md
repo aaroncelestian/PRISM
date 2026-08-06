@@ -7,6 +7,8 @@ A 6-dimensional, non-linear specimen scoring system that evaluates mineral speci
 
 PRISM addresses the fundamental information asymmetry problem in mineral specimen markets by making implicit expert heuristics explicit, auditable, and comparable across transactions. Unlike simple rating systems, PRISM applies dimension-specific non-linear transforms across 6 independent inputs and evaluates them simultaneously through 5 distinct context lenses — producing a compound classification (e.g. "Full Spectrum") that reflects a specimen's multi-dimensional profile rather than a single collapsed number.
 
+**Size is a pricing variable, not a quality variable. PRISM scores quality.** Physical size class is recorded for market comparison only and never enters the score. A perfect 2 mm specimen and a perfect 4 cm specimen of the same material can earn identical PRISM scores; the larger one is typically worth more money — that is a pricing question for market analysis, not a quality question for scoring.
+
 ### Core Purpose
 
 - **Consumer Protection**: Enable new collectors to understand what they're buying and whether pricing is fair

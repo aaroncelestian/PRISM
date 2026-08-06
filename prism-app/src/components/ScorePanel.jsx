@@ -227,6 +227,15 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
           </div>
         </div>
 
+        {/* Design principle — size ≠ quality */}
+        <div style={{
+          margin: "0 14px 10px", padding: "7px 11px", borderRadius: "4px",
+          background: "var(--bg-panel)", border: "1px solid var(--border-dim)",
+          fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.5,
+        }}>
+          Size is a pricing variable, not a quality variable. <strong style={{ color: "var(--text-dim)" }}>PRISM scores quality.</strong>
+        </div>
+
         {/* Context status callout — shown when selected context is below threshold */}
         {!primaryCtx.passes && (
           <div style={{

@@ -427,11 +427,17 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
               onChange={e => setSpec(s => ({ ...s, size: e.target.value }))}
               style={{ gridColumn: "1 / -1", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "4px", color: spec.size ? "var(--text)" : "var(--text-muted)", padding: "6px 10px", fontSize: "12px" }}
             >
-              <option value="">Size class (optional)</option>
+              <option value="">Size class (optional — pricing metadata)</option>
               {SIZE_CLASSES.map(sc => (
                 <option key={sc.key} value={sc.key}>{sc.label} — {sc.range}</option>
               ))}
             </select>
+            <div style={{
+              gridColumn: "1 / -1", fontSize: "10px", color: "var(--text-muted)",
+              lineHeight: 1.5, marginTop: "-2px",
+            }}>
+              Size is a pricing variable, not a quality variable. PRISM scores quality — size class is recorded for market comparison only and never enters the score.
+            </div>
           </div>
           {treatmentFlags && onTreatmentFlagsChange && (
             <TreatmentFlagsSection flags={treatmentFlags} onChange={onTreatmentFlagsChange} />
