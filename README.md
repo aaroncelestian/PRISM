@@ -5,7 +5,7 @@ A 6-dimensional, non-linear specimen scoring system that evaluates mineral speci
 
 ## Overview
 
-PRISM addresses the fundamental information asymmetry problem in mineral specimen markets by making implicit expert heuristics explicit, auditable, and comparable across transactions. Unlike simple rating systems, PRISM applies dimension-specific non-linear transforms across 6 independent inputs and evaluates them simultaneously through 5 distinct context lenses — producing a compound classification (e.g. "Institutional Masterpiece") that reflects a specimen's true multi-dimensional identity rather than a single collapsed number.
+PRISM addresses the fundamental information asymmetry problem in mineral specimen markets by making implicit expert heuristics explicit, auditable, and comparable across transactions. Unlike simple rating systems, PRISM applies dimension-specific non-linear transforms across 6 independent inputs and evaluates them simultaneously through 5 distinct context lenses — producing a compound classification (e.g. "Full Spectrum") that reflects a specimen's multi-dimensional profile rather than a single collapsed number.
 
 ### Core Purpose
 
@@ -61,15 +61,16 @@ The same 6 transformed scores are then weighted differently across 5 independent
 
 #### Compound Classification
 
-When multiple contexts simultaneously pass the quality threshold (70/100), a **compound grade** emerges that describes the specimen's identity across all dimensions:
+When multiple contexts simultaneously pass the quality threshold (70/100), a **compound grade** names the specimen's evaluative profile — which purposes it meets — without implying prestige or price:
 
-- **Institutional Masterpiece** — all 5 contexts qualify simultaneously *(once in a generation)*
-- **World-Class Specimen** — museum + exhibition + collector qualify
-- **Museum Display** — museum + exhibition qualify
-- **Collector Display** — exhibition + collector qualify
-- *(and more)*
+- **Full Spectrum** — all contexts qualify simultaneously
+- **Core Spectrum** — museum + exhibition + collector + science
+- **Institutional Display Collection** — museum + exhibition + collector
+- **Institutional Display** — museum + exhibition
+- **Display Collection** — exhibition + collector
+- *(and more; “Institutional” appears only when the Museum context is in the mix)*
 
-The compound classification is the primary output of PRISM — a single number cannot capture a 6-dimensional, 5-context analysis. The spectrum bar visualization shows all 5 context results simultaneously as colored bands, one per context, glowing when that context's threshold is met.
+The compound classification is the primary output of PRISM — a single number cannot capture a multi-dimensional, multi-context analysis. The spectrum bar visualization shows all context results simultaneously as colored bands, one per context, glowing when that context's threshold is met.
 
 ### Additional Tools
 
@@ -89,7 +90,7 @@ The compound classification is the primary output of PRISM — a single number c
 - **Recharts**: Data visualization for market analysis
 - **React Leaflet**: GIS mapping for locality and legal compliance
 - **Lucide React**: Icon system
-- **QRCode**: Certificate generation
+- **QRCode**: PRISM Record generation
 
 ### Data Structure
 
@@ -155,7 +156,7 @@ PRISM/
 │   │   │   ├── ExpertMode.jsx      # Advanced interface
 │   │   │   ├── ResearchMode.jsx    # Market analysis
 │   │   │   ├── PricingTool.jsx     # Price benchmarking
-│   │   │   ├── CertGenerator.jsx   # Certificate creation
+│   │   │   ├── CertGenerator.jsx   # PRISM Record creation
 │   │   │   ├── DonationEval.jsx    # Museum donation tool
 │   │   │   └── ...
 │   │   └── App.jsx
@@ -185,7 +186,7 @@ PRISM tracks collection legality across multiple regulatory frameworks:
 ## Use Cases
 
 1. **Collectors**: Evaluate specimens before purchase, verify fair pricing
-2. **Dealers**: Generate professional certificates, justify pricing
+2. **Dealers**: Generate professional PRISM Records, justify pricing
 3. **Museums**: Screen donations, generate appraisal documentation
 4. **Researchers**: Analyze market trends, study pricing patterns
 5. **Educators**: Teach mineral evaluation and market dynamics

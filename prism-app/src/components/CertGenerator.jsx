@@ -126,7 +126,7 @@ function ReviewStep({ scores, spec, sizeClass, setSizeClass, allCtxData, primary
       <div>
         <h3 style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)", marginBottom: "4px" }}>Review Evaluation</h3>
         <p style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.55 }}>
-          Confirm these scores are accurate before certifying. Once issued, a certificate ID is permanent.
+          Confirm these scores are accurate before issuing. Once issued, a Record ID is permanent.
         </p>
       </div>
 
@@ -211,7 +211,7 @@ function DocumentationStep({ scores, spec, docData: initDocData, setDocData, pho
 
       {/* Already captured from PRISM */}
       <div style={{ padding: "10px 12px", background: "rgba(10,111,136,0.04)", border: "1px solid rgba(10,111,136,0.18)", borderRadius: "6px" }}>
-        <div style={{ fontSize: "9px", letterSpacing: "0.12em", color: "var(--cyan)", textTransform: "uppercase", marginBottom: "6px" }}>Captured from PRISM Scoring — already on certificate</div>
+        <div style={{ fontSize: "9px", letterSpacing: "0.12em", color: "var(--cyan)", textTransform: "uppercase", marginBottom: "6px" }}>Captured from PRISM Scoring — already on record</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px" }}>
           {spec.name && (
             <div>
@@ -403,7 +403,7 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
           <span style={{ fontSize: "10px", color: "var(--text-muted)", fontStyle: "italic" }}>Why do I have to attest to these?</span>
         </div>
         <p style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.55, margin: 0 }}>
-          These attestations are embedded in the certificate and QR code. They are your formal statement of accuracy. False attestation devalues the certificate and is unethical.
+          These attestations are embedded in the record and QR code. They are your formal statement of accuracy. False attestation devalues the record and is unethical.
         </p>
       </div>
 
@@ -416,7 +416,7 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
         }}>
           <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)" }}>Why attestations matter</div>
           <p style={{ margin: 0 }}>
-            A PRISM certificate is a public document tied to a verifiable QR code. Anyone who scans it — a buyer, a museum, an auction house, or a future owner — is relying on the statements you make here to be true. The attestations are not bureaucratic formality; they are the backbone of what makes the certificate meaningful.
+            A PRISM Record is a public document tied to a verifiable QR code. Anyone who scans it — a buyer, a museum, an auction house, or a future owner — is relying on the statements you make here to be true. The attestations are not bureaucratic formality; they are the backbone of what makes the record meaningful.
           </p>
           <p style={{ margin: 0 }}>
             <strong style={{ color: "var(--text)" }}>Legal collection</strong> protects you and the buyer from unknowingly handling stolen or illegally collected material. <strong style={{ color: "var(--text)" }}>Locality accuracy</strong> and <strong style={{ color: "var(--text)" }}>species authenticity</strong> are core to scientific and collector value — misrepresenting these is fraud. <strong style={{ color: "var(--text)" }}>Repair disclosure</strong> is an industry standard; undisclosed repairs are grounds for reversal of sale in most jurisdictions.
@@ -432,7 +432,7 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
             background: "rgba(255,100,60,0.06)", border: "1px solid rgba(255,100,60,0.25)",
             borderRadius: "5px", fontSize: "11px", color: "#e08060", fontWeight: 500,
           }}>
-            If you cannot honestly confirm these statements, do not generate this certificate. A certificate you cannot stand behind does more harm than no certificate at all.
+            If you cannot honestly confirm these statements, do not generate this record. A record you cannot stand behind does more harm than no record at all.
           </div>
         </div>
       )}
@@ -497,7 +497,7 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
 
       {!allChecked && (
         <div style={{ fontSize: "10px", color: "#a65d00", padding: "7px 10px", background: "rgba(166,93,0,0.06)", border: "1px solid rgba(166,93,0,0.2)", borderRadius: "4px" }}>
-          All standard attestations must be confirmed to generate the certificate.
+          All standard attestations must be confirmed to generate the record.
         </div>
       )}
 
@@ -525,7 +525,7 @@ function AttestationStep({ attestations, setAttestations, evaluatorName, setEval
   );
 }
 
-// ── Step 4: Certificate Preview ───────────────────────────────────────────────
+// ── Step 4: Record Preview ────────────────────────────────────────────────────
 
 function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos, attestations, evaluatorName, evaluatorOrg, ownerName, primaryCtx, compoundGrades, customAttestations = [], onSaved }) {
   const [qrUrl, setQrUrl] = useState("");
@@ -569,7 +569,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
     if (!certEl) return;
     const pw = window.open("", "_blank", "width=800,height=900");
     if (!pw) { alert("Please allow pop-ups for this site to print."); return; }
-    pw.document.write(`<!DOCTYPE html><html><head><title>PRISM Certificate — ${certId}</title>
+    pw.document.write(`<!DOCTYPE html><html><head><title>PRISM Record — ${certId}</title>
       <style>
         body { font-family: 'Exo 2', system-ui, sans-serif; margin: 0; padding: 24px; }
         @page { size: A4; margin: 15mm; }
@@ -593,7 +593,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <h3 style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>Certificate Preview</h3>
+          <h3 style={{ fontSize: "15px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>Record Preview</h3>
           <p style={{ fontSize: "11px", color: "var(--text-dim)" }}>Review before printing or saving.</p>
         </div>
         <div style={{ display: "flex", gap: "6px" }}>
@@ -606,7 +606,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
         </div>
       </div>
 
-      {/* Certificate */}
+      {/* Record */}
       <div id="prism-cert-root" style={{
         background: "#ffffff", color: "#0d1520", borderRadius: "6px", padding: "24px",
         fontFamily: "'Exo 2', system-ui, sans-serif", fontSize: "11px", lineHeight: 1.5,
@@ -617,7 +617,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
           <div>
             <div style={{ fontSize: "18px", fontWeight: 800, letterSpacing: "0.18em", color: "#0d1520" }}>PRISM</div>
             <div style={{ fontSize: "8px", letterSpacing: "0.14em", color: "#507090", textTransform: "uppercase" }}>Precision Rating Index of Specimen Minerals</div>
-            <div style={{ marginTop: "6px", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em", color: "#0d1520" }}>SELF-EVALUATION CERTIFICATE</div>
+            <div style={{ marginTop: "6px", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em", color: "#0d1520" }}>SELF-EVALUATION RECORD</div>
           </div>
           {qrUrl && (
             <div style={{ textAlign: "center" }}>
@@ -635,7 +635,7 @@ function CertPreview({ certId, issued, scores, spec, sizeClass, docData, photos,
             ...(spec.variety ? [["Variety / Form", spec.variety]] : []),
             ["Locality", spec.locality || "—"],
             ["Size Class", sz ? `${sz.label} (${sz.range})` : "—"],
-            ["Certificate ID", certId],
+            ["Record ID", certId],
             ["Issued", dateStr],
           ].map(([l, v]) => (
             <div key={l}>
@@ -804,8 +804,8 @@ function SpecimenPickerScreen({ initScores, initSpec, records, onSelect, onClose
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Award size={16} style={{ color: "var(--cyan)" }} />
             <div>
-              <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>PRISM Self-Evaluation Certificate</div>
-              <div style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "1px" }}>Select the specimen to certify</div>
+              <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>PRISM Self-Evaluation Record</div>
+              <div style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "1px" }}>Select the specimen for this record</div>
             </div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={16} /></button>
@@ -897,7 +897,7 @@ function SpecimenPickerScreen({ initScores, initSpec, records, onSelect, onClose
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-const STEPS = ["Review", "Documentation", "Attestations", "Certificate"];
+const STEPS = ["Review", "Documentation", "Attestations", "Record"];
 
 export default function CertGenerator({ scores: initScores, spec: initSpec, records = [], onClose }) {
   const [step, setStep] = useState(0);
@@ -980,7 +980,7 @@ export default function CertGenerator({ scores: initScores, spec: initSpec, reco
             <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
               <Award size={16} style={{ color: "var(--cyan)", flexShrink: 0 }} />
               <div style={{ minWidth: 0 }}>
-                <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>PRISM Self-Evaluation Certificate</span>
+                <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>PRISM Self-Evaluation Record</span>
                 <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {workingSpec.name || workingSpec.species || "Unnamed Specimen"}
                   {workingSpec.locality ? ` · ${workingSpec.locality}` : ""}
@@ -1030,7 +1030,7 @@ export default function CertGenerator({ scores: initScores, spec: initSpec, reco
               {showDoneWarn && !certSaved && (
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", color: "#a65d00", background: "rgba(166,93,0,0.07)", border: "1px solid rgba(166,93,0,0.28)", borderRadius: "5px", padding: "6px 10px" }}>
                   <AlertTriangle size={12} style={{ flexShrink: 0 }} />
-                  <span>Save as PDF before closing — this certificate cannot be recovered.</span>
+                  <span>Save as PDF before closing — this record cannot be recovered.</span>
                   <button onClick={onClose} style={{ background: "none", border: "none", color: "#a65d00", textDecoration: "underline", cursor: "pointer", fontSize: "11px", whiteSpace: "nowrap", padding: 0 }}>Close anyway</button>
                 </div>
               )}

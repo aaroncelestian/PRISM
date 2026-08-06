@@ -120,7 +120,7 @@ export default function PRISM() {
       : []),
     { type: "header", label: "Valuation" },
     { label: "📤 Quick Summary",       action: () => { setShowExport(true);      setShowTools(false); } },
-    { label: "📜 PRISM Certificate",  action: () => { setShowCert(true);        setShowTools(false); } },
+    { label: "📜 PRISM Record",  action: () => { setShowCert(true);        setShowTools(false); } },
     { label: "💰 Sell / Trade",        action: () => { setShowPricing(true);     setShowTools(false); } },
     { label: "🏛️ Donate to Museum",   action: () => { setShowDonation(true);    setShowTools(false); } },
   ];
@@ -136,7 +136,7 @@ export default function PRISM() {
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
 
-    // QR certificate verification
+    // QR record verification
     const verifyParam = p.get("verify");
     if (verifyParam) {
       try {

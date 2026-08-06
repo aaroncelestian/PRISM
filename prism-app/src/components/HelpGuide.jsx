@@ -222,12 +222,12 @@ function TabHowTo() {
         </Step>
         <Step n="5" title="Read the result">
           Your PRISM score appears live on the right panel with a grade (Museum / Exhibition / Collector /
-          Study / General) and any earned compound grades (e.g., “World-Class Specimen”, “Heritage Specimen”,
-          “Competition Piece”).
+          Study / General) and any earned compound grades (e.g., “Full Spectrum”, “Institutional Display”,
+          “Display Collection”).
         </Step>
         <Step n="6" title="Save &amp; use the tools">
           Hit <strong>Save</strong> to add the result to your collection history. Use the
-          <strong> Tools</strong> menu to export, generate a certificate, get a pricing estimate, or
+          <strong> Tools</strong> menu to export, generate a PRISM Record, get a pricing estimate, or
           evaluate a museum donation.
         </Step>
       </Section>
@@ -288,10 +288,10 @@ function TabDimensions() {
           is Study; 20–44 is General; below 20 is Bulk.
         </P>
         <Callout icon="">
-          <strong>Compound grades</strong> are awarded when multiple evaluation contexts all pass the
-          70-point threshold simultaneously. Passing Museum + Exhibition earns “Museum Display”;
-          Museum + Collector earns “Masterpiece Collection”; Museum + Study earns “Research Reference”.
-          Rarer multi-context combinations unlock progressively more prestigious compound titles.
+          <strong>Compound grades</strong> describe which evaluation contexts all pass the
+          70-point threshold simultaneously. Passing Museum + Exhibition earns “Institutional Display”;
+          Museum + Collector earns “Institutional Collection”; Museum + Study earns “Institutional Science”.
+          Labels name the evaluative profile — not prestige or monetary value.
         </Callout>
       </Section>
     </>

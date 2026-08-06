@@ -272,7 +272,7 @@ export default function PRISM() {
                 color: "#00d4ff", fontSize: "10px", fontFamily: "'Exo 2', sans-serif",
                 fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
                 cursor: "pointer", transition: "background 0.15s",
-              }}>Generate Certificate</button>
+              }}>Generate Record</button>
 
               <button className="action-sec" style={{
                 padding: "8px", background: "transparent",
