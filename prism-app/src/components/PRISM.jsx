@@ -118,7 +118,7 @@ export default function PRISM() {
     ...(SHOW_METEORITE_ID
       ? [{ label: "☄️ Meteorite ID", action: () => { setShowMeteoriteID(true); setShowTools(false); } }]
       : []),
-    { type: "header", label: "Valuation" },
+    { type: "header", label: "Actions" },
     { label: "📤 Quick Summary",       action: () => { setShowExport(true);      setShowTools(false); } },
     { label: "📜 PRISM Record",  action: () => { setShowCert(true);        setShowTools(false); } },
     { label: "💰 Sell / Trade",        action: () => { setShowPricing(true);     setShowTools(false); } },
