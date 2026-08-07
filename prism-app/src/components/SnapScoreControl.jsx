@@ -7,125 +7,127 @@ export function nearestAnchor(anchors, value) {
   );
 }
 
-export function fineTuneRange(anchorValue) {
+export function fineTuneRange(anchorValue, wiggle = FINE_TUNE) {
   return {
-    min: Math.max(0, anchorValue - FINE_TUNE),
-    max: Math.min(100, anchorValue + FINE_TUNE),
+    min: Math.max(0, anchorValue - wiggle),
+    max: Math.min(100, anchorValue + wiggle),
   };
 }
 
+/** Snap raw 0–100 input to nearest anchor, then clamp to ±wiggle around it. */
+export function snapWithWiggle(raw, anchors, wiggle = FINE_TUNE) {
+  const band = nearestAnchor(anchors, raw);
+  if (!band) return Math.round(raw);
+  const { min, max } = fineTuneRange(band.value, wiggle);
+  return Math.max(min, Math.min(max, Math.round(raw)));
+}
+
 /**
- * Discrete band selector with optional ±5 fine-tune around the chosen anchor.
- * Used by Expert Mode (and Wizard fine-tune) for comparable scores.
+ * Full-width score slider that magnetically snaps to labeled anchors,
+ * with ±5 wiggle room around the active band. No button grid.
  */
 export default function SnapScoreControl({ anchors, value, onChange, compact = false }) {
   if (!anchors?.length) return null;
 
   const band = nearestAnchor(anchors, value);
-  const { min, max } = fineTuneRange(band.value);
-  const sliderVal = Math.max(min, Math.min(max, value));
-  const offset = value - band.value;
-  const outOfBand = Math.abs(offset) > FINE_TUNE;
+  const offset = value - (band?.value ?? 0);
+  const barColor = value >= 75 ? "#0a7a52" : value >= 50 ? "var(--cyan)" : "var(--text-label)";
+
+  const handleInput = (raw) => {
+    onChange(snapWithWiggle(raw, anchors));
+  };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: compact ? "6px" : "8px" }}>
-      {/* Band buttons */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${anchors.length}, minmax(0, 1fr))`,
-        gap: compact ? "3px" : "4px",
-      }}>
-        {anchors.map(anchor => {
-          const selected = band.value === anchor.value;
-          return (
-            <button
-              key={anchor.value}
-              type="button"
-              title={`${anchor.label}: ${anchor.hint}`}
-              onClick={() => onChange(anchor.value)}
-              style={{
-                padding: compact ? "6px 4px" : "8px 6px",
-                background: selected ? "rgba(10,111,136,0.10)" : "var(--bg-card)",
-                border: `1px solid ${selected ? "rgba(10,111,136,0.45)" : "var(--border)"}`,
-                borderRadius: "5px",
-                cursor: "pointer",
-                textAlign: "center",
-                transition: "all 0.12s",
-                minWidth: 0,
-              }}
-            >
-              <div style={{
-                fontFamily: "var(--mono)",
-                fontSize: compact ? "12px" : "13px",
-                fontWeight: 600,
-                color: selected ? "var(--cyan)" : "var(--text-muted)",
-                lineHeight: 1.2,
-              }}>
-                {anchor.value}
-              </div>
-              <div style={{
-                fontSize: compact ? "8px" : "9px",
-                color: selected ? "rgba(10,111,136,0.75)" : "var(--text-muted)",
-                lineHeight: 1.25,
-                marginTop: "2px",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}>
-                {anchor.label}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Selected band hint */}
-      {!compact && (
-        <div style={{ fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.4, padding: "0 1px" }}>
-          {band.hint}
-        </div>
-      )}
-
-      {/* ±5 fine-tune */}
-      <div style={{
-        padding: compact ? "6px 8px" : "8px 10px",
-        background: "var(--bg-card)",
-        border: "1px solid var(--border-dim)",
-        borderRadius: "5px",
-      }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: compact ? "4px" : "6px" }}>
+      {/* Slider with custom visible rail + snap ticks */}
+      <div style={{ position: "relative", height: compact ? "22px" : "24px" }}>
+        {/* Rail + fill */}
         <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          marginBottom: "4px", gap: "8px",
+          position: "absolute", pointerEvents: "none",
+          top: "calc(50% - 1.5px)", left: 0, right: 0,
+          height: "3px", background: "var(--border)", borderRadius: "2px",
         }}>
-          <span style={{ fontSize: "10px", color: "var(--text-muted)" }}>
-            Fine-tune ±{FINE_TUNE}
-          </span>
-          <span style={{
-            fontFamily: "var(--mono)", fontSize: "11px",
-            color: outOfBand ? "var(--warn)" : "var(--text-dim)",
-          }}>
-            {outOfBand
-              ? `outside band — adjust or reselect`
-              : offset === 0
-                ? `at ${band.value}`
-                : `${offset > 0 ? "+" : ""}${offset} from ${band.value}`}
-          </span>
+          <div style={{
+            position: "absolute", height: "100%", width: `${value}%`,
+            borderRadius: "2px", background: barColor, opacity: 0.7,
+            transition: "width 0.05s, background 0.15s",
+          }} />
+          {/* Snap tick marks */}
+          {anchors.map(a => (
+            <div
+              key={a.value}
+              title={`${a.value} — ${a.label}`}
+              style={{
+                position: "absolute",
+                left: `${a.value}%`,
+                top: "-4px",
+                width: "2px",
+                height: "11px",
+                marginLeft: "-1px",
+                borderRadius: "1px",
+                background: band?.value === a.value ? "var(--cyan)" : "var(--text-muted)",
+                opacity: band?.value === a.value ? 0.9 : 0.35,
+              }}
+            />
+          ))}
         </div>
         <input
           type="range"
-          min={min}
-          max={max}
+          min={0}
+          max={100}
           step={1}
-          value={sliderVal}
-          onChange={e => onChange(+e.target.value)}
-          style={{ width: "100%", margin: 0, display: "block" }}
+          value={value}
+          onChange={e => handleInput(+e.target.value)}
+          style={{ position: "absolute", top: 0, left: 0, width: "100%", margin: 0, height: "100%" }}
         />
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "1px" }}>
-          <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)" }}>{min}</span>
-          <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)" }}>{band.value}</span>
-          <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)" }}>{max}</span>
-        </div>
       </div>
+
+      {/* Anchor value labels along the track */}
+      <div style={{ position: "relative", height: compact ? "12px" : "14px", marginTop: "-2px" }}>
+        {anchors.map(a => (
+          <span
+            key={a.value}
+            style={{
+              position: "absolute",
+              left: `${a.value}%`,
+              transform: "translateX(-50%)",
+              fontFamily: "var(--mono)",
+              fontSize: compact ? "8px" : "9px",
+              color: band?.value === a.value ? "var(--cyan)" : "var(--text-muted)",
+              fontWeight: band?.value === a.value ? 600 : 400,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {a.value}
+          </span>
+        ))}
+      </div>
+
+      {/* Current band label + offset */}
+      {band && (
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "baseline",
+          gap: "8px", padding: "0 1px",
+        }}>
+          <span style={{
+            fontSize: compact ? "10px" : "11px",
+            color: "var(--text-dim)",
+            lineHeight: 1.35,
+            minWidth: 0,
+          }}>
+            <span style={{ fontWeight: 500, color: "var(--text)" }}>{band.label}</span>
+            {!compact && (
+              <span style={{ color: "var(--text-muted)" }}> — {band.hint}</span>
+            )}
+          </span>
+          <span style={{
+            fontFamily: "var(--mono)", fontSize: "10px", flexShrink: 0,
+            color: offset === 0 ? "var(--text-muted)" : "var(--cyan)",
+          }}>
+            {offset === 0 ? `snap ${band.value}` : `${offset > 0 ? "+" : ""}${offset} · snap ${band.value}`}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

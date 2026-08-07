@@ -213,7 +213,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                 fontFamily: "var(--sans)", fontSize: "22px", fontWeight: 600,
                 color: "var(--text)", marginBottom: "6px",
               }}>
-                Tell us about the specimen
+                About the specimen
               </h2>
               <p style={{ fontSize: "13px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: "22px" }}>
                 Even a rough description helps. You can fill in more detail later.
@@ -314,6 +314,8 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                     const score = scores[currentDim.key];
                     const sliderVal = Math.max(min, Math.min(max, score));
                     const offset = score - band.value;
+                    const barColor = score >= 75 ? "#0a7a52" : score >= 50 ? "var(--cyan)" : "var(--text-muted)";
+                    const pct = max === min ? 0 : ((sliderVal - min) / (max - min)) * 100;
                     return (
                       <div style={{
                         marginTop: "20px",
@@ -331,8 +333,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                           </span>
                           <span style={{
                             fontFamily: "var(--mono)", fontSize: "20px", fontWeight: 600,
-                            color: score >= 75 ? "#0a7a52" : score >= 50 ? "var(--cyan)" : "var(--text-muted)",
-                            transition: "color 0.2s",
+                            color: barColor, transition: "color 0.2s",
                           }}>
                             {score}
                             {offset !== 0 && Math.abs(offset) <= 5 && (
@@ -342,15 +343,33 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                             )}
                           </span>
                         </div>
-                        <input
-                          type="range"
-                          min={min}
-                          max={max}
-                          step={1}
-                          value={sliderVal}
-                          onChange={e => setScores(s => ({ ...s, [currentDim.key]: +e.target.value }))}
-                        />
-                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "3px" }}>
+                        <div style={{ position: "relative", height: "24px" }}>
+                          <div style={{
+                            position: "absolute", pointerEvents: "none",
+                            top: "calc(50% - 1.5px)", left: 0, right: 0,
+                            height: "3px", background: "var(--border)", borderRadius: "2px",
+                          }}>
+                            <div style={{
+                              position: "absolute", height: "100%", width: `${pct}%`,
+                              borderRadius: "2px", background: barColor, opacity: 0.7,
+                            }} />
+                            <div style={{
+                              position: "absolute", left: `${((band.value - min) / (max - min)) * 100}%`,
+                              top: "-4px", width: "2px", height: "11px", marginLeft: "-1px",
+                              background: "var(--cyan)", opacity: 0.7, borderRadius: "1px",
+                            }} />
+                          </div>
+                          <input
+                            type="range"
+                            min={min}
+                            max={max}
+                            step={1}
+                            value={sliderVal}
+                            onChange={e => setScores(s => ({ ...s, [currentDim.key]: +e.target.value }))}
+                            style={{ position: "absolute", top: 0, left: 0, width: "100%", margin: 0, height: "100%" }}
+                          />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "2px" }}>
                           <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)" }}>{min}</span>
                           <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)" }}>{band.value}</span>
                           <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)" }}>{max}</span>
