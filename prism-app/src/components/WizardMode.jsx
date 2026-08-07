@@ -5,6 +5,7 @@ import { useBreakpoint } from "../hooks/useWindowSize.js";
 import ScorePanel from "./ScorePanel.jsx";
 import TierSelector from "./TierSelector.jsx";
 import CriteriaChecklist from "./CriteriaChecklist.jsx";
+import { nearestAnchor, fineTuneRange } from "./SnapScoreControl.jsx";
 
 const TOTAL_STEPS = 1 + DIMS.length + 1; // specimen info + 8 dims + done
 
@@ -299,44 +300,64 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                       <AnchorButton
                         key={anchor.value}
                         anchor={anchor}
-                        selected={scores[currentDim.key] === anchor.value}
+                        selected={nearestAnchor(currentDim.anchors, scores[currentDim.key])?.value === anchor.value}
                         onClick={() => pickAnchor(currentDim.key, anchor.value)}
                       />
                     ))}
                   </div>
 
-                  {/* Fine-tune slider */}
-                  <div style={{
-                    marginTop: "20px",
-                    padding: "14px 16px",
-                    background: "var(--bg-card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "6px",
-                  }}>
-                    <div style={{
-                      display: "flex", justifyContent: "space-between",
-                      alignItems: "center", marginBottom: "10px",
-                    }}>
-                      <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>Fine-tune:</span>
-                      <span style={{
-                        fontFamily: "var(--mono)", fontSize: "20px", fontWeight: 600,
-                        color: scores[currentDim.key] >= 75 ? "#0a7a52" : scores[currentDim.key] >= 50 ? "var(--cyan)" : "var(--text-muted)",
-                        transition: "color 0.2s",
+                  {/* Fine-tune ±5 around selected band */}
+                  {(() => {
+                    const band = nearestAnchor(currentDim.anchors, scores[currentDim.key]);
+                    if (!band) return null;
+                    const { min, max } = fineTuneRange(band.value);
+                    const score = scores[currentDim.key];
+                    const sliderVal = Math.max(min, Math.min(max, score));
+                    const offset = score - band.value;
+                    return (
+                      <div style={{
+                        marginTop: "20px",
+                        padding: "14px 16px",
+                        background: "var(--bg-card)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "6px",
                       }}>
-                        {scores[currentDim.key]}
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0} max={100}
-                      value={scores[currentDim.key]}
-                      onChange={e => setScores(s => ({ ...s, [currentDim.key]: +e.target.value }))}
-                    />
-                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: "3px" }}>
-                      <span style={{ fontSize: "9px", color: "var(--text-muted)" }}>0</span>
-                      <span style={{ fontSize: "9px", color: "var(--text-muted)" }}>100</span>
-                    </div>
-                  </div>
+                        <div style={{
+                          display: "flex", justifyContent: "space-between",
+                          alignItems: "center", marginBottom: "10px",
+                        }}>
+                          <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>
+                            Fine-tune ±5 from {band.value}
+                          </span>
+                          <span style={{
+                            fontFamily: "var(--mono)", fontSize: "20px", fontWeight: 600,
+                            color: score >= 75 ? "#0a7a52" : score >= 50 ? "var(--cyan)" : "var(--text-muted)",
+                            transition: "color 0.2s",
+                          }}>
+                            {score}
+                            {offset !== 0 && Math.abs(offset) <= 5 && (
+                              <span style={{ fontSize: "11px", fontWeight: 400, color: "var(--text-muted)", marginLeft: "6px" }}>
+                                ({offset > 0 ? "+" : ""}{offset})
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={min}
+                          max={max}
+                          step={1}
+                          value={sliderVal}
+                          onChange={e => setScores(s => ({ ...s, [currentDim.key]: +e.target.value }))}
+                        />
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "3px" }}>
+                          <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)" }}>{min}</span>
+                          <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)" }}>{band.value}</span>
+                          <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)" }}>{max}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </>
               )}
             </div>

@@ -5,6 +5,7 @@ import { useBreakpoint } from "../hooks/useWindowSize.js";
 import ScorePanel from "./ScorePanel.jsx";
 import TierSelector from "./TierSelector.jsx";
 import CriteriaChecklist from "./CriteriaChecklist.jsx";
+import SnapScoreControl from "./SnapScoreControl.jsx";
 
 // Match PRISM spectrum bar colors exactly (same array, museum hidden so red=index 0 = exhibition)
 const EXPERT_SPECTRUM = ["#ff0000", "#ff7f00", "#ffff00", "#00ff00", "#0000ff", "#4b0082", "#9400d3"];
@@ -14,26 +15,22 @@ function AestheticsSubSliders({ subScores, onChange }) {
   const computed = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
   const computedColor = computed >= 75 ? "#0a7a52" : computed >= 50 ? "var(--cyan)" : "var(--text-label)";
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingTop: "4px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px", paddingTop: "4px" }}>
       {AESTHETICS_SUB_DIMS.map(sub => {
         const val = subScores[sub.key] ?? 0;
         const barColor = val >= 75 ? "#0a7a52" : val >= 50 ? "var(--cyan)" : "var(--text-label)";
         return (
           <div key={sub.key} style={{ paddingLeft: "8px", borderLeft: "2px solid var(--border-dim)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "2px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
               <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>{sub.label}</span>
               <span style={{ fontFamily: "var(--mono)", fontSize: "12px", color: barColor, minWidth: "24px", textAlign: "right" }}>{val}</span>
             </div>
-            <div style={{ position: "relative", height: "20px" }}>
-              <div style={{ position: "absolute", pointerEvents: "none", top: "calc(50% - 1.5px)", left: 0, right: 0, height: "3px", background: "var(--border-dim)", borderRadius: "2px" }}>
-                <div style={{ position: "absolute", height: "100%", width: `${val}%`, borderRadius: "2px", background: barColor, opacity: 0.65, transition: "width 0.05s, background 0.2s" }} />
-              </div>
-              <input
-                type="range" min={0} max={100} value={val}
-                onChange={e => onChange({ ...subScores, [sub.key]: +e.target.value })}
-                style={{ position: "absolute", top: 0, left: 0, width: "100%", margin: 0 }}
-              />
-            </div>
+            <SnapScoreControl
+              anchors={sub.anchors}
+              value={val}
+              onChange={v => onChange({ ...subScores, [sub.key]: v })}
+              compact
+            />
           </div>
         );
       })}
@@ -188,7 +185,7 @@ function DocumentationSection({ spec, setSpec }) {
   );
 }
 
-function DimRow({ dim, score, weight, onChange, criteriaValues, onCriteriaChange, subScores, onSubScoresChange }) {
+function DimRow({ dim, score, onChange, criteriaValues, onCriteriaChange, subScores, onSubScoresChange }) {
   const [open, setOpen] = useState(false);
   const barColor = score >= 75 ? "#0a7a52" : score >= 50 ? "var(--cyan)" : "var(--text-label)";
 
@@ -274,34 +271,16 @@ function DimRow({ dim, score, weight, onChange, criteriaValues, onCriteriaChange
         </div>
       )}
 
-      {/* Criteria checklist, tier selector, sub-sliders, or single slider */}
+      {/* Criteria checklist, tier selector, sub-sliders, or snap bands */}
       {dim.criteria ? (
         <CriteriaChecklist criteria={dim.criteria} checked={criteriaValues} onChange={onCriteriaChange} />
       ) : dim.tiers ? (
         <TierSelector tiers={dim.tiers} value={score} onChange={onChange} />
       ) : subScores ? (
         <AestheticsSubSliders subScores={subScores} onChange={onSubScoresChange} />
-      ) : (
-        <div style={{ position: "relative", height: "20px" }}>
-          <div style={{ position: "absolute", pointerEvents: "none", top: "calc(50% - 1.5px)", left: 0, right: 0, height: "3px", background: "var(--border-dim)", borderRadius: "2px" }}>
-            <div style={{
-              position: "absolute", height: "100%", width: `${score}%`,
-              borderRadius: "2px", background: barColor, opacity: 0.65,
-              transition: "width 0.05s, background 0.2s",
-            }} />
-            <div style={{
-              position: "absolute", width: "1px", height: "7px",
-              background: "rgba(10,111,136,0.4)", top: "-2px",
-              left: `${Math.round(weight * 100)}%`,
-            }} />
-          </div>
-          <input
-            type="range" min={0} max={100} value={score}
-            onChange={e => onChange(+e.target.value)}
-            style={{ position: "absolute", top: 0, left: 0, width: "100%", margin: 0 }}
-          />
-        </div>
-      )}
+      ) : dim.anchors ? (
+        <SnapScoreControl anchors={dim.anchors} value={score} onChange={onChange} />
+      ) : null}
     </div>
   );
 }
@@ -462,7 +441,6 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
             key={d.key}
             dim={d}
             score={scores[d.key]}
-            weight={W[d.key]}
             onChange={v => setScores(s => ({ ...s, [d.key]: v }))}
             criteriaValues={
               d.key === "scientific" ? sciCriteria

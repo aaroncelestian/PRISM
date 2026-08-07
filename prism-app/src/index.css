@@ -126,5 +126,12 @@ input[type=text]:focus, input:not([type]):focus {
 }
 input::placeholder { color: var(--text-muted); }
 
-/* ── Buttons ── */
-button { cursor: pointer; font-family: var(--sans); transition: all 0.15s; }
+/* Leaflet tiles: disable mix-blend-mode so basemap stays visible on themed backgrounds */
+.leaflet-container img.leaflet-tile {
+  mix-blend-mode: normal !important;
+}
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  font-family: var(--sans);
+}

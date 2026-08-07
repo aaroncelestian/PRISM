@@ -5,6 +5,7 @@ import L from "leaflet";
 import { X, ChevronLeft, ChevronRight, MapPin, Search, Download, Printer, Copy, CheckCheck } from "lucide-react";
 import { lookupCountryFlag, STATUS_COLORS, STATUS_LABELS } from "../data/countryFlags.js";
 import { GRADES, WEIGHTS, CONTEXTS, THRESHOLD, applyNonLinearTransform } from "../data/prism.js";
+import { useBreakpoint } from "../hooks/useWindowSize.js";
 
 function _ctxScore(ctxKey, scores) {
   const W = WEIGHTS[ctxKey];
@@ -299,6 +300,24 @@ function FlyToLocation({ target }) {
   useEffect(() => {
     if (target) map.flyTo([target.lat, target.lng], Math.max(map.getZoom(), 9), { animate: true, duration: 0.8 });
   }, [target, map]);
+  return null;
+}
+
+/** Leaflet often initializes at 0×0 inside modals/tabs — force a remeasure after mount. */
+function MapInvalidateSize() {
+  const map = useMap();
+  useEffect(() => {
+    const run = () => map.invalidateSize({ animate: false });
+    run();
+    const t1 = setTimeout(run, 100);
+    const t2 = setTimeout(run, 400);
+    window.addEventListener("resize", run);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener("resize", run);
+    };
+  }, [map]);
   return null;
 }
 
@@ -679,18 +698,27 @@ async function detectMapLocation({ lat, lng, currentCountry, wasCountryAutoDetec
 function LocationStep({ location, setLocation, landType, setLandType, originCountry, setOriginCountry, localityText, setLocalityText, acquisitionType }) {
   const [isDetecting, setIsDetecting] = useState(false);
   const [autoSource, setAutoSource] = useState({});
-  const [searchInput, setSearchInput] = useState("");
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [flyTarget, setFlyTarget] = useState(null);
+  const [mapReady, setMapReady] = useState(false);
+  const { width } = useBreakpoint();
+  const stackLayout = width < 720;
   const countryRef = useRef(originCountry);
   const autoSourceRef = useRef(autoSource);
   countryRef.current = originCountry;
   autoSourceRef.current = autoSource;
 
-  const handleSearch = async () => {
-    if (!searchInput.trim()) return;
+  // Defer map mount one frame so the modal layout has a real size first
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMapReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const handleSearch = async (query) => {
+    const q = (query || "").trim();
+    if (!q) return;
     setIsGeocoding(true);
-    const coords = await geocodePlace(searchInput.trim());
+    const coords = await geocodePlace(q);
     setIsGeocoding(false);
     if (coords) {
       setLocation(coords);
@@ -781,29 +809,56 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
         )}
       </div>
 
-      {/* Map + right panel — two-column layout */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "10px", alignItems: "start" }}>
+      {/* Map + right panel — two-column on wide, stacked on narrow */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: stackLayout ? "1fr" : "minmax(0, 1fr) 280px",
+        gap: "10px",
+        alignItems: "start",
+      }}>
 
         {/* Left: map */}
-        <div style={{ borderRadius: "6px", overflow: "hidden", border: "1px solid var(--border)", height: "420px" }}>
-          <MapContainer center={[20, 0]} zoom={2} style={{ height: "100%", width: "100%" }}>
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
-              opacity={0.65}
-            />
-            <TileLayer
-              url="https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA_Cached_with_PriUnk/MapServer/tile/{z}/{y}/{x}"
-              attribution="BLM National GIS — Surface Management Agency"
-              opacity={0.55}
-            />
-            <FlyToLocation target={flyTarget} />
-            <LocationPicker location={location} setLocation={setLocation} />
-          </MapContainer>
+        <div style={{
+          borderRadius: "6px",
+          overflow: "hidden",
+          border: "1px solid var(--border)",
+          height: stackLayout ? "280px" : "420px",
+          minWidth: 0,
+          background: "var(--bg-card)",
+          position: "relative",
+          zIndex: 0,
+        }}>
+          {mapReady ? (
+            <MapContainer
+              center={[20, 0]}
+              zoom={2}
+              style={{ height: "100%", width: "100%" }}
+              scrollWheelZoom={true}
+            >
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                opacity={0.9}
+              />
+              <TileLayer
+                url="https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA_Cached_with_PriUnk/MapServer/tile/{z}/{y}/{x}"
+                attribution="BLM National GIS — Surface Management Agency"
+                opacity={0.55}
+                maxZoom={15}
+              />
+              <MapInvalidateSize />
+              <FlyToLocation target={flyTarget} />
+              <LocationPicker location={location} setLocation={setLocation} />
+            </MapContainer>
+          ) : (
+            <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", color: "var(--text-muted)" }}>
+              Loading map…
+            </div>
+          )}
         </div>
 
         {/* Right: search + result + legend */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", height: "420px", overflowY: "auto" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", height: stackLayout ? "auto" : "420px", maxHeight: stackLayout ? "none" : "420px", overflowY: "auto" }}>
 
           {/* Search box */}
           <div>
@@ -816,11 +871,11 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
                 placeholder="Mine, canyon, or place name…"
                 value={localityText}
                 onChange={e => setLocalityText(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") { setSearchInput(localityText); handleSearch(); } }}
+                onKeyDown={e => { if (e.key === "Enter") handleSearch(localityText); }}
                 style={{ flex: 1, fontSize: "11px" }}
               />
               <button
-                onClick={() => { setSearchInput(localityText); handleSearch(); }}
+                onClick={() => handleSearch(localityText)}
                 disabled={isGeocoding || !localityText.trim()}
                 title="Search this location on the map"
                 style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 10px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--bg-card)", color: isGeocoding ? "rgba(10,111,136,0.5)" : "var(--text-dim)", fontSize: "11px", cursor: isGeocoding ? "default" : "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
@@ -1495,7 +1550,7 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
       padding: "20px",
     }}>
       <div style={{
-        width: "100%", maxWidth: "660px",
+        width: "100%", maxWidth: step === 1 ? "920px" : "660px",
         maxHeight: "92vh",
         background: "var(--bg)",
         border: "1px solid var(--border)",
@@ -1503,6 +1558,7 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
         display: "flex", flexDirection: "column",
         overflow: "hidden",
         boxShadow: "0 24px 80px rgba(0,0,0,0.7)",
+        transition: "max-width 0.2s ease",
       }}>
 
         {/* Header */}
