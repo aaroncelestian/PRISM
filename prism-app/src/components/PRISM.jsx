@@ -6,7 +6,6 @@ import { useTheme } from "../hooks/useTheme.js";
 import ExpertMode from "./ExpertMode.jsx";
 import WizardMode from "./WizardMode.jsx";
 import DonationEval from "./DonationEval.jsx";
-import PricingTool from "./PricingTool.jsx";
 import BuyerGuide from "./BuyerGuide.jsx";
 import CertGenerator from "./CertGenerator.jsx";
 import QuickExport from "./QuickExport.jsx";
@@ -90,7 +89,6 @@ export default function PRISM() {
   const [treatmentFlags, setTreatmentFlags] = useState(DEFAULT_TREATMENT_FLAGS);
   const [culturalCriteria, setCulturalCriteria] = useState([false, false, false, false, false]);
   const [showDonation,   setShowDonation]   = useState(false);
-  const [showPricing,    setShowPricing]    = useState(false);
   const [showBuyerGuide, setShowBuyerGuide] = useState(false);
   const [showCert,       setShowCert]       = useState(false);
   const [showExport,     setShowExport]     = useState(false);
@@ -121,15 +119,18 @@ export default function PRISM() {
     { type: "header", label: "Actions" },
     { label: "📤 Quick Summary",       action: () => { setShowExport(true);      setShowTools(false); } },
     { label: "📜 PRISM Record",  action: () => { setShowCert(true);        setShowTools(false); } },
-    { label: "💰 Sell / Trade",        action: () => { setShowPricing(true);     setShowTools(false); } },
     { label: "🏛️ Donate to Museum",   action: () => { setShowDonation(true);    setShowTools(false); } },
   ];
 
   useEffect(() => {
     if (!showTools) return;
-    const close = (e) => { if (!e.target.closest('[data-tools-menu]')) setShowTools(false); };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
+    const close = (e) => {
+      if (e.target.closest("[data-tools-menu]")) return;
+      setShowTools(false);
+    };
+    // Use pointerdown so touch and mouse behave the same; ignore events inside the menu.
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
   }, [showTools]);
 
   // ── Read URL params ───────────────────────────────────────────────────
@@ -253,6 +254,8 @@ export default function PRISM() {
         borderBottom: "1px solid var(--border)",
         background: "var(--bg-panel)",
         flexShrink: 0,
+        position: "relative",
+        zIndex: 100,
       }}>
 
         {/* Primary row */}
@@ -395,18 +398,24 @@ export default function PRISM() {
               📚{records.length > 0 ? ` ${records.length}` : ""} History
             </button>
             )}
-            <button onClick={() => setShowTools(t => !t)}
-              style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: showTools ? "rgba(10,111,136,0.08)" : "transparent", border: `1px solid ${showTools ? "rgba(10,111,136,0.35)" : "var(--border)"}`, color: showTools ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
-              🛠️ Tools ▾
-            </button>
+            <div data-tools-menu style={{ flexShrink: 0 }}>
+              <button onClick={() => setShowTools(t => !t)}
+                style={{ flexShrink: 0, padding: "5px 11px", borderRadius: "4px", background: showTools ? "rgba(10,111,136,0.08)" : "transparent", border: `1px solid ${showTools ? "rgba(10,111,136,0.35)" : "var(--border)"}`, color: showTools ? "var(--cyan)" : "var(--text-muted)", fontSize: "12px", whiteSpace: "nowrap" }}>
+                🛠️ Tools ▾
+              </button>
+            </div>
           </div>
         )}
 
         {/* Tools dropdown (shared desktop + mobile) — positioned fixed on mobile */}
         {showTools && isMobile && (
           <>
-            <div onClick={() => setShowTools(false)} style={{ position: "fixed", inset: 0, zIndex: 199 }} />
-            <div style={{ position: "fixed", top: "96px", right: "14px", zIndex: 200, minWidth: "200px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", boxShadow: "0 8px 24px rgba(0,0,0,0.5)", overflow: "hidden" }}>
+            <div onPointerDown={() => setShowTools(false)} style={{ position: "fixed", inset: 0, zIndex: 199 }} />
+            <div
+              data-tools-menu
+              onPointerDown={e => e.stopPropagation()}
+              style={{ position: "fixed", top: "96px", right: "14px", zIndex: 200, minWidth: "200px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", boxShadow: "0 8px 24px rgba(0,0,0,0.5)", overflow: "hidden" }}
+            >
               <ToolMenuItems items={toolMenuItems} isMobile={true} />
             </div>
           </>
@@ -424,9 +433,6 @@ export default function PRISM() {
       )}
       {showDonation && (
         <DonationEval scores={scores} spec={spec} records={records} onClose={() => setShowDonation(false)} />
-      )}
-      {showPricing && (
-        <PricingTool scores={scores} spec={spec} records={records} onClose={() => setShowPricing(false)} />
       )}
       {showBuyerGuide && (
         <BuyerGuide onClose={() => setShowBuyerGuide(false)} />

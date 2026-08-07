@@ -211,8 +211,8 @@ const LAND_LEGAL = {
   unknown: {
     status: "unknown",
     color: "#607090",
-    heading: "Land Status Undocumented",
-    detail: "Without knowing the land management type, legal collecting cannot be confirmed. This significantly limits provenance credibility for institutional acquisition.",
+    heading: "Land Status Not Yet Documented",
+    detail: "The land management type for this locality hasn’t been confirmed. Adding that detail — public, private, or other managed land — will strengthen the provenance record for institutional review.",
   },
 };
 
@@ -860,7 +860,7 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
               </div>
               {legalInfo && (
                 <div style={{ marginTop: "6px", fontSize: "11px", fontWeight: 600, color: legalInfo.color }}>
-                  {legalInfo.status === "allowed" ? "✓" : legalInfo.status === "conditional" ? "⚠" : "✗"} {legalInfo.heading}
+                  {legalInfo.status === "allowed" ? "✓" : legalInfo.status === "prohibited" ? "✗" : legalInfo.status === "unknown" ? "?" : "⚠"} {legalInfo.heading}
                 </div>
               )}
               {legalInfo?.detail && (
