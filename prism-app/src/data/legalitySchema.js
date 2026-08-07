@@ -7,47 +7,47 @@
 
 export const LEGALITY_META = {
   title: "Collecting Legality",
-  subtitle: "Casual-use check for U.S. federal land",
+  subtitle: "Quick check for hobby collecting on U.S. public land",
   version: "1.0",
   lastReviewed: "2026-08-06",
   scope:
-    "Casual/hobbyist mineral specimen collecting on U.S. federal land. Does not cover claim staking, commercial extraction, or detailed state/private-land rules.",
+    "Hobby rock and mineral collecting on U.S. federal land. Does not cover mining claims, commercial digging, or detailed state/private-land rules.",
   disclaimer:
-    "This tool encodes agency casual-use policy and informal guidance thresholds — not codified statutory quantity limits. No federal statute sets a numeric weight cap for common-variety casual collecting. BLM state offices and individual national forests issue supplemental guidance that can change independently of federal statute. Always verify with the local land manager before collecting.",
+    "This tool summarizes common agency rules for hobby collecting. It is not legal advice. There is no single nationwide weight limit for ordinary rock collecting — local BLM offices and national forests often have their own rules. Always check with the local land office before you collect.",
 };
 
 export const LAND_MANAGERS = [
-  { id: "BLM", label: "BLM", desc: "Bureau of Land Management public lands" },
-  { id: "USFS", label: "USFS", desc: "National Forest System lands" },
-  { id: "NPS", label: "NPS", desc: "National Park Service units" },
-  { id: "USFWS", label: "USFWS", desc: "National Wildlife Refuge System" },
-  { id: "state_trust", label: "State / trust land", desc: "State parks, forests, or trust lands" },
-  { id: "private", label: "Private land", desc: "Privately owned surface / mineral estate" },
-  { id: "unknown", label: "Unknown", desc: "Land manager not yet identified" },
+  { id: "BLM", label: "BLM", desc: "Bureau of Land Management — most open public land" },
+  { id: "USFS", label: "USFS", desc: "U.S. Forest Service — National Forests" },
+  { id: "NPS", label: "NPS", desc: "National Parks and National Park Service sites" },
+  { id: "USFWS", label: "USFWS", desc: "National Wildlife Refuges" },
+  { id: "state_trust", label: "State / trust land", desc: "State parks, state forests, or school-trust lands" },
+  { id: "private", label: "Private land", desc: "Land owned by a person or company" },
+  { id: "unknown", label: "Unknown", desc: "Not sure who manages this land yet" },
 ];
 
 export const WITHDRAWAL_STATUSES = [
-  { id: "open", label: "Open to mineral entry", desc: "No known withdrawal from casual collecting" },
-  { id: "national_monument", label: "National monument", desc: "Proclamation / management-plan restrictions often apply" },
-  { id: "wilderness", label: "Designated wilderness", desc: "Wilderness Act lands" },
-  { id: "wilderness_study_area", label: "Wilderness study area (WSA)", desc: "Managed under non-impairment standard" },
-  { id: "other_withdrawal", label: "Other withdrawal", desc: "ACEC, military, power-site, or similar" },
-  { id: "unknown", label: "Unknown / unchecked", desc: "Verify via BLM MLRS or agency GIS before collecting" },
+  { id: "open", label: "Open for hobby collecting", desc: "No special ban on casual collecting that you know of" },
+  { id: "national_monument", label: "National monument", desc: "Often has extra restrictions — check before collecting" },
+  { id: "wilderness", label: "Designated wilderness", desc: "Protected wilderness area — collecting usually banned" },
+  { id: "wilderness_study_area", label: "Wilderness study area", desc: "Being studied for wilderness protection — usually restricted" },
+  { id: "other_withdrawal", label: "Other special area", desc: "e.g. conservation area, military land, or power-site reserve" },
+  { id: "unknown", label: "Unknown / not checked", desc: "Look up the parcel before you collect" },
 ];
 
 export const MATERIAL_CLASSES = [
-  { id: "common_variety_mineral_rock", label: "Common rock / mineral", desc: "Hobby specimens, common-variety material" },
-  { id: "petrified_wood", label: "Petrified wood", desc: "Subject to informal BLM daily/annual caps" },
-  { id: "gemstone_locatable_grade", label: "Gem / locatable-grade", desc: "Marketable quality may trigger locatable-mineral rules" },
-  { id: "invertebrate_fossil_plant_fossil", label: "Invertebrate / plant fossil", desc: "Generally casual-use eligible in limited quantity" },
-  { id: "vertebrate_fossil", label: "Vertebrate fossil", desc: "Bones, teeth, tracks of vertebrates" },
-  { id: "archaeological_cultural", label: "Archaeological / cultural", desc: "Artifacts, cultural materials — out of mineralogical scope" },
+  { id: "common_variety_mineral_rock", label: "Common rock / mineral", desc: "Ordinary hobby specimens" },
+  { id: "petrified_wood", label: "Petrified wood", desc: "Often has informal daily and yearly weight limits on BLM land" },
+  { id: "gemstone_locatable_grade", label: "Gem-quality / high-value", desc: "Material valuable enough that mining rules may apply" },
+  { id: "invertebrate_fossil_plant_fossil", label: "Invertebrate / plant fossil", desc: "Shells, leaves, and similar fossils — usually OK in small amounts" },
+  { id: "vertebrate_fossil", label: "Vertebrate fossil", desc: "Bones, teeth, or tracks from animals with backbones" },
+  { id: "archaeological_cultural", label: "Artifacts / cultural items", desc: "Arrowheads, pottery, ruins — not rock collecting" },
 ];
 
 export const EXTRACTION_METHODS = [
   { id: "hand_tools", label: "Hand tools only", desc: "Hammer, chisel, hand shovel, rock pick" },
-  { id: "mechanized_non_explosive", label: "Mechanized (non-explosive)", desc: "Rock saws, power equipment, mechanized digging" },
-  { id: "explosive_blasting", label: "Explosives / blasting", desc: "Any explosive method" },
+  { id: "mechanized_non_explosive", label: "Power equipment", desc: "Rock saws, drills, or machine digging" },
+  { id: "explosive_blasting", label: "Explosives / blasting", desc: "Any use of explosives" },
 ];
 
 /** Editable informal quantity thresholds (not statutory hard caps). */
@@ -55,53 +55,112 @@ export const QUANTITY_THRESHOLDS = {
   blm_petrified_wood: {
     dailyLb: 25,
     annualLb: 250,
-    note: "Informal BLM Instruction Memorandum guidance; +1 piece exception may apply. Varies by state office.",
+    note: "Common BLM guidance: about 25 lb per day (+ one piece) and 250 lb per year. Local offices can set different limits.",
   },
   personal_use_soft_cap_lb: 25,
 };
 
+/**
+ * Plain-English guidance for BLM hobby collecting authorization.
+ * Most personal rockhounding needs no permit; this covers when it does.
+ */
+export const BLM_PERMIT_GUIDANCE = {
+  title: "How BLM collecting authorization works",
+  summary:
+    "For ordinary hobby collecting on open BLM land, you usually do not need a permit — stay within personal-use amounts, use hand tools, and do not sell what you collect. A permit or contract is only needed when you go beyond those hobby rules.",
+  whenNoPermit: [
+    "Common rocks and minerals for personal use, with hand tools and only minor ground disturbance",
+    "Petrified wood: up to about 25 lb + one piece per day, and 250 lb per year (unless the local office sets different limits)",
+    "Common invertebrate or plant fossils in a reasonable personal amount (often described as about 25 lb/day)",
+  ],
+  whenYouNeedAuthorization: [
+    "You want more material than hobby limits allow",
+    "You plan to sell or commercially dig",
+    "You need power equipment or blasting",
+    "You want a museum-size petrified-wood specimen over 250 lb",
+    "You want vertebrate fossils (bones, teeth, tracks) — research permit only; not hobby collecting",
+  ],
+  steps: [
+    {
+      title: "1. Confirm the land is open BLM",
+      text: "Use BLM’s public land maps (or ask the field office) to confirm the parcel is BLM-managed and not wilderness, a monument with collecting bans, a recreation site, or an active mining claim.",
+    },
+    {
+      title: "2. Call the local BLM field office before you dig",
+      text: "Find the office for that county/state at blm.gov (Office Directory). Ask what is allowed there, local quantity limits, closed areas, and whether you need a sale contract or other paperwork.",
+    },
+    {
+      title: "3. Ask which authorization fits your plan",
+      text: "Hobby amounts: often none. Larger personal or commercial mineral materials: usually a mineral-materials sale contract. Museum-display petrified wood over 250 lb: special free-use process with a public-display certification. Vertebrate fossils: paleontology research permit (specimens stay public property).",
+    },
+    {
+      title: "4. Apply through that field office",
+      text: "There is no nationwide “self-collecting permit” website for individual rockhounds. The local office tells you the form (if any), fees, maps, and conditions. Do not remove material until authorization is in hand when one is required.",
+    },
+    {
+      title: "5. Keep your paperwork with the specimens",
+      text: "Save the permit/contract, dates, locality, and land-office contact. That paper trail supports legal collection and stronger provenance scoring in PRISM.",
+    },
+  ],
+  links: [
+    { label: "BLM — Can I keep this?", href: "https://www.blm.gov/Learn/Can-I-Keep-This" },
+    { label: "BLM — Collecting fossils", href: "https://www.blm.gov/programs/paleontology/collecting-fossils" },
+    { label: "Find a BLM office", href: "https://www.blm.gov/office" },
+  ],
+  importantNote:
+    "“Free-use permits” for mineral materials (Form 3604) are mainly for government agencies and nonprofits — not a general hobbyist self-collecting permit. Individual collectors who need more than casual amounts usually buy material under a sale contract from the local BLM office.",
+};
+
+/** Result tags that should show BLM permit how-to guidance. */
+export const BLM_PERMIT_GUIDANCE_TAGS = new Set([
+  "EXCEEDS_CASUAL_THRESHOLD",
+  "PROHIBITED_CASUAL_PERMIT_REQUIRED",
+  "CONDITIONAL_REVIEW_REQUIRED",
+  "PERMITTED_CASUAL",
+]);
+
 export const RESULT_META = {
   PERMITTED_CASUAL: {
-    label: "Permitted (casual use)",
+    label: "Looks OK for hobby collecting",
     color: "var(--success)",
     tone: "success",
-    provenanceNote: "Document locality, date, and land status for provenance. Eligible for higher provenance tiers if paperwork is retained.",
+    provenanceNote: "Write down where and when you collected, and keep any permits or permissions. That helps support a stronger provenance score.",
   },
   CONDITIONAL_REVIEW_REQUIRED: {
-    label: "Conditional — review required",
+    label: "Check with the local office first",
     color: "var(--warn)",
     tone: "warn",
-    provenanceNote: "Do not assume legality. Confirm with the local field office before collecting or assigning a high provenance score.",
+    provenanceNote: "Don't assume this is allowed. Call the local land office before collecting or giving the specimen a high provenance score.",
   },
   PROHIBITED: {
-    label: "Prohibited",
+    label: "Not allowed",
     color: "var(--danger)",
     tone: "danger",
-    provenanceNote: "Illegal collection is a provenance defect. Cap at T4/T5 regardless of specimen quality.",
+    provenanceNote: "Illegal collecting hurts provenance. PRISM should not score these specimens above T4/T5, no matter how nice they look.",
   },
   PROHIBITED_CASUAL_PERMIT_REQUIRED: {
-    label: "Not casual — permit required",
+    label: "Needs a permit — not hobby collecting",
     color: "var(--danger)",
     tone: "danger",
-    provenanceNote: "Without a valid permit, treat as provenance-defective (T4/T5 cap).",
+    provenanceNote: "Without a valid permit, treat this as a provenance problem (cap at T4/T5).",
   },
   OUT_OF_SCOPE_ROUTE_ELSEWHERE: {
-    label: "Out of scope",
+    label: "Outside this tool's scope",
     color: "var(--cyan)",
     tone: "info",
-    provenanceNote: "This federal casual-use tree does not apply. Use the appropriate state, private, or commercial pathway.",
+    provenanceNote: "This hobby-collecting check doesn't cover your situation. Use the right rules for state land, private land, or commercial work.",
   },
   INSUFFICIENT_DATA: {
-    label: "Insufficient data",
+    label: "Need more information",
     color: "var(--text-muted)",
     tone: "muted",
-    provenanceNote: "Resolve land status before collecting. Until then, treat provenance claims cautiously (default T4/T5).",
+    provenanceNote: "Figure out who manages the land before collecting. Until then, treat provenance claims carefully (default T4/T5).",
   },
   EXCEEDS_CASUAL_THRESHOLD: {
-    label: "Exceeds casual threshold",
+    label: "Too much for casual hobby collecting",
     color: "var(--warn)",
     tone: "warn",
-    provenanceNote: "Free-use permit or sale contract may be required. Document authorization before scoring provenance highly.",
+    provenanceNote: "You may need written authorization from the local BLM office (often a mineral-materials sale contract). Get that before scoring provenance highly.",
   },
 };
 
@@ -125,7 +184,7 @@ export function evaluateLegality(input) {
     return {
       tag: "OUT_OF_SCOPE_ROUTE_ELSEWHERE",
       message:
-        "Commercial intent detected. Route to claim-location / Materials Act sale-permit rules. This casual-use check does not apply.",
+        "This tool is only for personal hobby collecting. Selling or commercial digging needs different rules (mining claims or sale permits).",
       notes,
     };
   }
@@ -136,7 +195,7 @@ export function evaluateLegality(input) {
       tag: "PROHIBITED",
       authority: "36 CFR 2.1",
       message:
-        "All rock, mineral, and fossil collecting is prohibited in NPS units absent a research permit. No casual-use exception exists.",
+        "Collecting rocks, minerals, or fossils is not allowed in National Parks unless you have a research permit. There is no hobby exception.",
       notes,
     };
   }
@@ -145,7 +204,7 @@ export function evaluateLegality(input) {
       tag: "PROHIBITED",
       authority: "50 CFR 27.51",
       message:
-        "Collecting is prohibited by default on refuge lands absent refuge-specific authorization. Check the individual refuge compatibility determination before proceeding.",
+        "Collecting is usually not allowed on National Wildlife Refuges. Check with that specific refuge before going.",
       notes,
     };
   }
@@ -153,7 +212,7 @@ export function evaluateLegality(input) {
     return {
       tag: "OUT_OF_SCOPE_ROUTE_ELSEWHERE",
       message:
-        "Federal framework does not apply. Check state statutes and the managing agency for that parcel.",
+        "Federal hobby-collecting rules don't apply here. Check your state's laws and the agency that manages the land.",
       notes,
     };
   }
@@ -161,7 +220,7 @@ export function evaluateLegality(input) {
     return {
       tag: "OUT_OF_SCOPE_ROUTE_ELSEWHERE",
       message:
-        "Federal public-land framework does not apply. Requires landowner permission and mineral-rights verification.",
+        "Federal public-land rules don't apply. You need the landowner's permission, and you should confirm who owns the mineral rights.",
       notes,
     };
   }
@@ -169,7 +228,7 @@ export function evaluateLegality(input) {
     return {
       tag: "INSUFFICIENT_DATA",
       message:
-        "Land manager must be resolved (e.g., via BLM MLRS or a GIS land-status layer) before legality can be assessed.",
+        "Figure out who manages the land first (for example with BLM's online map tools or a land-status map). We can't assess legality without that.",
       notes,
     };
   }
@@ -180,7 +239,7 @@ export function evaluateLegality(input) {
       tag: "PROHIBITED",
       authority: "Wilderness Act of 1964, 16 U.S.C. § 1133(c)",
       message:
-        "Mechanized equipment and generally all mineral entry/collecting are prohibited in designated wilderness.",
+        "Collecting is generally not allowed in designated wilderness. Power tools and vehicles for collecting are also banned.",
       notes,
     };
   }
@@ -188,7 +247,7 @@ export function evaluateLegality(input) {
     return {
       tag: "CONDITIONAL_REVIEW_REQUIRED",
       message:
-        "Most national monument proclamations withdraw the area from mineral entry and often restrict casual collecting. Check the specific proclamation and monument management plan — restrictions vary by monument.",
+        "Many national monuments ban or limit rock collecting. Rules differ by monument — check that monument's proclamation and management plan before you go.",
       notes,
     };
   }
@@ -196,7 +255,7 @@ export function evaluateLegality(input) {
     return {
       tag: "CONDITIONAL_REVIEW_REQUIRED",
       message:
-        "WSAs are managed to preserve wilderness character (non-impairment) pending congressional action. Casual collecting is generally not compatible; confirm with the local BLM office.",
+        "Wilderness study areas are managed to stay wild until Congress decides. Hobby collecting is usually not allowed — confirm with the local BLM office.",
       notes,
     };
   }
@@ -204,7 +263,7 @@ export function evaluateLegality(input) {
     return {
       tag: "INSUFFICIENT_DATA",
       message:
-        "Withdrawal instrument must be checked individually — scope of mineral-entry restriction varies (e.g., ACEC, military withdrawal, power-site reserve).",
+        "This is a special restricted area. Rules vary — look up the specific restriction (conservation area, military land, etc.) before collecting.",
       notes,
     };
   }
@@ -212,7 +271,7 @@ export function evaluateLegality(input) {
     return {
       tag: "INSUFFICIENT_DATA",
       message:
-        "Verify current withdrawal status via BLM MLRS (Mineral & Land Records System) before proceeding — status changes independently of general land-manager designation.",
+        "Check whether this parcel has special restrictions before you collect. Status can change even when the land is still labeled BLM or Forest Service.",
       notes,
     };
   }
@@ -223,7 +282,7 @@ export function evaluateLegality(input) {
       tag: "PROHIBITED_CASUAL_PERMIT_REQUIRED",
       authority: "Paleontological Resources Preservation Act, 16 U.S.C. § 470aaa",
       message:
-        "Vertebrate fossils are categorically excluded from casual collection on all federal land regardless of quantity or agency. Permit required.",
+        "Bones, teeth, and other vertebrate fossils cannot be collected as a hobby on federal land. You need a permit — amount doesn't matter.",
       notes,
     };
   }
@@ -232,17 +291,17 @@ export function evaluateLegality(input) {
       tag: "PROHIBITED",
       authority: "Archaeological Resources Protection Act, 16 U.S.C. § 470aa et seq.",
       message:
-        "Archaeological and cultural materials are outside PRISM’s mineralogical scope and are categorically protected. Do not collect.",
+        "Artifacts and cultural materials are protected by law and are outside rock-and-mineral collecting. Do not collect them.",
       notes,
     };
   }
   if (material_class === "gemstone_locatable_grade") {
     notes.push(
-      "If specimen quality/quantity suggests marketability (Coleman test), this may constitute locatable-mineral activity outside casual-use scope. Flag for manual review if value/quantity is high."
+      "If the material is valuable enough to sell in quantity, it may fall under mining rules instead of hobby collecting. Get a second opinion if you're taking a lot or high-value pieces."
     );
   }
   if (material_class === "invertebrate_fossil_plant_fossil") {
-    notes.push("Invertebrate and plant fossils are generally permitted under casual-use policy; reasonable quantity limits still apply.");
+    notes.push("Shells, leaves, and similar fossils are often allowed for hobby collecting in small amounts.");
   }
 
   // node_4 — extraction method
@@ -250,7 +309,7 @@ export function evaluateLegality(input) {
     return {
       tag: "PROHIBITED_CASUAL_PERMIT_REQUIRED",
       message:
-        "Requires Notice of Intent or Plan of Operations regardless of material class or quantity.",
+        "Blasting always needs formal agency approval — it is never hobby collecting.",
       notes,
     };
   }
@@ -258,7 +317,7 @@ export function evaluateLegality(input) {
     return {
       tag: "CONDITIONAL_REVIEW_REQUIRED",
       message:
-        "Power equipment (e.g., rock saws, mechanized digging) typically exceeds the casual-use threshold and may trigger Notice of Intent under 43 CFR 3809 (BLM) or 36 CFR 228 (USFS). Verify the local agency threshold.",
+        "Power tools (rock saws, machine digging, and similar) usually go beyond hobby collecting and may require filing paperwork with BLM or the Forest Service. Ask the local office what they allow.",
       notes,
     };
   }
@@ -275,23 +334,23 @@ export function evaluateLegality(input) {
     if ((hasTrip && trip > dailyLb) || (hasAnnual && annual > annualLb)) {
       return {
         tag: "EXCEEDS_CASUAL_THRESHOLD",
-        message: `Petrified wood appears to exceed informal BLM casual caps (≈${dailyLb} lb/day, ${annualLb} lb/year). A free-use permit is typically required.`,
+        message: `This amount of petrified wood looks above common BLM hobby limits (about ${dailyLb} lb + one piece per day, ${annualLb} lb per year). Contact the local BLM office — you may need a sale contract, or a special museum free-use authorization for a single piece over 250 lb.`,
         notes,
       };
     }
     if (!hasTrip && !hasAnnual) {
-      notes.push(`Track weight against informal caps: ≤${dailyLb} lb/day and ≤${annualLb} lb/year (state-office overrides possible).`);
+      notes.push(`Keep track of weight: commonly ≤${dailyLb} lb + one piece/day and ≤${annualLb} lb/year. Local offices may set different limits.`);
     }
   } else if (land_manager === "BLM" || land_manager === "USFS") {
     notes.push(
-      "No fixed federal statutory weight limit for general common-variety rock/mineral. Stay within reasonable personal/hobby use. USFS supplements vary by forest."
+      "There is no single federal weight limit for ordinary rock and mineral hobby collecting. Stay within a reasonable personal amount. National forests often have their own local rules."
     );
     const soft = QUANTITY_THRESHOLDS.personal_use_soft_cap_lb;
     if (hasTrip && trip > soft * 4) {
       return {
         tag: "CONDITIONAL_REVIEW_REQUIRED",
         message:
-          "Quantity suggests scale beyond typical personal/hobby use and may require a Materials Act free-use permit or sale contract. Confirm with the local office.",
+          "This quantity looks larger than typical personal hobby collecting. Ask the local land office whether you need a mineral-materials sale contract or other written authorization.",
         notes,
       };
     }
@@ -300,7 +359,7 @@ export function evaluateLegality(input) {
   return {
     tag: "PERMITTED_CASUAL",
     message:
-      "Under the answers provided, this outing appears within casual-use collecting policy for the selected land manager — subject to local supplemental rules. Verify on-site postings and contact the local field office if unsure.",
+      "Based on your answers, this looks like normal hobby collecting for this land manager — but local offices can add their own rules. Check posted signs and call the field office if you're unsure.",
     notes,
   };
 }

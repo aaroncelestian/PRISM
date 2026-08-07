@@ -120,8 +120,8 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
     ...computeContextData(c.key, scores),
   }));
   const visibleCtxData = allCtxData.filter(c => !c.hidden);
-  // Primary context is always the user-selected context (never hidden)
-  const selectedCtxData = visibleCtxData.find(c => c.key === ctx) || visibleCtxData[0];
+  // Honor explicitly selected ctx even when hidden (e.g. museum goal from Guided Mode)
+  const selectedCtxData = allCtxData.find(c => c.key === ctx) || visibleCtxData[0];
   const ctxGrade = GRADES.find(g => selectedCtxData.score >= g.min) || GRADES[GRADES.length - 1];
   const primaryCtx = {
     ...selectedCtxData,

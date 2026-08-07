@@ -1,13 +1,26 @@
 import { useState, useMemo, useEffect } from "react";
 import { ChevronRight, ChevronLeft, HelpCircle, X } from "lucide-react";
-import { DIMS, WEIGHTS, GRADES } from "../data/prism.js";
+import { DIMS, WEIGHTS, GRADES, THRESHOLD } from "../data/prism.js";
+import {
+  WIZARD_GOALS,
+  getWizardGoal,
+  getTopDims,
+  isHighImpactDim,
+  getCoachingLevers,
+  contextPasses,
+  formatTopWeights,
+  weightPct,
+} from "../data/wizardGoals.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import ScorePanel from "./ScorePanel.jsx";
 import TierSelector from "./TierSelector.jsx";
 import CriteriaChecklist from "./CriteriaChecklist.jsx";
 import { nearestAnchor, fineTuneRange } from "./SnapScoreControl.jsx";
 
-const TOTAL_STEPS = 1 + DIMS.length + 1; // specimen info + 8 dims + done
+const TOTAL_STEPS = 2 + DIMS.length + 1; // goal + specimen info + 8 dims + done
+const SPECIMEN_STEP = 1;
+const FIRST_DIM_STEP = 2;
+const DONE_STEP = TOTAL_STEPS - 1;
 
 function Tooltip({ text, onClose }) {
   return (
@@ -83,21 +96,33 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
   const [showTip, setShowTip] = useState(null);
   const [saveFlash, setSaveFlash] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(() => localStorage.getItem('prism_autoAdvance') === 'true');
+  const [goalPicked, setGoalPicked] = useState(false);
 
-  // step 0 = specimen info
-  // steps 1..DIMS.length = DIMS[0..]
+  // step 0 = goal / why
+  // step 1 = specimen info
+  // steps 2..(1+DIMS.length) = DIMS[0..]
   // last step = done
-  const dimIndex = step - 1;
+  const dimIndex = step - FIRST_DIM_STEP;
   const currentDim = dimIndex >= 0 && dimIndex < DIMS.length ? DIMS[dimIndex] : null;
   const progress = Math.round((step / (TOTAL_STEPS - 1)) * 100);
+  const goal = getWizardGoal(ctx);
+  const goalTopDims = useMemo(() => getTopDims(ctx, 3), [ctx]);
 
-  const canAdvance = step !== 0 || spec.name.trim().length > 0 || spec.species.trim().length > 0;
+  const canAdvance =
+    step === 0 ? goalPicked
+    : step === SPECIMEN_STEP ? (spec.name.trim().length > 0 || spec.species.trim().length > 0)
+    : true;
 
   const next = () => {
     if (step < TOTAL_STEPS - 1) setStep(s => s + 1);
   };
   const back = () => {
     if (step > 0) setStep(s => s - 1);
+  };
+
+  const pickGoal = (key) => {
+    setCtx(key);
+    setGoalPicked(true);
   };
 
   const pickAnchor = (dimKey, value) => {
@@ -107,7 +132,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
     }
   };
 
-  const isLastStep = step === TOTAL_STEPS - 1;
+  const isLastStep = step === DONE_STEP;
   const { isMobile } = useBreakpoint();
   const [showScorePanel, setShowScorePanel] = useState(false);
   const quickScore = useMemo(() => {
@@ -115,6 +140,9 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
     return Math.round(Object.entries(W).reduce((a, [k, w]) => a + (scores[k] ?? 50) * w, 0));
   }, [scores, ctx]);
   const quickGrade = GRADES.find(g => quickScore >= g.min) || GRADES[GRADES.length - 1];
+  const goalStatus = useMemo(() => contextPasses(scores, ctx), [scores, ctx]);
+  const coachingLevers = useMemo(() => getCoachingLevers(scores, ctx, 3), [scores, ctx]);
+  const highImpact = currentDim ? isHighImpactDim(ctx, currentDim.key) : false;
 
   useEffect(() => {
     const onKey = (e) => {
@@ -195,6 +223,16 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
             Step {step + 1} of {TOTAL_STEPS}
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {goalPicked && (
+              <span style={{
+                fontSize: "10px", color: "var(--cyan)", letterSpacing: "0.06em",
+                padding: "2px 8px", borderRadius: "3px",
+                background: "rgba(var(--accent-rgb), 0.08)",
+                border: "1px solid rgba(var(--accent-rgb), 0.28)",
+              }}>
+                {goal.hope}
+              </span>
+            )}
             {currentDim && (
               <span style={{ fontSize: "10px", color: "rgba(10,111,136,0.5)", letterSpacing: "0.08em" }}>
                 {currentDim.icon} {currentDim.label}
@@ -206,8 +244,80 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
         {/* ── Scrollable content ── */}
         <div style={{ flex: 1, overflowY: "auto", padding: "28px 28px 20px" }}>
 
-          {/* Step 0: Specimen info */}
+          {/* Step 0: Goal / why */}
           {step === 0 && (
+            <div>
+              <h2 style={{
+                fontFamily: "var(--sans)", fontSize: "22px", fontWeight: 600,
+                color: "var(--text)", marginBottom: "6px",
+              }}>
+                Why are you rating this?
+              </h2>
+              <p style={{ fontSize: "13px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: "18px" }}>
+                Pick what you are hoping for. PRISM will weight the score for that goal and highlight which dimensions matter most.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: goalPicked ? "16px" : 0 }}>
+                {WIZARD_GOALS.map((g) => {
+                  const selected = goalPicked && ctx === g.key;
+                  return (
+                    <button
+                      key={g.key}
+                      type="button"
+                      onClick={() => pickGoal(g.key)}
+                      style={{
+                        textAlign: "left",
+                        padding: "12px 14px",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        transition: "all 0.15s",
+                        background: selected ? "rgba(var(--accent-rgb), 0.08)" : "var(--bg-card)",
+                        border: `1px solid ${selected ? "rgba(var(--accent-rgb), 0.45)" : "var(--border)"}`,
+                      }}
+                    >
+                      <div style={{
+                        fontSize: "13px", fontWeight: selected ? 600 : 500,
+                        color: selected ? "var(--cyan)" : "var(--text)", marginBottom: "3px",
+                      }}>
+                        {g.hope}
+                      </div>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.5 }}>
+                        {g.pitch}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {goalPicked && (
+                <div style={{
+                  padding: "14px 16px", borderRadius: "6px",
+                  background: "rgba(var(--accent-rgb), 0.06)",
+                  border: "1px solid rgba(var(--accent-rgb), 0.22)",
+                }}>
+                  <div style={{
+                    fontSize: "11px", color: "var(--cyan)", letterSpacing: "0.08em",
+                    textTransform: "uppercase", marginBottom: "6px", fontWeight: 600,
+                  }}>
+                    How to reach this level
+                  </div>
+                  <div style={{ fontSize: "12px", color: "var(--text-dim)", marginBottom: "10px", lineHeight: 1.55 }}>
+                    For <strong style={{ color: "var(--text)" }}>{goal.hope}</strong>, PRISM weights{" "}
+                    <span style={{ fontFamily: "var(--mono)", color: "var(--cyan)" }}>{formatTopWeights(ctx, 3)}</span> most.
+                  </div>
+                  <ul style={{ margin: 0, padding: "0 0 0 16px" }}>
+                    {goal.tips.map((t, i) => (
+                      <li key={i} style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.65, marginBottom: "4px" }}>
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 1: Specimen info */}
+          {step === SPECIMEN_STEP && (
             <div>
               <h2 style={{
                 fontFamily: "var(--sans)", fontSize: "22px", fontWeight: 600,
@@ -261,6 +371,18 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
               <p style={{ fontSize: "13px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: "6px" }}>
                 {currentDim.desc}
               </p>
+
+              {highImpact && (
+                <div style={{
+                  marginBottom: "14px", padding: "10px 12px", borderRadius: "6px",
+                  background: "rgba(var(--accent-rgb), 0.06)",
+                  border: "1px solid rgba(var(--accent-rgb), 0.22)",
+                  fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55,
+                }}>
+                  <span style={{ color: "var(--cyan)", fontWeight: 600 }}>High impact for {goal.hope}</span>
+                  {" — "}{currentDim.label.toLowerCase()} is ~{weightPct(ctx, currentDim.key)}% of this score.
+                </div>
+              )}
 
               {/* Learn more toggle */}
               <div style={{ position: "relative", marginBottom: "22px", display: "inline-block" }}>
@@ -384,7 +506,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
 
           {/* Done state (last step) */}
           {isLastStep && !currentDim && (
-            <div style={{ textAlign: "center", paddingTop: "32px" }}>
+            <div style={{ textAlign: "center", paddingTop: "24px" }}>
               <div style={{ fontSize: "48px", marginBottom: "14px" }}>✅</div>
               <h2 style={{
                 fontFamily: "var(--sans)", fontSize: "22px", fontWeight: 600,
@@ -392,13 +514,59 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
               }}>
                 Your PRISM score is ready!
               </h2>
-              <p style={{ fontSize: "13px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: "28px" }}>
+              <p style={{ fontSize: "13px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: "16px" }}>
                 {isMobile
                   ? "Tap the score bar below to see your full grade and profile."
                   : "Check the panel on the right to see your score, grade, and profile."
                 }{" "}
                 Switch to Expert Mode anytime to fine-tune individual values.
               </p>
+
+              <div style={{
+                textAlign: "left", maxWidth: "420px", margin: "0 auto 22px",
+                padding: "14px 16px", borderRadius: "6px",
+                background: "var(--bg-card)", border: "1px solid var(--border)",
+              }}>
+                <div style={{
+                  fontSize: "11px", color: "var(--cyan)", letterSpacing: "0.08em",
+                  textTransform: "uppercase", marginBottom: "8px", fontWeight: 600,
+                }}>
+                  Goal: {goal.hope}
+                </div>
+                <div style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55, marginBottom: "10px" }}>
+                  Weighted score for this goal:{" "}
+                  <span style={{ fontFamily: "var(--mono)", fontWeight: 600, color: goalStatus.passes ? "var(--success)" : "var(--text)" }}>
+                    {goalStatus.score}
+                  </span>
+                  {" / 100"}
+                  {goalStatus.passes
+                    ? ` — clears the ${THRESHOLD}-point context threshold.`
+                    : ` — below the ${THRESHOLD}-point context threshold.`}
+                </div>
+                {!goalStatus.passes && coachingLevers.length > 0 && (
+                  <>
+                    <div style={{
+                      fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.08em",
+                      textTransform: "uppercase", marginBottom: "6px",
+                    }}>
+                      Next levers to improve
+                    </div>
+                    <ul style={{ margin: 0, padding: "0 0 0 16px" }}>
+                      {coachingLevers.slice(0, 2).map((d) => (
+                        <li key={d.key} style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.6, marginBottom: "3px" }}>
+                          {d.icon} {d.label} ({d.pct}% weight) — currently {d.score}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                {goalStatus.passes && (
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.55 }}>
+                    Strongest weighted areas: {goalTopDims.map((d) => d.short).join(", ")}. Fine-tune in Expert Mode if you want to push further.
+                  </div>
+                )}
+              </div>
+
               <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "center" }}>
                 {onSwitchToExpert && (
                   <button
@@ -467,7 +635,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                   {saveFlash ? "✓ Saved to History" : "💾 Save to History"}
                 </button>
                 <button
-                  onClick={() => { setStep(0); onReset?.(); }}
+                  onClick={() => { setGoalPicked(false); setStep(0); onReset?.(); }}
                   style={{
                     width: "220px", padding: "11px 20px",
                     background: "transparent",

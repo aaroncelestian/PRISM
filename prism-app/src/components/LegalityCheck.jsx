@@ -7,17 +7,19 @@ import {
   MATERIAL_CLASSES,
   EXTRACTION_METHODS,
   RESULT_META,
+  BLM_PERMIT_GUIDANCE,
+  BLM_PERMIT_GUIDANCE_TAGS,
   evaluateLegality,
 } from "../data/legalitySchema.js";
 
 const STEPS = [
-  { id: "scope", label: "Scope" },
-  { id: "intent", label: "Intent" },
+  { id: "scope", label: "About" },
+  { id: "intent", label: "Purpose" },
   { id: "land", label: "Land" },
-  { id: "status", label: "Status" },
-  { id: "material", label: "Material" },
-  { id: "method", label: "Method" },
-  { id: "quantity", label: "Quantity" },
+  { id: "status", label: "Restrictions" },
+  { id: "material", label: "What" },
+  { id: "method", label: "Tools" },
+  { id: "quantity", label: "Amount" },
   { id: "result", label: "Result" },
 ];
 
@@ -215,30 +217,93 @@ function prevVisibleIndex(visible, currentStep) {
   return visible[pos - 1].index;
 }
 
+function BlmPermitGuide({ compact = false }) {
+  const g = BLM_PERMIT_GUIDANCE;
+  return (
+    <div style={{
+      padding: "12px 14px", borderRadius: "6px", marginBottom: compact ? 0 : "12px",
+      background: "var(--bg-card)", border: "1px solid var(--border)",
+    }}>
+      <div style={{ fontSize: "11px", color: "var(--cyan)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>
+        {g.title}
+      </div>
+      <div style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.65, marginBottom: "10px" }}>
+        {g.summary}
+      </div>
+
+      {!compact && (
+        <>
+          <div style={{ fontSize: "11px", color: "var(--text)", fontWeight: 600, marginBottom: "4px" }}>Usually no permit needed</div>
+          <ul style={{ margin: "0 0 10px", padding: "0 0 0 16px" }}>
+            {g.whenNoPermit.map((item) => (
+              <li key={item} style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.65 }}>{item}</li>
+            ))}
+          </ul>
+          <div style={{ fontSize: "11px", color: "var(--text)", fontWeight: 600, marginBottom: "4px" }}>When you need to ask the BLM office</div>
+          <ul style={{ margin: "0 0 12px", padding: "0 0 0 16px" }}>
+            {g.whenYouNeedAuthorization.map((item) => (
+              <li key={item} style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.65 }}>{item}</li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      <div style={{ display: "grid", gap: "8px", marginBottom: "10px" }}>
+        {g.steps.map((s) => (
+          <div key={s.title} style={{ padding: "8px 10px", background: "var(--bg-panel)", borderRadius: "5px", border: "1px solid var(--border-dim)" }}>
+            <div style={{ fontSize: "11px", color: "var(--text)", fontWeight: 600, marginBottom: "3px" }}>{s.title}</div>
+            <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.55 }}>{s.text}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.55, marginBottom: "10px" }}>
+        {g.importantNote}
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+        {g.links.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: "11px", color: "var(--cyan)", textDecoration: "underline" }}
+          >
+            {link.label}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ScopeStep() {
   return (
     <div>
       <StepHeader title="WHAT THIS CHECKS">
-        Answer a few questions about where and what you plan to collect. PRISM maps those answers to casual-use federal policy for hobby mineral collecting.
+        Answer a few questions about where and what you plan to collect. PRISM uses your answers to check common hobby-collecting rules on U.S. public land.
       </StepHeader>
 
       <div style={{ padding: "12px 14px", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "6px", marginBottom: "10px" }}>
-        <div style={{ fontSize: "11px", color: "var(--cyan)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>In scope</div>
+        <div style={{ fontSize: "11px", color: "var(--cyan)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>Covered</div>
         <ul style={{ margin: 0, padding: "0 0 0 16px" }}>
-          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.7 }}>Casual / hobby specimen collecting</li>
-          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.7 }}>U.S. federal land managed by BLM or USFS (primary path)</li>
-          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.7 }}>Hand tools and personal-use quantities</li>
+          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.7 }}>Hobby collecting for your own collection</li>
+          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.7 }}>U.S. public land managed by BLM or the Forest Service</li>
+          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.7 }}>Hand tools and personal amounts</li>
         </ul>
       </div>
 
       <div style={{ padding: "12px 14px", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "6px", marginBottom: "10px" }}>
         <div style={{ fontSize: "11px", color: "var(--warn)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>Not covered in detail</div>
         <ul style={{ margin: 0, padding: "0 0 0 16px" }}>
-          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.7 }}>Claim staking or commercial extraction</li>
-          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.7 }}>State trust land and private mineral rights (routed out)</li>
-          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.7 }}>Per-forest or BLM state-office override tables</li>
+          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.7 }}>Mining claims or digging to sell</li>
+          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.7 }}>State land and private property (you'll be pointed elsewhere)</li>
+          <li style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.7 }}>Special local rules for each forest or BLM office</li>
         </ul>
       </div>
+
+      <BlmPermitGuide />
 
       <div style={{
         display: "flex", gap: "10px", padding: "10px 14px", borderRadius: "6px",
@@ -257,8 +322,8 @@ function ResultPanel({ result }) {
   const meta = RESULT_META[result.tag] || RESULT_META.INSUFFICIENT_DATA;
   return (
     <div>
-      <StepHeader title="LEGALITY RESULT">
-        Guidance only — confirm with the local land manager before collecting. Illegal collection is a provenance defect in PRISM.
+      <StepHeader title="YOUR RESULT">
+        This is guidance only — confirm with the local land office before collecting. Specimens collected illegally score poorly for provenance in PRISM.
       </StepHeader>
 
       <div style={{
@@ -281,7 +346,7 @@ function ResultPanel({ result }) {
         </div>
         {result.authority && (
           <div style={{ fontSize: "11px", fontFamily: "var(--mono)", color: "var(--cyan)", letterSpacing: "0.02em" }}>
-            Authority: {result.authority}
+            Rule: {result.authority}
           </div>
         )}
       </div>
@@ -305,13 +370,15 @@ function ResultPanel({ result }) {
         marginBottom: "12px",
       }}>
         <div style={{ fontSize: "11px", color: "var(--cyan)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "5px" }}>
-          Provenance impact (T1–T5)
+          How this affects provenance score
         </div>
         <div style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.65 }}>{meta.provenanceNote}</div>
       </div>
 
+      {BLM_PERMIT_GUIDANCE_TAGS.has(result.tag) && <BlmPermitGuide />}
+
       <div style={{ fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.55 }}>
-        Schema v{LEGALITY_META.version} · last reviewed {LEGALITY_META.lastReviewed}. Thresholds are informal guidance and may be overridden by local offices.
+        Tool v{LEGALITY_META.version} · last reviewed {LEGALITY_META.lastReviewed}. Weight limits here are informal guidance — local offices can set different rules.
       </div>
     </div>
   );
@@ -388,24 +455,24 @@ export default function LegalityCheck({ onClose }) {
 
           {currentMeta.id === "intent" && (
             <div>
-              <StepHeader title="COMMERCIAL INTENT">
-                Casual-use collecting is for personal hobby specimens — not sale, barter, or commercial extraction.
+              <StepHeader title="WHY ARE YOU COLLECTING?">
+                Hobby collecting means keeping specimens for yourself — not selling them or digging as a business.
               </StepHeader>
               <BoolChoice
                 value={answers.commercial_intent}
                 onChange={(v) => setField("commercial_intent", v)}
-                yesLabel="Yes — commercial / for sale"
-                yesDesc="Selling, trading as business inventory, or extracting for commercial gain"
-                noLabel="No — personal / hobby use"
-                noDesc="Keeping specimens for a personal collection or non-commercial study"
+                yesLabel="Yes — for sale or business"
+                yesDesc="Selling, stocking a shop, or digging for profit"
+                noLabel="No — personal hobby"
+                noDesc="Keeping specimens for your own collection or personal study"
               />
             </div>
           )}
 
           {currentMeta.id === "land" && (
             <div>
-              <StepHeader title="LAND MANAGER">
-                Who manages the collecting site? Resolve unknown parcels with BLM MLRS or a land-status GIS layer before going further.
+              <StepHeader title="WHO MANAGES THE LAND?">
+                If you're not sure, look it up on a public land map (for example BLM's online maps) before going further.
               </StepHeader>
               <OptionGrid
                 options={LAND_MANAGERS}
@@ -417,8 +484,8 @@ export default function LegalityCheck({ onClose }) {
 
           {currentMeta.id === "status" && (
             <div>
-              <StepHeader title="WITHDRAWAL STATUS">
-                Mineral-entry withdrawals change independently of the land-manager label. Check current status — do not assume “BLM” means open.
+              <StepHeader title="ANY SPECIAL RESTRICTIONS?">
+                Some BLM and Forest Service areas ban collecting even though they're still public land. Don't assume “BLM” means open — check for wilderness, monuments, and similar.
               </StepHeader>
               <OptionGrid
                 options={WITHDRAWAL_STATUSES}
@@ -430,8 +497,8 @@ export default function LegalityCheck({ onClose }) {
 
           {currentMeta.id === "material" && (
             <div>
-              <StepHeader title="MATERIAL CLASS">
-                Classification determines which statute applies and whether collection is categorically barred.
+              <StepHeader title="WHAT ARE YOU COLLECTING?">
+                Different materials have different rules. Some — like vertebrate fossils and artifacts — are never OK for hobby collecting.
               </StepHeader>
               <OptionGrid
                 options={MATERIAL_CLASSES}
@@ -443,8 +510,8 @@ export default function LegalityCheck({ onClose }) {
 
           {currentMeta.id === "method" && (
             <div>
-              <StepHeader title="EXTRACTION METHOD">
-                Casual use is generally limited to hand tools. Mechanized methods and blasting typically require notices or plans of operations.
+              <StepHeader title="HOW WILL YOU COLLECT?">
+                Hobby collecting is usually limited to hand tools. Power equipment and blasting typically need agency approval.
               </StepHeader>
               <OptionGrid
                 options={EXTRACTION_METHODS}
@@ -456,13 +523,13 @@ export default function LegalityCheck({ onClose }) {
 
           {currentMeta.id === "quantity" && (
             <div>
-              <StepHeader title="QUANTITY">
-                Optional — used for informal BLM petrified-wood caps and to flag outsized personal-use hauls. Leave blank if unknown.
+              <StepHeader title="HOW MUCH?">
+                Optional — helps flag large hauls and common BLM petrified-wood limits. Leave blank if you don't know.
               </StepHeader>
               <div style={{ display: "grid", gap: "12px" }}>
                 <label style={{ display: "block" }}>
                   <div style={{ fontSize: "11px", color: "var(--text-label)", marginBottom: "5px", letterSpacing: "0.06em" }}>
-                    This trip (lb)
+                    This trip (pounds)
                   </div>
                   <input
                     type="number"
@@ -480,7 +547,7 @@ export default function LegalityCheck({ onClose }) {
                 </label>
                 <label style={{ display: "block" }}>
                   <div style={{ fontSize: "11px", color: "var(--text-label)", marginBottom: "5px", letterSpacing: "0.06em" }}>
-                    Annual running total at this jurisdiction (lb)
+                    Total this year from this area (pounds)
                   </div>
                   <input
                     type="number"
