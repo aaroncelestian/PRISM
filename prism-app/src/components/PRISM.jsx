@@ -12,6 +12,7 @@ import QuickExport from "./QuickExport.jsx";
 import CollectionHistory from "./CollectionHistory.jsx";
 import HelpGuide from "./HelpGuide.jsx";
 import MeteoriteID from "./MeteoriteID.jsx";
+import LegalityCheck from "./LegalityCheck.jsx";
 import VerifyView from "./VerifyView.jsx";
 import { useLocalCollection } from "../hooks/useLocalCollection.js";
 import { APP_VERSION } from "../version.js";
@@ -95,6 +96,7 @@ export default function PRISM() {
   const [showHistory,    setShowHistory]    = useState(false);
   const [showHelp,       setShowHelp]       = useState(false);
   const [showMeteoriteID, setShowMeteoriteID] = useState(false);
+  const [showLegality,   setShowLegality]   = useState(false);
   const [lastSavedKey,   setLastSavedKey]   = useState(null);
   const [spSource,       setSpSource]       = useState(null); // SpecimenPro integration
   const [scoringCompId,  setScoringCompId]  = useState(null); // Research mode comp being scored
@@ -113,6 +115,7 @@ export default function PRISM() {
     { type: "header", label: "Reference" },
     { label: "❓ Help / Guide",        action: () => { setShowHelp(true);        setShowTools(false); } },
     { label: "🎓 Buyer Guide",         action: () => { setShowBuyerGuide(true);  setShowTools(false); } },
+    { label: "⚖️ Collecting Legality", action: () => { setShowLegality(true);   setShowTools(false); } },
     ...(SHOW_METEORITE_ID
       ? [{ label: "☄️ Meteorite ID", action: () => { setShowMeteoriteID(true); setShowTools(false); } }]
       : []),
@@ -427,6 +430,9 @@ export default function PRISM() {
 
       {showHelp && (
         <HelpGuide onClose={() => setShowHelp(false)} />
+      )}
+      {showLegality && (
+        <LegalityCheck onClose={() => setShowLegality(false)} />
       )}
       {showMeteoriteID && (
         <MeteoriteID onClose={() => setShowMeteoriteID(false)} />

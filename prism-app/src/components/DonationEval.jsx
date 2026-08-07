@@ -217,6 +217,61 @@ const LAND_LEGAL = {
   },
 };
 
+/** Land messaging for secondary acquisition (dealer / gift / trade / auction) — origin context, not collector guilt. */
+const LAND_ORIGIN_RISK = {
+  blm: {
+    status: "allowed",
+    color: "#0a7a52",
+    heading: "Common Legitimate Source Type",
+    detail: "BLM lands often host legal casual collecting and commercial claim activity. You are not the collector of record — ask the seller or prior owner whether they can substantiate that the specimen left the land legally.",
+  },
+  usfs: {
+    status: "conditional",
+    color: "#a65d00",
+    heading: "Managed Land — Verify Source Chain",
+    detail: "National Forest localities can be legitimate, but rules vary by forest. For a purchased or gifted specimen, confirm the seller/donor can stand behind legal origin rather than reconstructing your own collecting permit.",
+  },
+  nps: {
+    status: "prohibited",
+    color: "#ff5050",
+    heading: "High Origin Risk — Restricted Land",
+    detail: "Specimens from National Parks and Monuments are frequently illegally collected. Museums will scrutinize the dealer or donor chain closely; undocumented origin from this land type is usually disqualifying.",
+    action: "Obtain clear provenance that the piece was collected under a scientific permit, before park designation, or from an otherwise verifiable legal source before donation.",
+  },
+  state: {
+    status: "conditional",
+    color: "#a65d00",
+    heading: "State / Jurisdictional Context",
+    detail: "State-managed land rules vary widely. Pinning the locality helps the institution; your responsibility as buyer or recipient is reasonable diligence that the prior chain was legal, not personal collecting compliance.",
+  },
+  private: {
+    status: "conditional",
+    color: "#f0c040",
+    heading: "Private / Mine Locality Context",
+    detail: "Private land and commercial mines (e.g. Morenci) are common legitimate sources when material is sold through authorized channels. You did not need landowner permission yourself — confirm the dealer or prior owner can substantiate legal origin.",
+  },
+  tribal: {
+    status: "prohibited",
+    color: "#ff5050",
+    heading: "High Origin Risk — Tribal / Indigenous Lands",
+    detail: "Material from Tribal or Indigenous lands without proper authority is a serious federal and institutional concern. Museums will expect a documented legal chain; a purchase or gift alone does not clear title questions.",
+    action: "Seek dealer/donor documentation of tribal authority or applicable permits before offering this specimen for institutional donation.",
+  },
+  dod: {
+    status: "prohibited",
+    color: "#c04040",
+    heading: "High Origin Risk — Military / DOD Land",
+    detail: "Military lands are strictly controlled. Specimens claimed from these areas face extreme institutional scrutiny regardless of whether you personally collected them.",
+    action: "Without verified military authorization in the ownership chain, museums will almost certainly decline accession.",
+  },
+  unknown: {
+    status: "unknown",
+    color: "#607090",
+    heading: "Land Context Not Yet Documented",
+    detail: "Pinning or naming the locality still strengthens provenance. Land type here is informational for the institution — not a checklist of collecting permits you personally needed.",
+  },
+};
+
 const LAND_QUESTIONS = {
   blm: [
     { id: "casual",          label: "Casual / recreational purpose",     desc: "Collection was for personal use — not for commercial resale at time of collection.",       required: true },
@@ -291,6 +346,61 @@ const GIFT_QUESTIONS = [
 function getAcquisitionQuestions(acquisitionType) {
   const map = { dealer: DEALER_QUESTIONS, collector: COLLECTOR_QUESTIONS, auction: AUCTION_QUESTIONS, gift: GIFT_QUESTIONS };
   return map[acquisitionType] || [];
+}
+
+/** Buyer / recipient due diligence — secondary acquisition only (not self-collected). */
+const DUE_DILIGENCE_QUESTIONS_BASE = [
+  {
+    id: "dd_no_red_flags",
+    label: "No known illegal-origin red flags",
+    desc: "You have no reason to believe this specimen was stolen, poached, or taken from closed or prohibited land.",
+    required: true,
+  },
+  {
+    id: "dd_legitimate_locality",
+    label: "Locality is a known legitimate source",
+    desc: "The stated locality is a recognized commercial mine, published locality, or other source consistent with legal supply — not a closed park or similarly restricted site without explanation.",
+    required: false,
+    recommended: true,
+  },
+];
+
+function getDueDiligenceQuestions(acquisitionType) {
+  if (!acquisitionType || acquisitionType === "self" || acquisitionType === "unknown") return [];
+  const sellerRequired = acquisitionType === "dealer";
+  const sellerLabel =
+    acquisitionType === "dealer" ? "Seller stands behind legality"
+    : acquisitionType === "gift" ? "Donor stands behind legality"
+    : acquisitionType === "auction" ? "Sale source stands behind legality"
+    : "Prior owner stands behind legality";
+  const sellerDesc =
+    acquisitionType === "dealer"
+      ? "The named dealer affirms or documents that the specimen was legally acquired and can be offered for sale."
+      : acquisitionType === "gift"
+      ? "The donor affirms, to the best of their knowledge, that the specimen was legally obtained."
+      : acquisitionType === "auction"
+      ? "The auction house, catalog, or seller representation supports legal title / legal origin."
+      : "The prior collector affirms or documents that the specimen was legally obtained.";
+  return [
+    ...DUE_DILIGENCE_QUESTIONS_BASE,
+    {
+      id: "dd_seller_legality",
+      label: sellerLabel,
+      desc: sellerDesc,
+      required: sellerRequired,
+      recommended: !sellerRequired,
+    },
+  ];
+}
+
+function getDocumentationQuestions(acquisitionType, landType) {
+  const isSelf = acquisitionType === "self";
+  return [
+    ...(isSelf ? (LAND_QUESTIONS[landType] || []) : []),
+    ...getAcquisitionQuestions(acquisitionType),
+    ...getDueDiligenceQuestions(acquisitionType),
+    ...PROVENANCE_QUESTIONS,
+  ];
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
@@ -728,7 +838,9 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
 
   const flag = lookupCountryFlag(originCountry);
   const isSelf = acquisitionType === "self";
-  const legalInfo = landType ? LAND_LEGAL[landType] : null;
+  const legalInfo = landType
+    ? (isSelf ? LAND_LEGAL[landType] : LAND_ORIGIN_RISK[landType])
+    : null;
 
   useEffect(() => {
     if (!location) return;
@@ -748,9 +860,9 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
           Origin &amp; Collection Location
         </h3>
         <p style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55 }}>
-          Click the map or use the search box to pin the site. Country and US land management type
-          are auto-detected from the pin. The colored overlay shows US federal surface management
-          boundaries — most people find this helpful for quickly identifying the land type.
+          {isSelf
+            ? "Click the map or use the search box to pin where you collected. Country and US land management type are auto-detected from the pin. The colored overlay shows US federal surface management boundaries — use this to confirm collecting rules for that land type."
+            : "Pin the specimen’s stated locality for provenance documentation. Country and US land management type are auto-detected as institutional context — not a checklist of permits you personally needed. You are responsible for reasonable diligence that the piece was legally obtained."}
         </p>
       </div>
 
@@ -910,11 +1022,22 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
                   {autoSource.landType && <span style={{ fontWeight: 400, fontSize: "9px", opacity: 0.7 }}> · auto-detected</span>}
                 </div>
               </div>
-              <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.55 }}>
-                {LAND_TYPES.find(lt => lt.key === landType)?.desc}
-              </div>
+              {!isSelf && (
+                <div style={{
+                  display: "inline-block", marginBottom: "5px", padding: "2px 7px", borderRadius: "3px",
+                  fontSize: "9px", letterSpacing: "0.06em", textTransform: "uppercase",
+                  background: "rgba(96,112,144,0.12)", color: "var(--text-muted)",
+                }}>
+                  Land context (informational)
+                </div>
+              )}
+              {isSelf && (
+                <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.55 }}>
+                  {LAND_TYPES.find(lt => lt.key === landType)?.desc}
+                </div>
+              )}
               {legalInfo && (
-                <div style={{ marginTop: "6px", fontSize: "11px", fontWeight: 600, color: legalInfo.color }}>
+                <div style={{ marginTop: isSelf ? "6px" : "2px", fontSize: "11px", fontWeight: 600, color: legalInfo.color }}>
                   {legalInfo.status === "allowed" ? "✓" : legalInfo.status === "prohibited" ? "✗" : legalInfo.status === "unknown" ? "?" : "⚠"} {legalInfo.heading}
                 </div>
               )}
@@ -924,7 +1047,7 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
               {legalInfo?.action && (
                 <div style={{ marginTop: "4px", fontSize: "10px", color: legalInfo.color, lineHeight: 1.5 }}>➜ {legalInfo.action}</div>
               )}
-              {!isSelf && <div style={{ marginTop: "5px", fontSize: "9px", color: "var(--text-muted)", fontStyle: "italic" }}>Click map to override.</div>}
+              {!isSelf && <div style={{ marginTop: "5px", fontSize: "9px", color: "var(--text-muted)", fontStyle: "italic" }}>Click map to override locality pin.</div>}
             </div>
           )}
 
@@ -933,7 +1056,9 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
             <div style={{ padding: "9px 11px", borderRadius: "6px", background: "rgba(96,112,144,0.08)", border: "1px solid rgba(96,112,144,0.30)" }}>
               <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-dim)", marginBottom: "3px" }}>Not in federal dataset</div>
               <div style={{ fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.55 }}>
-                Likely private, county, or small state parcel. Select the type below if known.
+                {isSelf
+                  ? "Likely private, county, or small state parcel. Select the type below if known."
+                  : "Likely private, county, or small state parcel. Locality is still useful provenance even without a federal land label."}
               </div>
             </div>
           )}
@@ -942,7 +1067,9 @@ function LocationStep({ location, setLocation, landType, setLandType, originCoun
           {!location && !isDetecting && (
             <div style={{ padding: "9px 11px", borderRadius: "6px", background: "rgba(96,112,144,0.06)", border: "1px solid rgba(96,112,144,0.20)", textAlign: "center" }}>
               <div style={{ fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.55 }}>
-                Click the map or search a location to auto-detect land type.
+                {isSelf
+                  ? "Click the map or search a location to auto-detect land type."
+                  : "Click the map or search to pin the stated locality for provenance."}
               </div>
             </div>
           )}
@@ -1090,7 +1217,9 @@ function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploa
   const isSelf = acquisitionType === "self";
   const landQs = isSelf ? (LAND_QUESTIONS[landType] || []) : [];
   const acqQs  = getAcquisitionQuestions(acquisitionType);
+  const dueQs  = getDueDiligenceQuestions(acquisitionType);
   const acqMeta = ACQUISITION_TYPES.find(a => a.key === acquisitionType);
+  const highRiskLand = !isSelf && (landType === "nps" || landType === "tribal" || landType === "dod");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
@@ -1107,10 +1236,10 @@ function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploa
       {acqMeta && (
         <div style={{ padding: "8px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border-dim)", fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>
           {acqMeta.icon} <strong style={{ color: "var(--text)" }}>{acqMeta.label}:</strong>{" "}
-          {acquisitionType === "dealer" && "Museums accept dealer-purchased specimens but require the dealer to be named and the locality to be confirmed. The dealer's own documentation of the collection chain matters."}
-          {acquisitionType === "collector" && "Traceable collector-to-collector chains are accepted, but each link in the chain must be identified. Unknown links reduce institutional confidence."}
-          {acquisitionType === "auction" && "Auction-purchased specimens often have published catalog descriptions which serve as provenance documentation. Request the catalog page if available."}
-          {acquisitionType === "gift" && "Gift or inherited specimens are accepted but require documentation of the donor's acquisition history where possible."}
+          {acquisitionType === "dealer" && "Museums accept dealer-purchased specimens but require the dealer to be named and the locality to be confirmed. You did not personally collect this piece — your role is buyer due diligence: a named dealer, locality confirmation, and no known illegal-origin red flags."}
+          {acquisitionType === "collector" && "Traceable collector-to-collector chains are accepted, but each link in the chain must be identified. Unknown links reduce institutional confidence. Diligence is about the prior chain, not permits you personally held."}
+          {acquisitionType === "auction" && "Auction-purchased specimens often have published catalog descriptions which serve as provenance documentation. Request the catalog page if available. Diligence focuses on sale records and stated origin, not your own field permits."}
+          {acquisitionType === "gift" && "Gift or inherited specimens are accepted but require documentation of the donor's acquisition history where possible. You are responsible for reasonable diligence on legal origin, not for having collected the specimen yourself."}
           {acquisitionType === "self" && "Self-collected specimens have the strongest potential provenance — full locality, date, and legal collection documentation can be provided firsthand."}
           {acquisitionType === "unknown" && "Most institutions will not accept specimens with entirely unknown acquisition history into permanent collections."}
         </div>
@@ -1121,6 +1250,12 @@ function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploa
         <div style={{ padding: "10px 12px", background: "rgba(224,106,42,0.08)", border: "1px solid rgba(224,106,42,0.3)", borderRadius: "5px", fontSize: "11px", color: "#e06a2a", lineHeight: 1.5 }}>
           ⚠️ Collecting in National Parks and Monuments is generally prohibited (16 U.S.C. § 1).
           Museum donation is only possible for pre-designation specimens or those collected under a scientific permit.
+        </div>
+      )}
+      {highRiskLand && (
+        <div style={{ padding: "10px 12px", background: "rgba(224,106,42,0.08)", border: "1px solid rgba(224,106,42,0.3)", borderRadius: "5px", fontSize: "11px", color: "#e06a2a", lineHeight: 1.5 }}>
+          ⚠️ Stated locality land context is high-risk ({LAND_TYPES.find(lt => lt.key === landType)?.label}).
+          Museums will scrutinize the ownership chain — document a verifiable legal source; a purchase or gift alone rarely clears origin questions.
         </div>
       )}
       {isSelf && landType === "unknown" && (
@@ -1149,6 +1284,18 @@ function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploa
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
             {acqQs.map(q => <CheckItem key={q.id} q={q} checked={!!checks[q.id]} onToggle={() => toggle(q.id)} />)}
+          </div>
+        </div>
+      )}
+
+      {/* Buyer / recipient due diligence (secondary acquisition) */}
+      {dueQs.length > 0 && (
+        <div>
+          <div style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>
+            Legal-Origin Due Diligence
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            {dueQs.map(q => <CheckItem key={q.id} q={q} checked={!!checks[q.id]} onToggle={() => toggle(q.id)} />)}
           </div>
         </div>
       )}
@@ -1197,11 +1344,7 @@ function buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, 
   const flag     = lookupCountryFlag(originCountry);
   const status   = pct === 100 ? "READY FOR CONSIDERATION" : pct >= 60 ? "CONDITIONALLY SUITABLE" : "NOT CURRENTLY SUITABLE";
   const isSelf   = acquisitionType === "self";
-  const allQs    = [
-    ...(isSelf ? (LAND_QUESTIONS[landType] || []) : []),
-    ...getAcquisitionQuestions(acquisitionType),
-    ...PROVENANCE_QUESTIONS,
-  ];
+  const allQs    = getDocumentationQuestions(acquisitionType, landType);
   const LINE = "\u2500".repeat(52);
   const lines = ["PRISM \u2014 MINERAL DONATION EVALUATION REPORT", `Generated: ${now}`, LINE, ""];
   if (spec?.name || spec?.species || spec?.locality) {
@@ -1223,9 +1366,14 @@ function buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, 
   if (acquisitionDetails?.collectorNames) lines.push(`  Collector(s): ${acquisitionDetails.collectorNames}`);
   if (acquisitionDetails?.auctionHouse)   lines.push(`  Auction/Show: ${acquisitionDetails.auctionHouse}`);
   if (acquisitionDetails?.donorName)      lines.push(`  Donor:        ${acquisitionDetails.donorName}`);
-  lines.push("", "COLLECTION SITE");
+  lines.push("", isSelf ? "COLLECTION SITE" : "STATED LOCALITY");
   lines.push(`  Country:   ${originCountry || "Unknown"}`);
-  if (landMeta) lines.push(`  Land type: ${landMeta.label}`);
+  if (landMeta) {
+    lines.push(isSelf
+      ? `  Land type: ${landMeta.label}`
+      : `  Stated locality land context: ${landMeta.label}`);
+  }
+  if (localityText) lines.push(`  Locality:  ${localityText}`);
   if (location) lines.push(`  Coordinates: ${location.lat.toFixed(5)}\u00b0, ${location.lng.toFixed(5)}\u00b0`);
   lines.push("");
   if (flag) {
@@ -1260,6 +1408,7 @@ function buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, 
 }
 
 function buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location, checks, uploads, pct, chainScore, attestorName }) {
+  const isSelf = acquisitionType === "self";
   return JSON.stringify({
     generated: new Date().toISOString(),
     generator: "PRISM Mineral Donation Evaluator v1",
@@ -1274,6 +1423,7 @@ function buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, 
       locality: localityText || null,
       country: originCountry || null,
       landType: landType || null,
+      landTypeRole: isSelf ? "collector_compliance" : "stated_locality_context",
       coordinates: location ? { lat: location.lat, lng: location.lng } : null,
     },
     attestation: {
@@ -1294,9 +1444,7 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
   const [copied, setCopied] = useState(false);
   const [attestorName, setAttestorName] = useState("");
   const isSelf = acquisitionType === "self";
-  const landQs  = isSelf ? (LAND_QUESTIONS[landType] || []) : [];
-  const acqQs   = getAcquisitionQuestions(acquisitionType);
-  const allQs   = [...landQs, ...acqQs, ...PROVENANCE_QUESTIONS];
+  const allQs   = getDocumentationQuestions(acquisitionType, landType);
   const required = allQs.filter(q => q.required);
   const optional = allQs.filter(q => !q.required);
 
@@ -1305,7 +1453,7 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
   const optPassed = optional.filter(q => checks[q.id]);
 
   const pct = required.length > 0 ? Math.round((reqPassed.length / required.length) * 100)
-    : landType === "unknown" ? 0 : 100;
+    : (isSelf && landType === "unknown") ? 0 : 100;
 
   const acqMeta     = ACQUISITION_TYPES.find(a => a.key === acquisitionType);
   const chainStrength = CHAIN_STRENGTH[acquisitionType] || { base: 50, label: "Unknown" };
@@ -1407,11 +1555,23 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
       {/* Location summary */}
       {(originCountry || localityText || location || spec?.locality) && (
         <div style={{ padding: "9px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border)" }}>
-          <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>Collection Site</div>
+          <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
+            {isSelf ? "Collection Site" : "Stated Locality"}
+          </div>
           {localityText && <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", marginBottom: "3px" }}>{localityText}</div>}
           {!localityText && spec?.locality && <div style={{ fontSize: "12px", color: "var(--text)", marginBottom: "3px" }}>{spec.locality}</div>}
           {originCountry && <div style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "3px" }}>Country: <strong>{originCountry}</strong></div>}
-          {landMeta && <div style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "3px" }}>Land: <strong style={{ color: landMeta.color }}>{landMeta.label}</strong></div>}
+          {landMeta && (
+            <div style={{ fontSize: "11px", color: "var(--text-dim)", marginBottom: "3px" }}>
+              {isSelf ? "Land:" : "Stated locality land context:"}{" "}
+              <strong style={{ color: landMeta.color }}>{landMeta.label}</strong>
+              {!isSelf && (
+                <span style={{ display: "block", marginTop: "2px", fontSize: "10px", color: "var(--text-muted)" }}>
+                  Informational for the institution — not collector-permit compliance for you.
+                </span>
+              )}
+            </div>
+          )}
           {location && <div style={{ fontSize: "10px", color: "var(--text-muted)", fontFamily: "var(--mono)" }}>{location.lat.toFixed(5)}°, {location.lng.toFixed(5)}°</div>}
         </div>
       )}

@@ -1,0 +1,195 @@
+{
+  "schema_name": "PRISM Specimen Collecting Legality Check",
+  "version": "1.0",
+  "scope": "Casual/hobbyist mineral specimen collecting on U.S. federal land. Does NOT cover claim staking, commercial extraction, or state/private land (see state_land_stub).",
+  "last_reviewed": "2026-08-06",
+
+  "input_fields": {
+    "land_manager": {
+      "type": "enum",
+      "options": ["BLM", "USFS", "NPS", "USFWS", "state_trust", "private", "unknown"],
+      "required": true,
+      "description": "Primary federal (or non-federal) land management agency for the collecting site."
+    },
+    "withdrawal_status": {
+      "type": "enum",
+      "options": ["open", "national_monument", "wilderness", "wilderness_study_area", "other_withdrawal", "unknown"],
+      "required": true,
+      "description": "Mineral entry withdrawal status. Check current BLM MLRS / agency withdrawal database — status changes independent of generic land-manager type."
+    },
+    "material_class": {
+      "type": "enum",
+      "options": ["common_variety_mineral_rock", "petrified_wood", "gemstone_locatable_grade", "vertebrate_fossil", "invertebrate_fossil_plant_fossil", "archaeological_cultural"],
+      "required": true,
+      "description": "Classification determines which statute governs and whether collection is categorically barred."
+    },
+    "quantity_this_trip_lb": {
+      "type": "number",
+      "required": false,
+      "description": "Estimated weight of specimens removed this outing."
+    },
+    "quantity_annual_running_total_lb": {
+      "type": "number",
+      "required": false,
+      "description": "Running annual total for this collector at this jurisdiction, if tracked."
+    },
+    "extraction_method": {
+      "type": "enum",
+      "options": ["hand_tools", "mechanized_non_explosive", "explosive_blasting"],
+      "required": true,
+      "description": "Casual use is generally restricted to hand tools; mechanized/blasting methods trigger permit or Plan of Operations requirements regardless of material class."
+    },
+    "commercial_intent": {
+      "type": "boolean",
+      "required": true,
+      "description": "If true, this is outside casual-use collecting entirely and Materials Act sale/permit or 1872 Act claim-location logic applies instead — route to separate commercial module, do not use this tree."
+    }
+  },
+
+  "decision_tree": {
+    "node_0_commercial_check": {
+      "condition": "commercial_intent == true",
+      "if_true": {
+        "result": "OUT_OF_SCOPE",
+        "message": "Commercial intent detected. Route to claim-location / Materials Act sale-permit module. This casual-use tree does not apply."
+      },
+      "if_false": "proceed to node_1"
+    },
+
+    "node_1_land_manager_gate": {
+      "condition": "land_manager",
+      "branches": {
+        "NPS": {
+          "result": "PROHIBITED",
+          "authority": "36 CFR 2.1",
+          "message": "All rock, mineral, and fossil collecting is prohibited in NPS units absent a research permit. No casual-use exception exists."
+        },
+        "USFWS": {
+          "result": "PROHIBITED_DEFAULT",
+          "authority": "50 CFR 27.51",
+          "message": "Collecting is prohibited by default on refuge lands absent refuge-specific authorization. Check individual refuge compatibility determination before proceeding."
+        },
+        "state_trust": {
+          "result": "ROUTE_TO_STATE_MODULE",
+          "message": "Federal framework does not apply. Route to state_land_stub for state-specific statute lookup."
+        },
+        "private": {
+          "result": "ROUTE_TO_PRIVATE_MODULE",
+          "message": "Federal public-land framework does not apply. Requires landowner permission / mineral rights verification."
+        },
+        "unknown": {
+          "result": "INSUFFICIENT_DATA",
+          "message": "Land manager must be resolved (e.g., via BLM MLRS or GIS land-status layer) before legality can be assessed."
+        },
+        "BLM": "proceed to node_2",
+        "USFS": "proceed to node_2"
+      }
+    },
+
+    "node_2_withdrawal_gate": {
+      "condition": "withdrawal_status",
+      "branches": {
+        "national_monument": {
+          "result": "LIKELY_PROHIBITED",
+          "message": "Most national monument proclamations withdraw the area from mineral entry and often restrict casual collecting. Check the specific proclamation and monument management plan — restrictions vary by monument."
+        },
+        "wilderness": {
+          "result": "PROHIBITED",
+          "authority": "Wilderness Act of 1964, 16 U.S.C. § 1133(c)",
+          "message": "Mechanized equipment and generally all mineral entry/collecting prohibited in designated wilderness."
+        },
+        "wilderness_study_area": {
+          "result": "LIKELY_PROHIBITED",
+          "message": "WSAs are managed to preserve wilderness character (non-impairment standard) pending congressional action. Casual collecting is generally not compatible; confirm with local BLM office."
+        },
+        "other_withdrawal": {
+          "result": "INSUFFICIENT_DATA",
+          "message": "Withdrawal instrument must be checked individually — scope of mineral-entry restriction varies (e.g., ACEC, military withdrawal, power-site reserve)."
+        },
+        "unknown": {
+          "result": "INSUFFICIENT_DATA",
+          "message": "Verify current withdrawal status via BLM MLRS (Mineral & Land Records System) before proceeding — status changes independently of general land-manager designation."
+        },
+        "open": "proceed to node_3"
+      }
+    },
+
+    "node_3_material_class_gate": {
+      "condition": "material_class",
+      "branches": {
+        "vertebrate_fossil": {
+          "result": "PROHIBITED_CASUAL",
+          "authority": "Paleontological Resources Preservation Act, 16 U.S.C. § 470aaa",
+          "message": "Vertebrate fossils are categorically excluded from casual collection on all federal land regardless of quantity or agency. Permit required."
+        },
+        "archaeological_cultural": {
+          "result": "PROHIBITED",
+          "authority": "Archaeological Resources Protection Act, 16 U.S.C. § 470aa et seq.",
+          "message": "Out of PRISM's mineralogical scope; flag and block."
+        },
+        "invertebrate_fossil_plant_fossil": {
+          "result": "PROCEED",
+          "message": "Generally permitted under casual-use collecting policy; reasonable quantity limits apply per node_4.",
+          "next": "node_4"
+        },
+        "common_variety_mineral_rock": "proceed to node_4",
+        "petrified_wood": "proceed to node_4",
+        "gemstone_locatable_grade": {
+          "result": "CONDITIONAL",
+          "message": "If specimen quality/quantity suggests marketability (Coleman test), this may constitute locatable-mineral activity outside casual-use scope. Flag for manual review if value/quantity is high; otherwise proceed to node_4."
+        }
+      }
+    },
+
+    "node_4_extraction_method_gate": {
+      "condition": "extraction_method",
+      "branches": {
+        "explosive_blasting": {
+          "result": "PROHIBITED_CASUAL",
+          "message": "Requires Notice of Intent or Plan of Operations regardless of material class or quantity."
+        },
+        "mechanized_non_explosive": {
+          "result": "CONDITIONAL",
+          "message": "Power equipment (e.g., rock saws, mechanized digging) typically exceeds casual-use threshold and may trigger Notice of Intent under 43 CFR 3809 (BLM) or 36 CFR 228 (USFS). Verify local agency threshold."
+        },
+        "hand_tools": "proceed to node_5"
+      }
+    },
+
+    "node_5_quantity_gate": {
+      "condition": "quantity_this_trip_lb, quantity_annual_running_total_lb, land_manager",
+      "logic": [
+        {
+          "if": "land_manager == 'BLM' AND material_class == 'petrified_wood'",
+          "then_check": "quantity_this_trip_lb <= 25 (informal daily cap, +1 piece exception) AND quantity_annual_running_total_lb <= 250",
+          "result_pass": "PERMITTED_CASUAL",
+          "result_fail": "EXCEEDS_CASUAL_THRESHOLD — free-use permit required",
+          "note": "Caps are informal BLM Instruction Memorandum guidance and vary by state office; treat as default, allow per-jurisdiction override."
+        },
+        {
+          "if": "land_manager == 'BLM' OR land_manager == 'USFS'",
+          "then_check": "quantity_this_trip_lb within reasonable personal-use range (no fixed federal statutory number for general common-variety rock/mineral)",
+          "result_pass": "PERMITTED_CASUAL",
+          "result_fail": "REVIEW — quantity suggests scale beyond personal/hobby use; may require Materials Act free-use permit or sale contract",
+          "note": "USFS supplements vary by individual national forest; PRISM should maintain a per-forest override table where published."
+        }
+      ]
+    },
+
+    "node_6_final_output": {
+      "description": "Aggregate result from nodes 1–5 into a single PRISM legality tag.",
+      "possible_tags": [
+        "PERMITTED_CASUAL",
+        "CONDITIONAL_REVIEW_REQUIRED",
+        "PROHIBITED",
+        "PROHIBITED_CASUAL_PERMIT_REQUIRED",
+        "OUT_OF_SCOPE_ROUTE_ELSEWHERE",
+        "INSUFFICIENT_DATA"
+      ]
+    }
+  },
+
+  "provenance_tier_integration_note": "Recommend mapping node_6_final_output directly into PRISM's T1–T5 provenance tier as a hard gate: PROHIBITED / PROHIBITED_CASUAL_PERMIT_REQUIRED should cap a specimen at no higher than T4/T5 regardless of other scientific-value scoring, since documented illegal collection is a provenance defect independent of specimen quality.",
+
+  "disclaimer": "This schema encodes agency casual-use policy and informal guidance thresholds, not codified statutory quantity limits (no federal statute sets a numeric weight cap for common-variety casual collecting). Thresholds should be stored as an editable config table, not hardcoded, since BLM state offices and individual national forests issue their own supplemental guidance that can change independent of federal statute."
+}
