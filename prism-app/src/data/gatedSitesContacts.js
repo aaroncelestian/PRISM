@@ -24,8 +24,8 @@ export const AGENCY_CONTACTS = [
   },
   {
     id: "barstow",
-    sites: "El Paso Mountains, Cady Mountains, Alvord Mountain, Afton Canyon, Opal Mountain, Calico Mountains, Trona onyx ground, Randsburg",
-    match: ["El Paso Mountains", "Cady Mountains", "Alvord Mountain", "Afton Canyon", "Opal Mountain", "Calico Mountains", "Trona onyx", "Randsburg"],
+    sites: "El Paso Mountains, Cady Mountains, Alvord Mountain, Afton Canyon, Opal Mountain, Calico Mountains, Trona onyx ground, Randsburg, Mud Hills, Lake Tecopa",
+    match: ["El Paso Mountains", "El Paso / Ricardo", "Cady Mountains", "Alvord Mountain", "Afton Canyon", "Opal Mountain", "Calico Mountains", "Trona onyx", "Randsburg", "Mud Hills", "Lake Tecopa"],
     office: "BLM Barstow Field Office",
     address: "2601 Barstow Road, Barstow, CA 92311",
     phone: "(760) 252-6000",
@@ -34,8 +34,8 @@ export const AGENCY_CONTACTS = [
   },
   {
     id: "needles",
-    sites: "Marble Mountains, Danby/Cadiz, Bristol Mountains, Amboy, Ludlow, Old Woman Mountains, Turtle Mountains",
-    match: ["Marble Mountains", "Danby", "Cadiz", "Bristol Mountains", "Amboy", "Ludlow", "Old Woman Mountains", "Turtle Mountains"],
+    sites: "Marble Mountains, Danby/Cadiz, Bristol Mountains, Amboy, Ludlow, Old Woman Mountains, Turtle Mountains, Dish Hill, Shadow Mountains Table Mountain",
+    match: ["Marble Mountains", "Danby", "Cadiz", "Bristol Mountains", "Amboy", "Ludlow", "Old Woman Mountains", "Turtle Mountains", "Dish Hill", "Shadow Mountains"],
     office: "BLM Needles Field Office",
     address: "1303 S. Highway 95, Needles, CA 92363",
     phone: "(760) 326-7000",
@@ -44,8 +44,8 @@ export const AGENCY_CONTACTS = [
   },
   {
     id: "ridgecrest",
-    sites: "Argus Range, Kramer Hills, Randsburg (Ridgecrest side)",
-    match: ["Argus Range", "Kramer Hills"],
+    sites: "Argus Range, Kramer Hills, Randsburg (Ridgecrest side), El Paso / Ricardo zeolites, Saddleback / West Baker",
+    match: ["Argus Range", "Kramer Hills", "El Paso / Ricardo", "Saddleback", "West Baker"],
     office: "BLM Ridgecrest Field Office",
     address: "300 S. Richmond Rd, Ridgecrest, CA 93555",
     phone: "(760) 384-5400",
@@ -64,8 +64,8 @@ export const AGENCY_CONTACTS = [
   },
   {
     id: "angeles",
-    sites: "Cascade Canyon (corundum), Soledad Canyon",
-    match: ["Cascade Canyon", "Soledad Canyon"],
+    sites: "Cascade Canyon (corundum), Soledad Canyon, Acton area (verify district)",
+    match: ["Cascade Canyon", "Soledad Canyon", "Acton area"],
     office: "Angeles National Forest, Supervisor's Office",
     address: "701 N. Santa Anita Ave, Arcadia, CA 91006",
     phone: "(626) 574-1613",

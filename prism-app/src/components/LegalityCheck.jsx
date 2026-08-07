@@ -285,6 +285,36 @@ function ScopeStep() {
         Answer a few questions about where and what you plan to collect. PRISM uses your answers to check common hobby-collecting rules on U.S. public land.
       </StepHeader>
 
+      <div style={{
+        padding: "12px 14px", borderRadius: "6px", marginBottom: "10px",
+        background: "rgba(var(--accent-rgb), 0.06)", border: "1px solid rgba(var(--accent-rgb), 0.22)",
+      }}>
+        <div style={{ fontSize: "11px", color: "var(--cyan)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>
+          Find your local BLM office
+        </div>
+        <div style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55, marginBottom: "8px" }}>
+          Local field offices set many of the day-to-day collecting rules. Look up contact info here before you go:
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+          <a
+            href="https://www.blm.gov/locations"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: "12px", color: "var(--cyan)", fontWeight: 600, textDecoration: "underline" }}
+          >
+            blm.gov/locations — all BLM offices
+          </a>
+          <a
+            href="https://www.blm.gov/california"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: "12px", color: "var(--cyan)", fontWeight: 600, textDecoration: "underline" }}
+          >
+            blm.gov/california — California
+          </a>
+        </div>
+      </div>
+
       <div style={{ padding: "12px 14px", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "6px", marginBottom: "10px" }}>
         <div style={{ fontSize: "11px", color: "var(--cyan)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>Covered</div>
         <ul style={{ margin: 0, padding: "0 0 0 16px" }}>
@@ -323,7 +353,11 @@ function ResultPanel({ result }) {
   return (
     <div>
       <StepHeader title="YOUR RESULT">
-        This is guidance only — confirm with the local land office before collecting. Specimens collected illegally score poorly for provenance in PRISM.
+        This is guidance only — confirm with the{" "}
+        <a href="https://www.blm.gov/locations" target="_blank" rel="noopener noreferrer" style={{ color: "var(--cyan)" }}>
+          local BLM field office
+        </a>
+        {" "}before collecting. Specimens collected illegally score poorly for provenance in PRISM.
       </StepHeader>
 
       <div style={{

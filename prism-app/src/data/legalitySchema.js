@@ -87,7 +87,7 @@ export const BLM_PERMIT_GUIDANCE = {
     },
     {
       title: "2. Call the local BLM field office before you dig",
-      text: "Find the office for that county/state at blm.gov (Office Directory). Ask what is allowed there, local quantity limits, closed areas, and whether you need a sale contract or other paperwork.",
+      text: "Find your state and field office at blm.gov/locations (official BLM office directory). Ask what is allowed there, local quantity limits, closed areas, and whether you need a sale contract or other paperwork.",
     },
     {
       title: "3. Ask which authorization fits your plan",
@@ -103,9 +103,10 @@ export const BLM_PERMIT_GUIDANCE = {
     },
   ],
   links: [
+    { label: "Find a BLM field office", href: "https://www.blm.gov/locations" },
+    { label: "BLM California offices", href: "https://www.blm.gov/california" },
     { label: "BLM — Can I keep this?", href: "https://www.blm.gov/Learn/Can-I-Keep-This" },
     { label: "BLM — Collecting fossils", href: "https://www.blm.gov/programs/paleontology/collecting-fossils" },
-    { label: "Find a BLM office", href: "https://www.blm.gov/office" },
   ],
   importantNote:
     "“Free-use permits” for mineral materials (Form 3604) are mainly for government agencies and nonprofits — not a general hobbyist self-collecting permit. Individual collectors who need more than casual amounts usually buy material under a sale contract from the local BLM office.",

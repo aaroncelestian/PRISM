@@ -15,7 +15,7 @@ import { useBreakpoint } from "../hooks/useWindowSize.js";
 import ScorePanel from "./ScorePanel.jsx";
 import TierSelector from "./TierSelector.jsx";
 import CriteriaChecklist from "./CriteriaChecklist.jsx";
-import { nearestAnchor, fineTuneRange } from "./SnapScoreControl.jsx";
+import { nearestAnchor } from "./SnapScoreControl.jsx";
 
 const TOTAL_STEPS = 2 + DIMS.length + 1; // goal + specimen info + 8 dims + done
 const SPECIMEN_STEP = 1;
@@ -27,14 +27,14 @@ function Tooltip({ text, onClose }) {
     <div style={{
       position: "absolute", zIndex: 50,
       top: "calc(100% + 8px)", left: 0, right: 0,
-      background: "#0f1a2e",
+      background: "var(--bg-panel)",
       border: "1px solid var(--border)",
       borderRadius: "6px",
       padding: "12px 14px",
       fontSize: "12px",
       color: "var(--text-dim)",
       lineHeight: 1.6,
-      boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+      boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
     }}>
       <button
         onClick={onClose}
@@ -416,90 +416,16 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                   onChange={v => pickAnchor(currentDim.key, v)}
                 />
               ) : (
-                <>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                    {currentDim.anchors.map(anchor => (
-                      <AnchorButton
-                        key={anchor.value}
-                        anchor={anchor}
-                        selected={nearestAnchor(currentDim.anchors, scores[currentDim.key])?.value === anchor.value}
-                        onClick={() => pickAnchor(currentDim.key, anchor.value)}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Fine-tune ±5 around selected band */}
-                  {(() => {
-                    const band = nearestAnchor(currentDim.anchors, scores[currentDim.key]);
-                    if (!band) return null;
-                    const { min, max } = fineTuneRange(band.value);
-                    const score = scores[currentDim.key];
-                    const sliderVal = Math.max(min, Math.min(max, score));
-                    const offset = score - band.value;
-                    const barColor = score >= 75 ? "#0a7a52" : score >= 50 ? "var(--cyan)" : "var(--text-muted)";
-                    const pct = max === min ? 0 : ((sliderVal - min) / (max - min)) * 100;
-                    return (
-                      <div style={{
-                        marginTop: "20px",
-                        padding: "14px 16px",
-                        background: "var(--bg-card)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "6px",
-                      }}>
-                        <div style={{
-                          display: "flex", justifyContent: "space-between",
-                          alignItems: "center", marginBottom: "10px",
-                        }}>
-                          <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>
-                            Fine-tune ±5 from {band.value}
-                          </span>
-                          <span style={{
-                            fontFamily: "var(--mono)", fontSize: "20px", fontWeight: 600,
-                            color: barColor, transition: "color 0.2s",
-                          }}>
-                            {score}
-                            {offset !== 0 && Math.abs(offset) <= 5 && (
-                              <span style={{ fontSize: "11px", fontWeight: 400, color: "var(--text-muted)", marginLeft: "6px" }}>
-                                ({offset > 0 ? "+" : ""}{offset})
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                        <div style={{ position: "relative", height: "24px" }}>
-                          <div style={{
-                            position: "absolute", pointerEvents: "none",
-                            top: "calc(50% - 1.5px)", left: 0, right: 0,
-                            height: "3px", background: "var(--border)", borderRadius: "2px",
-                          }}>
-                            <div style={{
-                              position: "absolute", height: "100%", width: `${pct}%`,
-                              borderRadius: "2px", background: barColor, opacity: 0.7,
-                            }} />
-                            <div style={{
-                              position: "absolute", left: `${((band.value - min) / (max - min)) * 100}%`,
-                              top: "-4px", width: "2px", height: "11px", marginLeft: "-1px",
-                              background: "var(--cyan)", opacity: 0.7, borderRadius: "1px",
-                            }} />
-                          </div>
-                          <input
-                            type="range"
-                            min={min}
-                            max={max}
-                            step={1}
-                            value={sliderVal}
-                            onChange={e => setScores(s => ({ ...s, [currentDim.key]: +e.target.value }))}
-                            style={{ position: "absolute", top: 0, left: 0, width: "100%", margin: 0, height: "100%" }}
-                          />
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "2px" }}>
-                          <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)" }}>{min}</span>
-                          <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)" }}>{band.value}</span>
-                          <span style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)" }}>{max}</span>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {currentDim.anchors.map(anchor => (
+                    <AnchorButton
+                      key={anchor.value}
+                      anchor={anchor}
+                      selected={nearestAnchor(currentDim.anchors, scores[currentDim.key])?.value === anchor.value}
+                      onClick={() => pickAnchor(currentDim.key, anchor.value)}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           )}
