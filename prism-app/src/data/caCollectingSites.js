@@ -1,10 +1,10 @@
 /** California mineral collecting sites — compiled reference (not legal advice). Last updated 2026-08-06. */
 
 export const STATUS_META = {
-  designated: { label: "Designated", color: "#5C6B4F", desc: "Agency-formalized collecting area" },
-  casual: { label: "Casual-use", color: "#7C8A6C", desc: "Standard hand-tool collecting rules" },
-  conditional: { label: "Conditional", color: "#B8862E", desc: "Permit, season, or boundary caveat applies" },
-  fee_dig: { label: "Fee-dig", color: "#6E4A63", desc: "Private operation, paid entry" },
+  designated: { label: "Designated", color: "#0a7a52", desc: "Agency-formalized collecting area" },
+  casual: { label: "Casual-use", color: "#0a6f88", desc: "Standard hand-tool collecting rules" },
+  conditional: { label: "Conditional", color: "#a65d00", desc: "Permit, season, or boundary caveat applies" },
+  fee_dig: { label: "Fee-dig", color: "#8a6a18", desc: "Private operation, paid entry" },
 };
 
 export const MATERIAL_FILTERS = [

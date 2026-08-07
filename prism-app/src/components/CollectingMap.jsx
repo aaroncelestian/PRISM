@@ -316,7 +316,7 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial,
                   radius={selectedIdx === i ? 9 : 7}
                   pathOptions={{
                     fillColor: meta.color,
-                    color: "#1a2530",
+                    color: "#15202b",
                     weight: selectedIdx === i ? 2 : 1.2,
                     fillOpacity: 0.9,
                   }}
