@@ -79,7 +79,7 @@ export const WIZARD_GOALS = [
     tips: [
       "Locality rarity and a verified provenance chain dominate museum scoring.",
       "Keep a paper trail: legal collection, labels, and chain of custody. Illegal finds cap provenance low.",
-      "Scientific significance helps asymmetrically; aesthetics barely factor. Use Donate to Museum when ready.",
+      "Scientific significance helps asymmetrically; aesthetics barely move the museum score (~4%). A true showstopper can still interest a display curator — score the Display / show specimen goal too — but legality and a paper trail stay non-negotiable. Beauty is not an exception to provenance. Use Donate to Museum when ready.",
     ],
   },
   {
@@ -126,6 +126,28 @@ export const WIZARD_GOALS = [
 
 export function getWizardGoal(ctx) {
   return WIZARD_GOALS.find((g) => g.key === ctx) || WIZARD_GOALS.find((g) => g.key === "collector");
+}
+
+/**
+ * Soft “display curator exception” signal for museum-goal tours.
+ * High visual impact with non-catastrophic provenance — does not boost museum score.
+ */
+export function getDisplayCuratorNote(scores, ctx) {
+  if (ctx !== "museum") return null;
+  const crystal = scores.crystal ?? 0;
+  const aesthetics = scores.aesthetics ?? 0;
+  const provenance = scores.provenance ?? 0;
+  if (crystal < 85 || aesthetics < 85) return null;
+  if (provenance < 40) {
+    return {
+      tone: "caution",
+      text: "This piece looks visually exceptional, but weak provenance still blocks institutional interest. Beauty does not waive a paper trail or legal origin — score Display / show separately if you want the showstopper case documented.",
+    };
+  }
+  return {
+    tone: "info",
+    text: "Possible display-curator interest: crystal and aesthetics are exceptional. That does not raise the museum score — pair with the Display / show specimen goal. Legality and documentation remain required for accession.",
+  };
 }
 
 export function getContextMeta(ctx) {

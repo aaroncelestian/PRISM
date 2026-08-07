@@ -10,6 +10,7 @@ import {
   contextPasses,
   formatTopWeights,
   weightPct,
+  getDisplayCuratorNote,
 } from "../data/wizardGoals.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import ScorePanel from "./ScorePanel.jsx";
@@ -142,6 +143,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
   const quickGrade = GRADES.find(g => quickScore >= g.min) || GRADES[GRADES.length - 1];
   const goalStatus = useMemo(() => contextPasses(scores, ctx), [scores, ctx]);
   const coachingLevers = useMemo(() => getCoachingLevers(scores, ctx, 3), [scores, ctx]);
+  const displayCuratorNote = useMemo(() => getDisplayCuratorNote(scores, ctx), [scores, ctx]);
   const highImpact = currentDim ? isHighImpactDim(ctx, currentDim.key) : false;
 
   useEffect(() => {
@@ -489,6 +491,21 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                 {goalStatus.passes && (
                   <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.55 }}>
                     Strongest weighted areas: {goalTopDims.map((d) => d.short).join(", ")}. Fine-tune in Expert Mode if you want to push further.
+                  </div>
+                )}
+                {displayCuratorNote && (
+                  <div style={{
+                    marginTop: "12px", padding: "10px 12px", borderRadius: "5px",
+                    background: displayCuratorNote.tone === "caution"
+                      ? "rgba(166,93,0,0.08)" : "rgba(10,111,136,0.07)",
+                    border: `1px solid ${displayCuratorNote.tone === "caution"
+                      ? "rgba(166,93,0,0.28)" : "rgba(10,111,136,0.28)"}`,
+                    fontSize: "11px",
+                    color: displayCuratorNote.tone === "caution" ? "#a65d00" : "var(--text-dim)",
+                    lineHeight: 1.55,
+                  }}>
+                    {displayCuratorNote.tone === "caution" ? "⚠ " : "💎 "}
+                    {displayCuratorNote.text}
                   </div>
                 )}
               </div>
