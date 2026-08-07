@@ -301,8 +301,8 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
                     How to reach this level
                   </div>
                   <div style={{ fontSize: "12px", color: "var(--text-dim)", marginBottom: "10px", lineHeight: 1.55 }}>
-                    For <strong style={{ color: "var(--text)" }}>{goal.hope}</strong>, PRISM weights{" "}
-                    <span style={{ fontFamily: "var(--mono)", color: "var(--cyan)" }}>{formatTopWeights(ctx, 3)}</span> most.
+                    For <strong style={{ color: "var(--text)" }}>{goal.hope}</strong>, the highest weights are{" "}
+                    <span style={{ fontFamily: "var(--mono)", color: "var(--cyan)" }}>{formatTopWeights(ctx, 3)}</span>.
                   </div>
                   <ul style={{ margin: 0, padding: "0 0 0 16px" }}>
                     {goal.tips.map((t, i) => (

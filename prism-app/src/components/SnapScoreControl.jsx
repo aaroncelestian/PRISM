@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 const FINE_TUNE = 5;
 
 export function nearestAnchor(anchors, value) {
@@ -23,23 +25,32 @@ export function snapWithWiggle(raw, anchors, wiggle = FINE_TUNE) {
 }
 
 /**
- * Full-width score slider that magnetically snaps to labeled anchors,
- * with ±5 wiggle room around the active band. No button grid.
+ * Full-width score slider. Drag freely across 0–100.
+ * Anchor numbers are clickable: jump to that value with a brief glow, then fine-tune.
  */
 export default function SnapScoreControl({ anchors, value, onChange, compact = false }) {
+  const [glowValue, setGlowValue] = useState(null);
+
+  useEffect(() => {
+    if (glowValue == null) return;
+    const t = setTimeout(() => setGlowValue(null), 450);
+    return () => clearTimeout(t);
+  }, [glowValue]);
+
   if (!anchors?.length) return null;
 
   const band = nearestAnchor(anchors, value);
   const offset = value - (band?.value ?? 0);
   const barColor = value >= 75 ? "#0a7a52" : value >= 50 ? "var(--cyan)" : "var(--text-label)";
 
-  const handleInput = (raw) => {
-    onChange(snapWithWiggle(raw, anchors));
+  const jumpTo = (v) => {
+    onChange(v);
+    setGlowValue(v);
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: compact ? "4px" : "6px" }}>
-      {/* Slider with custom visible rail + snap ticks */}
+      {/* Slider with custom visible rail + reference ticks */}
       <div style={{ position: "relative", height: compact ? "22px" : "24px" }}>
         {/* Rail + fill */}
         <div style={{
@@ -50,9 +61,9 @@ export default function SnapScoreControl({ anchors, value, onChange, compact = f
           <div style={{
             position: "absolute", height: "100%", width: `${value}%`,
             borderRadius: "2px", background: barColor, opacity: 0.7,
-            transition: "width 0.05s, background 0.15s",
+            transition: "width 0.12s ease, background 0.15s",
           }} />
-          {/* Snap tick marks */}
+          {/* Reference tick marks */}
           {anchors.map(a => (
             <div
               key={a.value}
@@ -67,6 +78,8 @@ export default function SnapScoreControl({ anchors, value, onChange, compact = f
                 borderRadius: "1px",
                 background: band?.value === a.value ? "var(--cyan)" : "var(--text-muted)",
                 opacity: band?.value === a.value ? 0.9 : 0.35,
+                boxShadow: glowValue === a.value ? "0 0 8px 2px rgba(var(--accent-rgb), 0.75)" : "none",
+                transition: "box-shadow 0.25s ease, opacity 0.15s",
               }}
             />
           ))}
@@ -77,33 +90,51 @@ export default function SnapScoreControl({ anchors, value, onChange, compact = f
           max={100}
           step={1}
           value={value}
-          onChange={e => handleInput(+e.target.value)}
+          onChange={e => onChange(Math.round(+e.target.value))}
           style={{ position: "absolute", top: 0, left: 0, width: "100%", margin: 0, height: "100%" }}
         />
       </div>
 
-      {/* Anchor value labels along the track */}
-      <div style={{ position: "relative", height: compact ? "12px" : "14px", marginTop: "-2px" }}>
-        {anchors.map(a => (
-          <span
-            key={a.value}
-            style={{
-              position: "absolute",
-              left: `${a.value}%`,
-              transform: "translateX(-50%)",
-              fontFamily: "var(--mono)",
-              fontSize: compact ? "8px" : "9px",
-              color: band?.value === a.value ? "var(--cyan)" : "var(--text-muted)",
-              fontWeight: band?.value === a.value ? 600 : 400,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {a.value}
-          </span>
-        ))}
+      {/* Clickable anchor value labels — same look, larger hit target */}
+      <div style={{ position: "relative", height: compact ? "14px" : "16px", marginTop: "-2px" }}>
+        {anchors.map(a => {
+          const active = band?.value === a.value;
+          const glowing = glowValue === a.value;
+          return (
+            <button
+              key={a.value}
+              type="button"
+              title={`Jump to ${a.value} — ${a.label}`}
+              onClick={() => jumpTo(a.value)}
+              style={{
+                position: "absolute",
+                left: `${a.value}%`,
+                transform: "translateX(-50%)",
+                fontFamily: "var(--mono)",
+                fontSize: compact ? "8px" : "9px",
+                color: glowing || active ? "var(--cyan)" : "var(--text-muted)",
+                fontWeight: glowing || active ? 600 : 400,
+                whiteSpace: "nowrap",
+                background: "none",
+                border: "none",
+                padding: "4px 6px",
+                margin: "-4px -6px",
+                cursor: "pointer",
+                lineHeight: 1,
+                borderRadius: "3px",
+                boxShadow: glowing
+                  ? "0 0 10px 3px rgba(var(--accent-rgb), 0.55), 0 0 0 1px rgba(var(--accent-rgb), 0.35)"
+                  : "none",
+                transition: "box-shadow 0.25s ease, color 0.15s, font-weight 0.15s",
+              }}
+            >
+              {a.value}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Current band label + offset */}
+      {/* Current band label + offset from nearest reference */}
       {band && (
         <div style={{
           display: "flex", justifyContent: "space-between", alignItems: "baseline",
@@ -124,7 +155,7 @@ export default function SnapScoreControl({ anchors, value, onChange, compact = f
             fontFamily: "var(--mono)", fontSize: "10px", flexShrink: 0,
             color: offset === 0 ? "var(--text-muted)" : "var(--cyan)",
           }}>
-            {offset === 0 ? `snap ${band.value}` : `${offset > 0 ? "+" : ""}${offset} · snap ${band.value}`}
+            {offset === 0 ? `${band.value}` : `${offset > 0 ? "+" : ""}${offset} from ${band.value}`}
           </span>
         </div>
       )}

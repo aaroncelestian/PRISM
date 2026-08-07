@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, Copy, Check, MapPin, Phone, Mail } from "lucide-react";
+import { X, Copy, Check, MapPin, Phone, Mail, Home } from "lucide-react";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+
+const CA_HOME = { center: [37.0, -119.0], zoom: 6 };
 import {
   CA_COLLECTING_SITES,
   CA_MAP_META,
@@ -16,6 +18,8 @@ import {
   FEE_DIG_CONTACTS,
   EMAIL_TEMPLATES,
   OUTREACH_NOTES,
+  getSiteOutreach,
+  fillTemplateForSite,
 } from "../data/gatedSitesContacts.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 
@@ -49,6 +53,16 @@ function FlyToSite({ target }) {
     if (!target) return;
     map.flyTo([target.lat, target.lng], 10, { animate: true, duration: 0.6 });
   }, [target, map]);
+  return null;
+}
+
+function FlyHome({ requestId }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!requestId) return;
+    map.closePopup();
+    map.flyTo(CA_HOME.center, CA_HOME.zoom, { animate: true, duration: 0.7 });
+  }, [requestId, map]);
   return null;
 }
 
@@ -109,10 +123,15 @@ function CopyButton({ text, label = "Copy" }) {
   );
 }
 
-function SitePopup({ site }) {
+function SitePopup({ site, onOpenTemplate }) {
   const meta = STATUS_META[site.status] || STATUS_META.casual;
+  const { contacts, feeDig, template } = getSiteOutreach(site);
+  const filled = fillTemplateForSite(template, site);
+  const primaryContacts = contacts.filter((c) => !c.secondary);
+  const hotlines = contacts.filter((c) => c.secondary);
+
   return (
-    <div style={{ minWidth: 220, maxWidth: 280, fontFamily: "var(--sans)" }}>
+    <div style={{ minWidth: 240, maxWidth: 320, fontFamily: "var(--sans)" }}>
       <span style={{
         display: "inline-block", fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 600,
         letterSpacing: "0.06em", textTransform: "uppercase", padding: "2px 7px", borderRadius: "3px",
@@ -142,12 +161,102 @@ function SitePopup({ site }) {
       <div style={{ fontFamily: "var(--mono)", fontSize: "10px", color: "var(--text-muted)", marginTop: "6px" }}>
         {site.lat.toFixed(4)}, {site.lng.toFixed(4)} — {site.coordNote}
       </div>
+
+      {(primaryContacts.length > 0 || feeDig) && (
+        <div style={{
+          marginTop: "10px", paddingTop: "9px", borderTop: "1px solid var(--border-dim)",
+        }}>
+          <div style={{
+            fontFamily: "var(--mono)", fontSize: "9px", letterSpacing: "0.1em",
+            textTransform: "uppercase", color: "var(--cyan)", marginBottom: "6px", fontWeight: 600,
+          }}>
+            Who to call / email
+          </div>
+          {primaryContacts.map((c) => (
+            <div key={c.id} style={{ marginBottom: "8px" }}>
+              <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>{c.office}</div>
+              {c.phone && c.phone !== "—" && (
+                <div style={{ display: "flex", gap: "5px", alignItems: "center", marginTop: "3px", fontSize: "11px", color: "var(--text-dim)" }}>
+                  <Phone size={11} style={{ color: "var(--cyan)", flexShrink: 0 }} />
+                  <span style={{ fontFamily: "var(--mono)" }}>{c.phone}</span>
+                </div>
+              )}
+              {c.email && c.email !== "—" && (
+                <div style={{ display: "flex", gap: "5px", alignItems: "flex-start", marginTop: "2px", fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.4 }}>
+                  <Mail size={11} style={{ color: "var(--cyan)", flexShrink: 0, marginTop: 1 }} />
+                  <span>{c.email}</span>
+                </div>
+              )}
+            </div>
+          ))}
+          {hotlines.map((c) => (
+            <div key={c.id} style={{ marginBottom: "8px", fontSize: "11px", color: "var(--text-dim)" }}>
+              <span style={{ fontWeight: 600, color: "var(--text)" }}>{c.office}:</span>{" "}
+              <span style={{ fontFamily: "var(--mono)" }}>{c.phone}</span>
+            </div>
+          ))}
+          {feeDig && (
+            <div style={{ marginBottom: "8px" }}>
+              <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>{feeDig.operator}</div>
+              {feeDig.phone && feeDig.phone !== "—" && (
+                <div style={{ display: "flex", gap: "5px", alignItems: "center", marginTop: "3px", fontSize: "11px", color: "var(--text-dim)" }}>
+                  <Phone size={11} style={{ color: "var(--cyan)", flexShrink: 0 }} />
+                  <span style={{ fontFamily: "var(--mono)" }}>{feeDig.phone}</span>
+                </div>
+              )}
+              {feeDig.web && (
+                <div style={{ display: "flex", gap: "5px", alignItems: "flex-start", marginTop: "2px", fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.4 }}>
+                  <Mail size={11} style={{ color: "var(--cyan)", flexShrink: 0, marginTop: 1 }} />
+                  <span>{feeDig.web}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {template && (
+        <div style={{
+          marginTop: "4px", padding: "8px 10px", borderRadius: "5px",
+          background: "rgba(var(--accent-rgb), 0.06)", border: "1px solid rgba(var(--accent-rgb), 0.22)",
+        }}>
+          <div style={{
+            fontFamily: "var(--mono)", fontSize: "9px", letterSpacing: "0.08em",
+            textTransform: "uppercase", color: "var(--cyan)", marginBottom: "5px", fontWeight: 600,
+          }}>
+            Email draft (hobby collector)
+          </div>
+          <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.4, marginBottom: "8px" }}>
+            {filled.subject}
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+            <CopyButton text={filled.full} label="Copy email" />
+            {onOpenTemplate && (
+              <button
+                type="button"
+                onClick={() => onOpenTemplate(template.id)}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: "5px",
+                  padding: "4px 10px", borderRadius: "4px", fontSize: "10px",
+                  cursor: "pointer", letterSpacing: "0.06em",
+                  background: "transparent",
+                  border: "1px solid var(--border)",
+                  color: "var(--text-muted)",
+                }}
+              >
+                Full template {template.id}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function MapTab({ status, setStatus, manager, setManager, material, setMaterial }) {
+function MapTab({ status, setStatus, manager, setManager, material, setMaterial, onOpenTemplate }) {
   const [selectedIdx, setSelectedIdx] = useState(null);
+  const [homeRequestId, setHomeRequestId] = useState(0);
   const [mapReady, setMapReady] = useState(false);
   const [query, setQuery] = useState("");
   const { isMobile } = useBreakpoint();
@@ -156,6 +265,11 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial 
     const id = requestAnimationFrame(() => setMapReady(true));
     return () => cancelAnimationFrame(id);
   }, []);
+
+  const goHome = () => {
+    setSelectedIdx(null);
+    setHomeRequestId((n) => n + 1);
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -179,8 +293,8 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial 
       <div style={{ position: "relative", minHeight: isMobile ? 220 : 0, height: isMobile ? "38vh" : "100%", flex: isMobile ? "0 0 auto" : 1, background: "var(--bg)" }}>
         {mapReady ? (
           <MapContainer
-            center={[37.0, -119.0]}
-            zoom={6}
+            center={CA_HOME.center}
+            zoom={CA_HOME.zoom}
             style={{ height: "100%", width: "100%" }}
             scrollWheelZoom
           >
@@ -191,6 +305,7 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial 
             />
             <MapInvalidateSize active />
             <FlyToSite target={flyTarget} />
+            <FlyHome requestId={homeRequestId} />
             {CA_COLLECTING_SITES.map((s, i) => {
               if (!visibleIdx.has(i)) return null;
               const meta = STATUS_META[s.status] || STATUS_META.casual;
@@ -207,8 +322,8 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial 
                   }}
                   eventHandlers={{ click: () => setSelectedIdx(i) }}
                 >
-                  <Popup>
-                    <SitePopup site={s} />
+                  <Popup maxWidth={340} minWidth={260}>
+                    <SitePopup site={s} onOpenTemplate={onOpenTemplate} />
                   </Popup>
                 </CircleMarker>
               );
@@ -219,6 +334,22 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial 
             Loading map…
           </div>
         )}
+        <button
+          type="button"
+          onClick={goHome}
+          title="Zoom out to California"
+          aria-label="Zoom out to California"
+          style={{
+            position: "absolute", top: 76, left: 12, zIndex: 500,
+            display: "inline-flex", alignItems: "center", gap: "5px",
+            padding: "6px 10px", borderRadius: "5px", cursor: "pointer",
+            background: "var(--bg-panel)", border: "1px solid var(--border)",
+            color: "var(--cyan)", fontFamily: "var(--mono)", fontSize: "10px",
+            letterSpacing: "0.06em", boxShadow: "0 1px 4px rgba(0,0,0,0.18)",
+          }}
+        >
+          <Home size={13} /> CA
+        </button>
         <div style={{
           position: "absolute", bottom: 12, right: 12, zIndex: 500,
           maxWidth: 280, padding: "6px 10px", borderRadius: "4px",
@@ -455,7 +586,7 @@ function TemplatesTab({ focusId }) {
   return (
     <div style={{ padding: "18px 20px", overflowY: "auto", height: "100%" }}>
       <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.55, marginBottom: "14px" }}>
-        Email drafts and call talking points for verifying collecting status. Lead with institutional affiliation.
+        Plain-English email drafts written as a hobby rockhound. Sign with [first and last name, (optional club name too)] before sending. On the map, popups pre-fill the site name for you.
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "14px" }}>
         {EMAIL_TEMPLATES.map((t) => (
@@ -605,6 +736,7 @@ export default function CollectingMap({ onClose }) {
               status={status} setStatus={setStatus}
               manager={manager} setManager={setManager}
               material={material} setMaterial={setMaterial}
+              onOpenTemplate={openTemplate}
             />
           )}
           {tab === "contacts" && <ContactsTab onOpenTemplate={openTemplate} />}

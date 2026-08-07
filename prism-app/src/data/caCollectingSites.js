@@ -138,7 +138,7 @@ export const CA_COLLECTING_SITES = [
     "materialLabel": "Jasper, agate, petrified wood, invertebrate fossils",
     "limit": "25 lb/day + 1 piece, 250 lb/yr; petrified wood capped separately",
     "tools": "Hand tools",
-    "note": "Volcanic mesas and fossil badlands, a long-established BLM rockhounding area. Red Rock Canyon State Park sits adjacent and is closed to collecting — confirm you're on BLM ground.",
+    "note": "Volcanic mesas and fossil badlands, a long-established BLM rockhounding area. Red Rock Canyon State Park sits adjacent and is closed to collecting — confirm you're on BLM ground. Amygdaloidal lavas in the district also host zeolites (see separate El Paso / Ricardo zeolite pin).",
     "coordNote": "Approximate — management-area centroid."
   },
   {
@@ -360,10 +360,10 @@ export const CA_COLLECTING_SITES = [
     "managerFull": "BLM Hollister FO",
     "status": "conditional",
     "material": "misc",
-    "materialLabel": "Serpentine, jadeite, neptunite, tremolite (150+ minerals)",
+    "materialLabel": "Serpentine, jadeite, neptunite, natrolite, tremolite (150+ minerals)",
     "limit": "No published weight cap; personal use, hand tools",
     "tools": "Hand tools; motorized use restricted",
-    "note": "Mineralogically exceptional but carries naturally-occurring-asbestos exposure risk; BLM restricts access seasonally (historically summer/dry-season) — call the CCMA hotline before visiting. Gem-grade benitoite occurs only on the adjacent patented Benitoite Gem Mine claim, not on the open BLM ground.",
+    "note": "Mineralogically exceptional but carries naturally-occurring-asbestos exposure risk; BLM restricts access seasonally (historically summer/dry-season) — call the CCMA hotline before visiting. Natrolite is part of the public-land suite; gem-grade benitoite occurs only on the adjacent patented Benitoite Gem Mine claim, not on open BLM ground.",
     "coordNote": "Approximate — management-area centroid."
   },
   {
@@ -843,7 +843,7 @@ export const CA_COLLECTING_SITES = [
     "materialLabel": "Analcime and other zeolite-family minerals in basalt vugs",
     "limit": "Likely prohibited — reserve managed for vernal-pool and wildflower habitat",
     "tools": "N/A",
-    "note": "Zeolite mineralization is real and documented here, but this specific mesa is a CDFW ecological reserve protecting vernal-pool habitat, not open BLM/USFS multiple-use ground. Treat as closed to collecting unless you can confirm otherwise directly with CDFW — flagging this one mainly so you don't send someone here expecting BLM-style casual-use rules.",
+    "note": "Documented zeolite (analcime ± associates) in basalt, but this mesa is a CDFW ecological reserve for vernal pools/wildflowers — treat as closed unless CDFW confirms otherwise. See the other zeolite pins on this map (Tick Canyon, Dish Hill, Mud Hills, Tecopa, El Paso, etc.) for more representative CA collecting targets.",
     "coordNote": "Approximate — reserve centroid, status likely closed."
   },
   {
