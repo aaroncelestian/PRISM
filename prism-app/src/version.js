@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.2.1";
+export const APP_VERSION = "1.2.2";
 
 // Bump COLLECTION_SCHEMA when the shape of a collection record changes.
 // Old saved files will be migrated up via migrateCollectionRecord().
