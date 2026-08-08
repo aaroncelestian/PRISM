@@ -40,7 +40,6 @@ export default function SnapScoreControl({ anchors, value, onChange, compact = f
   if (!anchors?.length) return null;
 
   const band = nearestAnchor(anchors, value);
-  const offset = value - (band?.value ?? 0);
   const barColor = value >= 75 ? "#0a7a52" : value >= 50 ? "var(--cyan)" : "var(--text-label)";
 
   const jumpTo = (v) => {
@@ -67,7 +66,7 @@ export default function SnapScoreControl({ anchors, value, onChange, compact = f
           {anchors.map(a => (
             <div
               key={a.value}
-              title={`${a.value} — ${a.label}`}
+              title={`${a.value}`}
               style={{
                 position: "absolute",
                 left: `${a.value}%`,
@@ -95,7 +94,7 @@ export default function SnapScoreControl({ anchors, value, onChange, compact = f
         />
       </div>
 
-      {/* Clickable anchor value labels — same look, larger hit target */}
+      {/* Clickable anchor numbers */}
       <div style={{ position: "relative", height: compact ? "14px" : "16px", marginTop: "-2px" }}>
         {anchors.map(a => {
           const active = band?.value === a.value;
@@ -104,7 +103,7 @@ export default function SnapScoreControl({ anchors, value, onChange, compact = f
             <button
               key={a.value}
               type="button"
-              title={`Jump to ${a.value} — ${a.label}`}
+              title={`Jump to ${a.value}`}
               onClick={() => jumpTo(a.value)}
               style={{
                 position: "absolute",
@@ -133,32 +132,6 @@ export default function SnapScoreControl({ anchors, value, onChange, compact = f
           );
         })}
       </div>
-
-      {/* Current band label + offset from nearest reference */}
-      {band && (
-        <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "baseline",
-          gap: "8px", padding: "0 1px",
-        }}>
-          <span style={{
-            fontSize: compact ? "10px" : "11px",
-            color: "var(--text-dim)",
-            lineHeight: 1.35,
-            minWidth: 0,
-          }}>
-            <span style={{ fontWeight: 500, color: "var(--text)" }}>{band.label}</span>
-            {!compact && (
-              <span style={{ color: "var(--text-muted)" }}> — {band.hint}</span>
-            )}
-          </span>
-          <span style={{
-            fontFamily: "var(--mono)", fontSize: "10px", flexShrink: 0,
-            color: offset === 0 ? "var(--text-muted)" : "var(--cyan)",
-          }}>
-            {offset === 0 ? `${band.value}` : `${offset > 0 ? "+" : ""}${offset} from ${band.value}`}
-          </span>
-        </div>
-      )}
     </div>
   );
 }

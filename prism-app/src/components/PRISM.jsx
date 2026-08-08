@@ -455,7 +455,7 @@ export default function PRISM() {
         <CertGenerator scores={scores} spec={spec} records={records} onClose={() => setShowCert(false)} />
       )}
       {showExport && (
-        <QuickExport scores={scores} spec={spec} spSource={spSource} records={records} onClose={() => setShowExport(false)} />
+        <QuickExport scores={scores} spec={spec} ctx={ctx} spSource={spSource} records={records} onClose={() => setShowExport(false)} />
       )}
       {showHistory && (
         <CollectionHistory
