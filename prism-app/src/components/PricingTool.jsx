@@ -1,12 +1,11 @@
 import { useState, useMemo } from "react";
 import { X, ChevronLeft, ChevronRight, TrendingUp, Copy, CheckCheck, Printer } from "lucide-react";
-import { WEIGHTS, CONTEXTS, GRADES, applyNonLinearTransform } from "../data/prism.js";
+import { WEIGHTS, CONTEXTS, GRADES, computeContextScore } from "../data/prism.js";
 
 function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
   let best = 0, bestGrade = GRADES[GRADES.length - 1];
   CONTEXTS.forEach(c => {
-    const W = WEIGHTS[c.key];
-    const s = Math.round(Object.entries(W).reduce((a, [k, w]) => a + (initScores[k] ?? 50) * w, 0));
+    const s = computeContextScore(c.key, initScores).score;
     if (s > best) { best = s; bestGrade = GRADES.find(g => s >= g.min) || GRADES[GRADES.length - 1]; }
   });
   const curScore = best; const curGrade = bestGrade;
@@ -204,16 +203,12 @@ const STEPS = ["Size", "Condition", "Sale Channel", "Market Guide"];
 // ── Price calculation ─────────────────────────────────────────────────────────
 
 function computePrimaryScore(scores) {
-  const adj = Object.fromEntries(
-    Object.entries(scores).map(([k, v]) => [k, applyNonLinearTransform(k, v ?? 0)])
-  );
   let best = 0;
   Object.keys(WEIGHTS).forEach(ctxKey => {
-    const W = WEIGHTS[ctxKey];
-    const s = Object.keys(W).reduce((sum, d) => sum + (adj[d] ?? 0) * W[d], 0);
-    if (s > best) best = s;
+    const { score } = computeContextScore(ctxKey, scores);
+    if (score > best) best = score;
   });
-  return Math.round(best);
+  return best;
 }
 
 function getGrade(score) {

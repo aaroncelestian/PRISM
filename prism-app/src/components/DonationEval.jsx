@@ -4,13 +4,11 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { X, ChevronLeft, ChevronRight, MapPin, Search, Download, Printer, Copy, CheckCheck } from "lucide-react";
 import { lookupCountryFlag, STATUS_COLORS, STATUS_LABELS } from "../data/countryFlags.js";
-import { GRADES, WEIGHTS, CONTEXTS, THRESHOLD, applyNonLinearTransform } from "../data/prism.js";
+import { GRADES, CONTEXTS, THRESHOLD, computeContextScore } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 
 function _ctxScore(ctxKey, scores) {
-  const W = WEIGHTS[ctxKey];
-  const adj = Object.fromEntries(Object.entries(scores).map(([k, v]) => [k, applyNonLinearTransform(k, v ?? 0)]));
-  return Math.round(Object.entries(W).reduce((a, [k, w]) => a + (adj[k] ?? 0) * w, 0));
+  return computeContextScore(ctxKey, scores).score;
 }
 function _bestScore(scores) {
   const all = CONTEXTS.map(c => ({ key: c.key, score: _ctxScore(c.key, scores) }));

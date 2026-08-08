@@ -1,15 +1,13 @@
 import { useState, useRef } from "react";
 import { X, Camera, Printer, Download } from "lucide-react";
-import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades, applyNonLinearTransform } from "../data/prism.js";
+import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades, computeContextScore } from "../data/prism.js";
 
 const GRADE_FOR = Object.fromEntries(CONTEXTS.map((c, i) => [c.key, GRADES[i]]));
 
 function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
   const primary = (() => {
     const ctxScores = CONTEXTS.map(c => {
-      const W = WEIGHTS[c.key];
-      const adj = Object.fromEntries(Object.entries(initScores).map(([k, v]) => [k, applyNonLinearTransform(k, v ?? 50)]));
-      const score = Math.round(Object.entries(W).reduce((a, [k, w]) => a + (adj[k] ?? 50) * w, 0));
+      const { score } = computeContextScore(c.key, initScores);
       return { ...c, score, grade: GRADE_FOR[c.key] };
     });
     const passing = ctxScores.filter(c => c.score >= THRESHOLD);
@@ -82,15 +80,9 @@ function _PickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
   );
 }
 
-function computeContextScore(ctxKey, scores) {
-  const W = WEIGHTS[ctxKey];
-  const adj = Object.fromEntries(Object.entries(scores).map(([k, v]) => [k, applyNonLinearTransform(k, v ?? 50)]));
-  return Math.round(Object.entries(W).reduce((a, [k, w]) => a + (adj[k] ?? 50) * w, 0));
-}
-
 function getPrimaryGrade(scores) {
   const ctxScores = CONTEXTS.map(c => {
-    const score = computeContextScore(c.key, scores);
+    const { score } = computeContextScore(c.key, scores);
     return { ...c, score, grade: GRADE_FOR[c.key] };
   });
   const passing = ctxScores.filter(c => c.score >= THRESHOLD);

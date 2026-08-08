@@ -1,4 +1,4 @@
-import { WEIGHTS, DIMS, THRESHOLD, CONTEXTS } from "./prism.js";
+import { WEIGHTS, DIMS, THRESHOLD, CONTEXTS, computeContextScore } from "./prism.js";
 
 /**
  * Guided-tour goals: hope-oriented labels mapped to PRISM scoring contexts.
@@ -43,11 +43,8 @@ export function getCoachingLevers(scores, ctx, topN = 3) {
 }
 
 export function contextPasses(scores, ctx) {
-  const W = WEIGHTS[ctx];
-  if (!W) return false;
-  const score = Math.round(
-    Object.entries(W).reduce((a, [k, w]) => a + (scores[k] ?? 0) * w, 0)
-  );
+  if (!WEIGHTS[ctx]) return { score: 0, passes: false };
+  const { score } = computeContextScore(ctx, scores);
   return { score, passes: score >= THRESHOLD };
 }
 
@@ -87,9 +84,9 @@ export const WIZARD_GOALS = [
     hope: "Cultural or historical significance",
     pitch: "Value from history, named collections, or heritage — not just mineralogy.",
     tips: [
-      "Cultural / Historical checklist (~34% weight) is the main lever — media/exhibition, named collections, and documented specimen narratives score highest.",
-      "Provenance (~22%) still matters; closed-mine cultural memory and verified human use of the mineral (not artifacts) add further points.",
-      "Beauty alone will not carry this context — heritage must be documented.",
+      "Heritage checklist (~24%) plus provenance (~22%) lead — media/exhibition, named collections, and specimen narratives matter most.",
+      "Crystal and aesthetics (~30% combined) support a documented heritage piece; Heritage Showcase synergy rewards excellence + recognition together.",
+      "Beauty alone will not pass Cultural — at least one heritage criterion is required.",
     ],
   },
   {

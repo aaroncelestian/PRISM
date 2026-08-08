@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { ChevronRight, ChevronLeft, HelpCircle, X } from "lucide-react";
-import { DIMS, WEIGHTS, GRADES, THRESHOLD } from "../data/prism.js";
+import { DIMS, WEIGHTS, GRADES, THRESHOLD, computeContextScore } from "../data/prism.js";
 import {
   WIZARD_GOALS,
   getWizardGoal,
@@ -136,10 +136,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
   const isLastStep = step === DONE_STEP;
   const { isMobile } = useBreakpoint();
   const [showScorePanel, setShowScorePanel] = useState(false);
-  const quickScore = useMemo(() => {
-    const W = WEIGHTS[ctx];
-    return Math.round(Object.entries(W).reduce((a, [k, w]) => a + (scores[k] ?? 50) * w, 0));
-  }, [scores, ctx]);
+  const quickScore = useMemo(() => computeContextScore(ctx, scores).score, [scores, ctx]);
   const quickGrade = GRADES.find(g => quickScore >= g.min) || GRADES[GRADES.length - 1];
   const goalStatus = useMemo(() => contextPasses(scores, ctx), [scores, ctx]);
   const coachingLevers = useMemo(() => getCoachingLevers(scores, ctx, 3), [scores, ctx]);

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { HelpCircle, X } from "lucide-react";
-import { DIMS, WEIGHTS, GRADES, CONTEXTS, SIZE_CLASSES, TREATMENT_FLAGS, AESTHETICS_SUB_DIMS } from "../data/prism.js";
+import { DIMS, WEIGHTS, GRADES, CONTEXTS, SIZE_CLASSES, TREATMENT_FLAGS, AESTHETICS_SUB_DIMS, computeContextScore } from "../data/prism.js";
 import { WIZARD_GOALS, getWizardGoal, formatTopWeights } from "../data/wizardGoals.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import ScorePanel from "./ScorePanel.jsx";
@@ -287,14 +287,11 @@ function DimRow({ dim, score, onChange, criteriaValues, onCriteriaChange, subSco
 }
 
 export default function ExpertMode({ scores, setScores, ctx, setCtx, spec, setSpec, sciCriteria, onSciCriteriaChange, culturalCriteria, onCulturalCriteriaChange, aestheticsSubScores, onAestheticsSubScoresChange, treatmentFlags, onTreatmentFlagsChange, onExport = null, onSaveToCollection = null, scoringComp = null, onSaveToComp = null }) {
-  const W = WEIGHTS[ctx] || WEIGHTS.collector;
   const goal = getWizardGoal(ctx);
   const { isMobile } = useBreakpoint();
   const [showScorePanel, setShowScorePanel] = useState(false);
   const [saveFlash, setSaveFlash] = useState(false);
-  const quickScore = useMemo(() =>
-    Math.round(Object.entries(W).reduce((a, [k, w]) => a + (scores[k] ?? 50) * w, 0)),
-  [scores, ctx]); // eslint-disable-line react-hooks/exhaustive-deps
+  const quickScore = useMemo(() => computeContextScore(ctx, scores).score, [scores, ctx]);
   const quickGrade = GRADES.find(g => quickScore >= g.min) || GRADES[GRADES.length - 1];
   const ctxMeta = CONTEXTS.find(c => c.key === ctx);
 

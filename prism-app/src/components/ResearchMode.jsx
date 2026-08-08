@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from "recharts";
 import { Plus, X, Search, Edit2, Trash2, Award, Camera, Download, FolderOpen, ExternalLink, Upload, Bot, Copy, Check } from "lucide-react";
-import { GRADES, WEIGHTS, CONTEXTS, THRESHOLD, HERITAGE_FLAGS } from "../data/prism.js";
+import { GRADES, WEIGHTS, CONTEXTS, THRESHOLD, HERITAGE_FLAGS, computeContextScore } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import { COMPS_SCHEMA } from "../version.js";
 import { migrateComp, wrapForSave, unwrapFromFile } from "../utils/dbMigrations.js";
@@ -136,8 +136,7 @@ function getStorageBytesUsed() {
 
 function computePrimary(scores) {
   const all = CONTEXTS.map(c => {
-    const W = WEIGHTS[c.key];
-    const score = Math.round(Object.entries(W).reduce((a, [k, w]) => a + (scores[k] ?? 50) * w, 0));
+    const { score } = computeContextScore(c.key, scores);
     return { ...c, score };
   });
   const visible = all.filter(c => !c.hidden);

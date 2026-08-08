@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ListOrdered, SlidersHorizontal, RotateCcw, Search, Sun, Moon } from "lucide-react";
-import { CONTEXTS, WEIGHTS, GRADES, THRESHOLD, detectCompoundGrades, DIMS, scoreFromCriteria, criteriaCheckedFromScore } from "../data/prism.js";
+import { CONTEXTS, WEIGHTS, GRADES, THRESHOLD, detectCompoundGrades, DIMS, scoreFromCriteria, criteriaCheckedFromScore, computeContextScore } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import { useTheme } from "../hooks/useTheme.js";
 import ExpertMode from "./ExpertMode.jsx";
@@ -38,8 +38,7 @@ function persistScoringMode(mode) {
 
 function computePrimary(scores) {
   const all = CONTEXTS.map(c => {
-    const W = WEIGHTS[c.key];
-    const score = Math.round(Object.entries(W).reduce((a,[k,w]) => a + (scores[k]??50)*w, 0));
+    const { score } = computeContextScore(c.key, scores);
     return { ...c, score };
   });
   const passing = all.find(c => c.score >= THRESHOLD) || all[0];

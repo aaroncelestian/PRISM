@@ -282,8 +282,8 @@ function TabDimensions() {
           weight="3–40% weight (highest in Scientific Study)"
           desc="Weighted checklist (points sum to 100): type locality (30), literature (25), morphological/crystallographic significance such as twinning or rare habit (20), associations/paragenesis (15), and compositional or emerging-science significance (10). Most collector specimens score low here — that is normal." />
         <DimCard icon="🏺" name="Cultural / Historical"
-          weight="2–34% weight (highest in Cultural/Historical)"
-          desc="Weighted heritage checklist: media or public exhibition (30), named collection or notable ownership (25), famous specimen narrative (20), closed/exhausted historic mine (15), and documented human cultural use of the mineral (10). Not for indigenous or archaeological artifacts. In the Cultural context this dimension carries 34%." />
+          weight="2–24% weight (highest in Cultural/Historical)"
+          desc="Weighted heritage checklist: media or public exhibition (30), named collection or notable ownership (25), famous specimen narrative (20), closed/exhausted historic mine (15), and documented human cultural use of the mineral (10). Not for indigenous or archaeological artifacts. In the Cultural context this dimension carries 24%; crystal and aesthetics also support the grade, with a Heritage Showcase synergy when excellence pairs with recognition." />
       </Section>
 
       <Section title="How the Score is Calculated">
@@ -328,8 +328,8 @@ function TabContexts() {
           focus="Crystal 22% · Species 13% · Variety 13% · Locality 24%"
           use="The classic collector context. Rarity drives the score — species scarcity, variety uniqueness, and locality rarity together account for half the weight." />
         <CtxCard icon="📜" name="Cultural / Historical"
-          focus="Cultural Significance 34% · Provenance 22% · Locality 12%"
-          use="For specimens with documented heritage recognition: media or exhibition history, named collections, famous specimen narratives, closed-mine cultural memory, or verified human use of the mineral — never cultural artifacts. Documentation is everything." />
+          focus="Cultural Significance 24% · Provenance 22% · Crystal 16% · Aesthetics 14%"
+          use="For specimens with documented heritage recognition: media or exhibition history, named collections, famous specimen narratives, closed-mine cultural memory, or verified human use of the mineral — never cultural artifacts. Excellence supports a heritage piece; Heritage Showcase synergy can apply when both are present." />
         <CtxCard icon="🔬" name="Scientific Study"
           focus="Scientific 40% · Provenance 26% · Locality 8%"
           use="For research and reference specimens. A well-documented piece with research relevance outscores a beautiful specimen with no scientific context." />

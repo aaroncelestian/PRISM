@@ -3,7 +3,7 @@ export const WEIGHTS = {
   museum:     { crystal: 0.12,  speciesRarity: 0.10,  varietyRarity: 0.10,  localityRarity: 0.23, provenance: 0.22, aesthetics: 0.04, scientific: 0.12, culturalSignificance: 0.07 },
   exhibition: { crystal: 0.41,  speciesRarity: 0.035, varietyRarity: 0.035, localityRarity: 0.12, provenance: 0.06, aesthetics: 0.29, scientific: 0.03, culturalSignificance: 0.02 },
   collector:  { crystal: 0.22,  speciesRarity: 0.13,  varietyRarity: 0.13,  localityRarity: 0.24, provenance: 0.10, aesthetics: 0.11, scientific: 0.03, culturalSignificance: 0.04 },
-  cultural:   { crystal: 0.10,  speciesRarity: 0.08,  varietyRarity: 0.01,  localityRarity: 0.12, provenance: 0.22, aesthetics: 0.05, scientific: 0.08, culturalSignificance: 0.34 },
+  cultural:   { crystal: 0.16,  speciesRarity: 0.06,  varietyRarity: 0.02,  localityRarity: 0.10, provenance: 0.22, aesthetics: 0.14, scientific: 0.06, culturalSignificance: 0.24 },
   study:      { crystal: 0.11,  speciesRarity: 0.04,  varietyRarity: 0.04,  localityRarity: 0.08, provenance: 0.26, aesthetics: 0.05, scientific: 0.40, culturalSignificance: 0.02 },
   systematic: { crystal: 0.06,  speciesRarity: 0.10,  varietyRarity: 0.02,  localityRarity: 0.15, provenance: 0.30, aesthetics: 0.02, scientific: 0.33, culturalSignificance: 0.02 },
   commercial: { crystal: 0.20,  speciesRarity: 0.15,  varietyRarity: 0.05,  localityRarity: 0.12, provenance: 0.05, aesthetics: 0.22, scientific: 0.18, culturalSignificance: 0.03 },
@@ -52,7 +52,7 @@ export const CONTEXTS = [
     gradeLabel: "Collector", // numeric grade band when score is mid-tier; UI threshold copy uses context label, not this
     icon: "🏺",
     desc: "Evaluating for cultural, historical, or heritage significance.",
-    detail: "Cultural and historical specimens are driven by documented heritage recognition (34%) with provenance (22%) close behind. Media or exhibition history, named collections, famous specimen narratives, closed-mine cultural memory, and verified human cultural use of the mineral matter most — beauty alone will not carry this context.",
+    detail: "Cultural and historical specimens balance documented heritage recognition (24%) with provenance (22%), crystal quality (16%), and aesthetics (14%). Media or exhibition history still matters, but a showpiece with verified heritage can clear the threshold without stacking every checklist item — beauty alone will not.",
   },
   {
     key: "study",
@@ -386,6 +386,49 @@ export function applyNonLinearTransform(dimKey, rawScore) {
       return rawScore;
   }
   return Math.max(0, Math.min(100, transformed));
+}
+
+/**
+ * Cross-dimension synergy for Cultural context — heritage recognition × specimen excellence.
+ * Uses raw (pre-transform) scores so slider/checklist values match the gates the user sees.
+ */
+export function computeSynergyBonus(ctxKey, rawScores) {
+  if (ctxKey !== "cultural") return { bonus: 0, label: null };
+  const cultural = rawScores.culturalSignificance ?? 0;
+  const crystal = rawScores.crystal ?? 0;
+  const aesthetics = rawScores.aesthetics ?? 0;
+  const provenance = rawScores.provenance ?? 0;
+
+  if (cultural >= 30 && crystal >= 75 && aesthetics >= 75) {
+    return { bonus: 10, label: "Heritage Showcase" };
+  }
+  if (cultural >= 30 && (crystal >= 75 || aesthetics >= 75) && provenance >= 70) {
+    return { bonus: 8, label: "Heritage Showcase" };
+  }
+  if (cultural >= 55 && (crystal >= 80 || aesthetics >= 80)) {
+    return { bonus: 6, label: "Heritage Showcase" };
+  }
+  return { bonus: 0, label: null };
+}
+
+/**
+ * Shared context score: nonlinear dim transforms → weighted sum → optional synergy.
+ * Returns { score, baseScore, synergyBonus, synergyLabel, adjustedScores }.
+ */
+export function computeContextScore(ctxKey, scores) {
+  const W = WEIGHTS[ctxKey];
+  if (!W) {
+    return { score: 0, baseScore: 0, synergyBonus: 0, synergyLabel: null, adjustedScores: {} };
+  }
+  const adjustedScores = Object.fromEntries(
+    Object.entries(scores).map(([k, v]) => [k, applyNonLinearTransform(k, v ?? 50)])
+  );
+  const baseScore = Math.round(
+    Object.entries(W).reduce((acc, [k, w]) => acc + (adjustedScores[k] ?? 50) * w, 0)
+  );
+  const { bonus: synergyBonus, label: synergyLabel } = computeSynergyBonus(ctxKey, scores);
+  const score = Math.min(100, baseScore + synergyBonus);
+  return { score, baseScore, synergyBonus, synergyLabel, adjustedScores };
 }
 
 // Helper: detect suspicious score combinations that may indicate input errors

@@ -1,16 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, Award, Camera, Printer, Copy, FileDown, AlertTriangle } from "lucide-react";
 import QRCode from "qrcode";
-import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades, applyNonLinearTransform, SIZE_CLASSES } from "../data/prism.js";
+import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades, computeContextScore, SIZE_CLASSES } from "../data/prism.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const GRADE_FOR = Object.fromEntries(CONTEXTS.map((c, i) => [c.key, GRADES[i]]));
 
-function computeContextScore(ctxKey, scores) {
-  const W = WEIGHTS[ctxKey];
-  const adj = Object.fromEntries(Object.entries(scores).map(([k, v]) => [k, applyNonLinearTransform(k, v ?? 50)]));
-  return Math.round(Object.entries(W).reduce((a, [k, w]) => a + (adj[k] ?? 50) * w, 0));
+function ctxScore(ctxKey, scores) {
+  return computeContextScore(ctxKey, scores).score;
 }
 
 const HMAC_SECRET = "prism-cert-integrity-v1-2024-mineral-evaluation";
@@ -40,7 +38,7 @@ function generateCertId() {
 
 function computeDisplayScore(scores) {
   const all = CONTEXTS.map(c => {
-    const score = computeContextScore(c.key, scores);
+    const score = ctxScore(c.key, scores);
     return { key: c.key, score, grade: GRADE_FOR[c.key] };
   });
   const passing = all.filter(c => c.score >= THRESHOLD);
@@ -923,7 +921,7 @@ export default function CertGenerator({ scores: initScores, spec: initSpec, reco
 
   // Compute context data
   const allCtxData = CONTEXTS.map(c => {
-    const score = computeContextScore(c.key, workingScores);
+    const score = ctxScore(c.key, workingScores);
     return { ...c, score, grade: GRADE_FOR[c.key] };
   });
   const passingCtx = allCtxData.filter(c => c.score >= THRESHOLD);

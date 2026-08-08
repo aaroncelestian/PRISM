@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
 } from "recharts";
-import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades, detectInconsistencies, applyNonLinearTransform } from "../data/prism.js";
+import { GRADES, DIMS, WEIGHTS, CONTEXTS, THRESHOLD, detectCompoundGrades, detectInconsistencies, computeContextScore } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 
 function useAnimatedScore(target) {
@@ -44,18 +44,10 @@ function gradeFromScore(score) {
 
 function computeContextData(ctxKey, scores) {
   const W = WEIGHTS[ctxKey];
-  
-  // Apply universal non-linear transformations to all dimensions
-  const adjustedScores = Object.fromEntries(
-    Object.entries(scores).map(([k, v]) => [k, applyNonLinearTransform(k, v ?? 50)])
-  );
-  
-  const score = Math.round(
-    Object.entries(W).reduce((acc, [k, w]) => acc + (adjustedScores[k] ?? 50) * w, 0)
-  );
+  const { score, baseScore, synergyBonus, synergyLabel, adjustedScores } = computeContextScore(ctxKey, scores);
   const passes = score >= THRESHOLD;
   let bottleneck = null;
-  if (!passes) {
+  if (!passes && W) {
     let maxShortfall = -Infinity;
     Object.entries(W).forEach(([k, w]) => {
       const shortfall = w * Math.max(0, THRESHOLD - (adjustedScores[k] ?? 50));
@@ -65,7 +57,7 @@ function computeContextData(ctxKey, scores) {
       }
     });
   }
-  return { score, passes, bottleneck };
+  return { score, baseScore, synergyBonus, synergyLabel, passes, bottleneck };
 }
 
 function generateNarrative(scores, primaryCtx, allCtxData) {
@@ -436,6 +428,26 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
                   </div>
                 );
               })}
+              {primaryCtx.synergyBonus > 0 && (
+                <div style={{
+                  marginTop: "4px", padding: "10px 12px", borderRadius: "5px",
+                  background: "rgba(10,122,82,0.07)", border: "1px solid rgba(10,122,82,0.28)",
+                  display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "10px",
+                }}>
+                  <div>
+                    <div style={{ fontSize: "12px", fontWeight: 600, color: "#0a7a52" }}>
+                      {primaryCtx.synergyLabel || "Synergy"}
+                    </div>
+                    <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px", lineHeight: 1.4 }}>
+                      Heritage recognition paired with specimen excellence
+                      {primaryCtx.baseScore != null && ` · base ${primaryCtx.baseScore}`}
+                    </div>
+                  </div>
+                  <span style={{ fontFamily: "var(--mono)", fontSize: "14px", fontWeight: 700, color: "#0a7a52", flexShrink: 0 }}>
+                    +{primaryCtx.synergyBonus}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}
