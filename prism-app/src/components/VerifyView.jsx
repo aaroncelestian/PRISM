@@ -13,7 +13,7 @@ async function computeHmac(message) {
 }
 
 const DIMS_COMPACT = [
-  { key: "cr", label: "Crystal Quality",  icon: "💠" },
+  { key: "cr", label: "Specimen Condition", icon: "💠" },
   { key: "sr", label: "Species Rarity",   icon: "🌍" },
   { key: "lr", label: "Locality Rarity",  icon: "📍" },
   { key: "pv", label: "Provenance",       icon: "📜" },

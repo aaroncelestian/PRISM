@@ -235,7 +235,7 @@ function computeMarketPosition(score, conditionKey) {
 const NEGOTIATION_GUIDE = {
   "Trophy":           { ask: "Price at the high end of your range and hold — exceptional pieces reward patient sellers.", floor: "Expect 85–90% of ask from serious buyers. Don't capitulate below that.", tip: "Document the PRISM score prominently. Top collectors pay premiums for quantified quality." },
   "Investment Grade": { ask: "Price 15–20% above your target. Investment-grade pieces attract committed buyers.", floor: "80% of ask is a firm floor — better buyers exist, don't rush.", tip: "Provenance documentation materially adds to investment-grade value. Include it." },
-  "Premium":          { ask: "Price 10–15% above your target to allow normal collector negotiation.", floor: "70–75% of ask is a reasonable floor for this tier.", tip: "Highlight your highest-scoring PRISM dimensions — locality rarity and crystal quality close deals." },
+  "Premium":          { ask: "Price 10–15% above your target to allow normal collector negotiation.", floor: "70–75% of ask is a reasonable floor for this tier.", tip: "Highlight your highest-scoring PRISM dimensions — locality rarity and specimen condition close deals." },
   "Above Average":    { ask: "Price at mid estimate with good presentation.", floor: "65–70% of ask is typical. Below that you're leaving money behind.", tip: "Photography and accurate locality info close deals faster than price adjustments at this tier." },
   "Standard":         { ask: "Price at or slightly below mid estimate to remain competitive.", floor: "60–65% of ask is typical. Bundles and trades often net more than single-piece sales.", tip: "Flexible terms (trades, bundles) move standard-grade pieces more effectively than price cuts." },
   "Entry / Bulk":     { ask: "Price at the low end — this tier is highly price-competitive.", floor: "Quick liquidation beats holding. Set a firm floor and focus on volume.", tip: "Lot sales or trade-up offers are usually more effective than single-piece listings at this tier." },
@@ -401,7 +401,7 @@ function ChannelStep({ channel, setChannel }) {
 
 const AD_DIMS = {
   localityRarity: "Locality Rarity", speciesRarity: "Species Rarity",
-  varietyRarity:  "Variety Rarity",  crystal:       "Crystal Quality",
+  varietyRarity:  "Variety Rarity",  crystal:       "Specimen Condition",
   aesthetics:     "Aesthetics",      provenance:    "Provenance",
   scientific:     "Scientific Value",
 };

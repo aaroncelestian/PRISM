@@ -823,7 +823,7 @@ export function getLocalityBySpecies(species) {
 export const COMMON_SPECIES = [
   { name: "Quartz", forms: "rock crystal, smoky, amethyst, citrine, rose", rarityRange: "10–25", note: "Ubiquitous. Thousands of localities worldwide. Only exceptional specimens from notable localities warrant higher rarity scores." },
   { name: "Calcite", forms: "dog-tooth, nail-head, rhombohedral, scalenohedral", rarityRange: "10–20", note: "One of the most abundant minerals on Earth. Common in thousands of deposits." },
-  { name: "Pyrite", forms: "cubes, pyritohedra, striped faces", rarityRange: "10–25", note: "Extremely common. Fine crystal form (sharp cubes) raises the crystal quality score, NOT species rarity." },
+  { name: "Pyrite", forms: "cubes, pyritohedra, striped faces", rarityRange: "10–25", note: "Extremely common. Fine crystal form (sharp cubes) raises Specimen Condition and Aesthetics → Form, NOT species rarity." },
   { name: "Fluorite", forms: "cubes, octahedra, penetration twins", rarityRange: "15–30", note: "Very common worldwide. Color and crystal perfection drive value, not species rarity." },
   { name: "Galena", forms: "cubes, octahedra, combinations", rarityRange: "10–20", note: "Most common lead mineral. Found in every mining district." },
   { name: "Sphalerite", forms: "tetrahedra, massive, cleavage fragments", rarityRange: "10–25", note: "Very common zinc ore mineral globally." },

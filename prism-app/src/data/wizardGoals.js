@@ -54,7 +54,7 @@ export const WIZARD_GOALS = [
     hope: "Personal collection piece",
     pitch: "A strong specimen for your own cabinet — rarity and quality matter most.",
     tips: [
-      "Prioritize locality prestige and crystal quality — together they carry nearly half the weight.",
+      "Prioritize locality prestige and specimen condition — together they carry nearly half the weight.",
       "Species and variety rarity also move the needle; common minerals need exceptional form or locality.",
       "Provenance helps but is secondary for a personal piece.",
     ],
@@ -64,8 +64,8 @@ export const WIZARD_GOALS = [
     hope: "Display / show specimen",
     pitch: "Something that stops people at a showcase, gem show, or exhibition case.",
     tips: [
-      "Crystal perfection is the dominant driver (~41%). Sharp faces and complete terminations win.",
-      "Aesthetics (~29%) — color, form, presentation, and luster — are nearly as important.",
+      "Specimen condition is the dominant driver (~41%). Sharp faces and complete terminations win.",
+      "Aesthetics (~29%) — color, form, presentation, luster, and optical quality — are nearly as important.",
       "A famous locality adds show-floor prestige; paperwork matters less here than visual impact.",
     ],
   },
@@ -85,7 +85,7 @@ export const WIZARD_GOALS = [
     pitch: "Value from history, named collections, or heritage — not just mineralogy.",
     tips: [
       "Heritage checklist (~24%) plus provenance (~22%) lead — media/exhibition, named collections, and specimen narratives matter most.",
-      "Crystal and aesthetics (~30% combined) support a documented heritage piece; Heritage Showcase synergy rewards excellence + recognition together.",
+      "Condition and aesthetics (~30% combined) support a documented heritage piece; Heritage Showcase synergy rewards excellence + recognition together.",
       "Beauty alone will not pass Cultural — at least one heritage criterion is required.",
     ],
   },
@@ -106,7 +106,7 @@ export const WIZARD_GOALS = [
     tips: [
       "Scientific significance and provenance together are nearly two thirds of this score.",
       "Locality matters when it is a type locality or well-documented reference source.",
-      "Crystal quality and aesthetics are secondary — documentation is the specimen.",
+      "Specimen condition and aesthetics are secondary — documentation is the specimen.",
     ],
   },
   {
@@ -114,7 +114,7 @@ export const WIZARD_GOALS = [
     hope: "Teaching / educational use",
     pitch: "A clear classroom or outreach example that engages students and illustrates concepts.",
     tips: [
-      "Aesthetics and crystal quality keep attention — students need a clear visual example.",
+      "Aesthetics and specimen condition keep attention — students need a clear visual example.",
       "Species character and scientific relevance reward specimens that teach a concept well.",
       "Provenance matters less than practical educational value for this goal.",
     ],

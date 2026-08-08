@@ -12,7 +12,7 @@ import SnapScoreControl from "./SnapScoreControl.jsx";
 const EXPERT_SPECTRUM = ["#ff0000", "#ff7f00", "#ffff00", "#00ff00", "#0000ff", "#4b0082", "#9400d3"];
 
 function AestheticsSubSliders({ subScores, onChange }) {
-  const vals = Object.values(subScores);
+  const vals = AESTHETICS_SUB_DIMS.map(sub => subScores[sub.key] ?? 0);
   const computed = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
   const computedColor = computed >= 75 ? "#0a7a52" : computed >= 50 ? "var(--cyan)" : "var(--text-label)";
   return (

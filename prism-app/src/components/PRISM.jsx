@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ListOrdered, SlidersHorizontal, RotateCcw, Search, Sun, Moon } from "lucide-react";
-import { CONTEXTS, WEIGHTS, GRADES, THRESHOLD, detectCompoundGrades, DIMS, scoreFromCriteria, criteriaCheckedFromScore, computeContextScore } from "../data/prism.js";
+import { CONTEXTS, WEIGHTS, GRADES, THRESHOLD, detectCompoundGrades, DIMS, AESTHETICS_SUB_DIMS, scoreFromCriteria, criteriaCheckedFromScore, computeContextScore } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import { useTheme } from "../hooks/useTheme.js";
 import ExpertMode from "./ExpertMode.jsx";
@@ -52,12 +52,19 @@ const DEFAULT_SCORES = {
   provenance: 0, aesthetics: 0, scientific: 0, culturalSignificance: 0,
 };
 
-const DEFAULT_AESTHETICS_SUB = { color: 0, form: 0, presentation: 0, luster: 0 };
+const DEFAULT_AESTHETICS_SUB = { color: 0, form: 0, presentation: 0, luster: 0, optical: 0 };
 const DEFAULT_TREATMENT_FLAGS = { synthetic: false, crystals_added: false, matrix_altered: false, coated: false, oiled: false, filled: false, lapidary: false, repaired: false, irradiated: false, heated: false, other: false, otherNote: "" };
 
 function initAestheticsSub(aestheticsScore) {
   const v = aestheticsScore ?? 0;
-  return { color: v, form: v, presentation: v, luster: v };
+  return { color: v, form: v, presentation: v, luster: v, optical: v };
+}
+
+/** Merge saved aesthetics subs with defaults so older records missing `optical` still hydrate. */
+function hydrateAestheticsSub(saved, aestheticsScore) {
+  const base = initAestheticsSub(aestheticsScore);
+  if (!saved || typeof saved !== "object") return base;
+  return { ...base, ...saved, optical: saved.optical ?? aestheticsScore ?? 0 };
 }
 
 function ToolMenuItems({ items, isMobile }) {
@@ -180,7 +187,7 @@ export default function PRISM() {
 
   const handleAestheticsSubScores = (newSubScores) => {
     setAestheticsSubScores(newSubScores);
-    const vals = Object.values(newSubScores);
+    const vals = AESTHETICS_SUB_DIMS.map(sub => newSubScores[sub.key] ?? 0);
     const mean = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
     setScores(s => ({ ...s, aesthetics: mean }));
   };
@@ -225,7 +232,7 @@ export default function PRISM() {
     setScores(loadedScores);
     setSciCriteria([false, false, false, false, false]);
     setCulturalCriteria([false, false, false, false, false]);
-    setAestheticsSubScores(comp.aestheticsSub || initAestheticsSub(loadedScores.aesthetics));
+    setAestheticsSubScores(hydrateAestheticsSub(comp.aestheticsSub, loadedScores.aesthetics));
     setTreatmentFlags({ ...DEFAULT_TREATMENT_FLAGS, ...(comp.treatmentFlags || {}) });
     if (comp.ctx) setCtx(comp.ctx);
     setMode(getPreferredScoringMode());
@@ -468,7 +475,7 @@ export default function PRISM() {
             setLastSavedKey(JSON.stringify({ scores: loadedScores, spec: rec.spec, ctx: rec.ctx }));
             setSciCriteria(criteriaCheckedFromScore(sciDimCriteria, loadedScores.scientific ?? 0));
             setCulturalCriteria(criteriaCheckedFromScore(culturalDimCriteria, loadedScores.culturalSignificance ?? 0));
-            setAestheticsSubScores(rec.aestheticsSub && Object.keys(rec.aestheticsSub).length > 0 ? rec.aestheticsSub : initAestheticsSub(loadedScores.aesthetics));
+            setAestheticsSubScores(hydrateAestheticsSub(rec.aestheticsSub, loadedScores.aesthetics));
             setTreatmentFlags({ ...DEFAULT_TREATMENT_FLAGS, ...(rec.treatmentFlags || {}) });
             setScoringCompId(null);
             setSpSource(null);

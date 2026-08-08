@@ -217,7 +217,7 @@ function TabHowTo() {
           inform several dimensions. Size class is metadata only — it never enters the score.
         </Step>
         <Step n="4" title="Score each dimension">
-          Rate crystal quality (0–100), species rarity, variety/form uniqueness, locality rarity,
+          Rate specimen condition (0–100), species rarity, variety/form uniqueness, locality rarity,
           aesthetics, provenance, scientific value, and cultural/historical significance. Each slider
           has descriptive anchor labels to guide calibration.
         </Step>
@@ -260,15 +260,15 @@ function TabDimensions() {
     <>
       <Section title="The Eight Scoring Dimensions">
         <P>Every PRISM score is built from these eight factors, each rated 0–100. Size class is not among them.</P>
-        <DimCard icon="💠" name="Crystal Quality"
+        <DimCard icon="💠" name="Specimen Condition"
           weight="6–41% weight (highest in Display/Show)"
-          desc="The physical perfection of the crystals: terminations, luster, clarity, lack of damage. A gem-quality terminated crystal with vitreous luster scores 90+. A broken, dull, or corroded specimen scores below 30." />
+          desc="Physical integrity only: terminations, chips, breaks, and abrasion. Do not score color, luster, or optical beauty here — those are Aesthetics. A pristine, undamaged crystal scores 90+ even if visually modest. Heavily damaged pieces score below 30." />
         <DimCard icon="🌍" name="Species Rarity"
           weight="4–15% weight (highest in Teaching / Collector)"
           desc="How rare the mineral species is globally. Common minerals like quartz or calcite score low. Ultra-rare species known from only one or two localities score 90–100. Check the MINDAT occurrence count as a guide. Do not fold variety into this score — that is a separate dimension." />
         <DimCard icon="🔷" name="Variety / Form Uniqueness"
           weight="2–13% weight (highest in Collector)"
-          desc="How rare this specific variety, form, color, or crystal habit is — independent of species rarity. A metallic-blue almandine from a single locality scores 90+ here even though almandine as a species is common. Typical prism habits score low regardless of species." />
+          desc="How rare this specific variety, form, color, or crystal habit is worldwide — not how elegant the habit looks on this piece (that is Aesthetics → Form / Habit). A metallic-blue almandine from a single locality scores 90+ here even though almandine as a species is common." />
         <DimCard icon="📍" name="Locality Rarity"
           weight="8–24% weight (highest in Collector)"
           desc="How available this specific mine’s material is today: mine status, pocket frequency, auction appearance. Exhausted classic localities and single-pocket finds score high. Active mines with common pockets score low. Prestige alone is not the metric — scarcity of supply is." />
@@ -277,7 +277,7 @@ function TabDimensions() {
           desc="Documented chain of custody and collection history, scored by provenance tier (T1–T5). Original field labels with legal collection documentation score highest. Unknown or unverifiable locality scores near 0. Critical for museum, insurance, and donation contexts." />
         <DimCard icon="🎨" name="Aesthetics"
           weight="2–29% weight (highest in Display/Show)"
-          desc="Overall visual appeal: color saturation, form expression, presentation, and luster. In Expert mode these four sub-scores average to the aesthetics dimension. Stunning color and composition score 80+. Dull or awkwardly presented pieces score lower." />
+          desc="Overall visual appeal: color, form expression, presentation, luster, and optical quality (clarity and phenomena). In Expert mode these five sub-scores average to the aesthetics dimension. Stunning color and composition score 80+. Dull or awkwardly presented pieces score lower." />
         <DimCard icon="🔬" name="Scientific Value"
           weight="3–40% weight (highest in Scientific Study)"
           desc="Weighted checklist (points sum to 100): type locality (30), literature (25), morphological/crystallographic significance such as twinning or rare habit (20), associations/paragenesis (15), and compositional or emerging-science significance (10). Most collector specimens score low here — that is normal." />

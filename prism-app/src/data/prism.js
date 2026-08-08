@@ -36,7 +36,7 @@ export const CONTEXTS = [
     gradeLabel: "Exhibition",
     icon: "✨",
     desc: "Evaluating for gem show display or prominent exhibition.",
-    detail: "Exhibition contexts reward crystal perfection and visual impact above all. Crystal quality (42%) and aesthetics (30%) dominate — famous localities add show-floor prestige. Provenance and science matter little here.",
+    detail: "Exhibition contexts reward specimen condition and visual impact above all. Specimen condition (42%) and aesthetics (30%) dominate — famous localities add show-floor prestige. Provenance and science matter little here.",
   },
   {
     key: "collector",
@@ -52,7 +52,7 @@ export const CONTEXTS = [
     gradeLabel: "Collector", // numeric grade band when score is mid-tier; UI threshold copy uses context label, not this
     icon: "🏺",
     desc: "Evaluating for cultural, historical, or heritage significance.",
-    detail: "Cultural and historical specimens balance documented heritage recognition (24%) with provenance (22%), crystal quality (16%), and aesthetics (14%). Media or exhibition history still matters, but a showpiece with verified heritage can clear the threshold without stacking every checklist item — beauty alone will not.",
+    detail: "Cultural and historical specimens balance documented heritage recognition (24%) with provenance (22%), specimen condition (16%), and aesthetics (14%). Media or exhibition history still matters, but a showpiece with verified heritage can clear the threshold without stacking every checklist item — beauty alone will not.",
   },
   {
     key: "study",
@@ -68,7 +68,7 @@ export const CONTEXTS = [
     gradeLabel: "Study",
     icon: "🗂️",
     desc: "Evaluating as a systematic collection or type specimen.",
-    detail: "Systematic and type collections prioritize scientific completeness and documentation above all. Scientific significance (35%) and provenance (30%) together account for nearly two thirds of the score. Locality (15%) reflects the importance of type locality and reference material from well-documented sources. Crystal quality and aesthetics are secondary — a well-documented holotype in average condition far outranks a beautiful specimen with no research context.",
+    detail: "Systematic and type collections prioritize scientific completeness and documentation above all. Scientific significance (35%) and provenance (30%) together account for nearly two thirds of the score. Locality (15%) reflects the importance of type locality and reference material from well-documented sources. Specimen condition and aesthetics are secondary — a well-documented holotype in average condition far outranks a beautiful specimen with no research context.",
   },
   {
     key: "commercial",
@@ -76,7 +76,7 @@ export const CONTEXTS = [
     gradeLabel: "General",
     icon: "🎓",
     desc: "Evaluating for classroom, outreach, or educational collection use.",
-    detail: "Educational specimens need to be visually engaging and species-diverse — aesthetics (25%) and species character (20%) drive engagement. Scientific and educational relevance (18%) rewards specimens that illustrate concepts clearly. Crystal quality (20%) ensures the specimen is a good example of its kind. Provenance matters less here than practical educational value.",
+    detail: "Educational specimens need to be visually engaging and species-diverse — aesthetics (25%) and species character (20%) drive engagement. Scientific and educational relevance (18%) rewards specimens that illustrate concepts clearly. Specimen condition (20%) ensures the specimen is a good example of its kind. Provenance matters less here than practical educational value.",
   },
 ];
 
@@ -494,11 +494,11 @@ export function detectInconsistencies(scores, spec, sciCriteria, culturalCriteri
     });
   }
 
-  // Gem-grade crystal but very low aesthetics — unusual combo
+  // Near-perfect condition but very low aesthetics — unusual combo
   if ((s.crystal ?? 50) >= 85 && (s.aesthetics ?? 50) < 25) {
     warnings.push({
       key: "crystal_aesthetic_mismatch", level: "info", dim: "aesthetics",
-      msg: "Crystal Quality is gem-grade (85+) but Aesthetics is very low (<25). This combination is unusual — verify both scores.",
+      msg: "Specimen Condition is near-perfect (85+) but Aesthetics is very low (<25). This combination is unusual — verify both scores.",
     });
   }
 
@@ -528,17 +528,17 @@ export function detectCompoundGrades(allCtxScores) {
 export const DIMS = [
   {
     key: "crystal",
-    label: "Crystal Quality",
-    short: "Crystal",
+    label: "Specimen Condition",
+    short: "Condition",
     icon: "💠",
-    desc: "How perfect are the crystals themselves?",
-    detail: "Look at the crystal faces, edges, and tips. Are they sharp and complete? Are there any chips, breaks, or cloudy areas? A perfect, undamaged crystal with well-formed faces scores highest.",
+    desc: "How intact and undamaged are the crystals?",
+    detail: "Score physical condition only: chips, breaks, abrasion, incomplete terminations, and contact damage. Do not score color, luster, form elegance, or optical beauty here — those belong under Aesthetics. A sharp, complete, undamaged crystal scores highest even if the piece is visually modest.",
     anchors: [
-      { value: 10, label: "Heavily damaged", hint: "Major chips, breaks, or incomplete crystal faces" },
-      { value: 35, label: "Rough / crude", hint: "Recognizable as crystals but imperfect, abraded" },
-      { value: 60, label: "Good specimens", hint: "Well-formed, minor contact or small chips" },
-      { value: 80, label: "Very fine", hint: "Sharp faces, complete terminations, minor flaws" },
-      { value: 95, label: "Gem / flawless", hint: "Perfect geometry, brilliant luster, no damage" },
+      { value: 10, label: "Heavily damaged", hint: "Major chips, breaks, or largely incomplete crystals" },
+      { value: 35, label: "Rough / abraded", hint: "Recognizable crystals but significant abrasion, contacts, or tip damage" },
+      { value: 60, label: "Good condition", hint: "Mostly intact; minor contact or small chips in non-critical areas" },
+      { value: 80, label: "Very fine", hint: "Sharp edges, complete or near-complete terminations, only trivial flaws" },
+      { value: 95, label: "Pristine", hint: "No meaningful damage under loupe; complete terminations" },
     ],
   },
   {
@@ -561,8 +561,8 @@ export const DIMS = [
     label: "Variety / Form Uniqueness",
     short: "Variety",
     icon: "🔷",
-    desc: "How rare is this specific variety, form, color, or habit of the species?",
-    detail: "Score how many localities worldwide produce this specific form. A metallic-blue almandine from a single Arizona locality scores 90+ here even though almandine as a species is common. Common habits like typical quartz prisms score low regardless of species rarity. Examples: typical quartz prism = 5, standard elbaite tourmaline = 30, tourmaline cat's-eye = 70, trapiche ruby = 90.",
+    desc: "How rare is this specific variety, form, color, or habit of the species worldwide?",
+    detail: "Score global scarcity of the named variety or habit — how few localities produce this form — not how elegant or well-expressed the habit looks on this piece (that is Aesthetics → Crystal Form / Habit). A metallic-blue almandine from a single Arizona locality scores 90+ here even though almandine as a species is common. Typical quartz prisms score low regardless of species rarity. Examples: typical quartz prism = 5, standard elbaite tourmaline = 30, tourmaline cat's-eye = 70, trapiche ruby = 90.",
     anchors: [
       { value: 5,  label: "Typical / standard form",          hint: "Common habit for this species; widely produced" },
       { value: 25, label: "Recognizable but not distinctive",  hint: "Some variation, but this form available from multiple localities" },
@@ -592,7 +592,7 @@ export const DIMS = [
     short: "Aesthet.",
     icon: "🎨",
     desc: "How visually striking is the specimen overall?",
-    detail: "Step back and look at the whole piece: the color, composition, contrast with matrix, and overall visual impact. Would a non-collector find it beautiful? A great aesthetic specimen catches your eye instantly.",
+    detail: "Step back and look at the whole piece: color, form expression, presentation, luster, and optical quality (clarity and phenomena). Physical damage and incomplete terminations are scored under Specimen Condition, not here. A great aesthetic specimen catches your eye instantly.",
     anchors: [
       { value: 10, label: "Dull / unremarkable", hint: "Little visual interest, drab colors" },
       { value: 30, label: "Modest appeal", hint: "Some interest but nothing striking" },
@@ -712,13 +712,13 @@ export const AESTHETICS_SUB_DIMS = [
     key: "form",
     label: "Crystal Form / Habit",
     icon: "💠",
-    desc: "Visual expression of crystal geometry, habit, and structural elegance",
+    desc: "How well this specimen expresses crystal geometry, habit, and structural elegance — not how rare that habit is worldwide",
     anchors: [
-      { value: 10, label: "Poor",                   hint: "Crystal form absent, habit unclear, or damage severe" },
+      { value: 10, label: "Poor",                   hint: "Crystal form absent or habit unclear on this piece" },
       { value: 30, label: "Marginal",               hint: "Form less developed than most comparable specimens" },
       { value: 55, label: "Good",                   hint: "Well-expressed habit typical for the species; average in good collections" },
       { value: 80, label: "Fine",                   hint: "Better form than most known specimens; fine geometry and expression" },
-      { value: 95, label: "Exceptional",            hint: "World-class — best of species or size known to curators" },
+      { value: 95, label: "Exceptional",            hint: "World-class expression of habit — best of species or size known to curators" },
     ],
   },
   {
@@ -745,6 +745,19 @@ export const AESTHETICS_SUB_DIMS = [
       { value: 55, label: "Good",                   hint: "Good vitreous or characteristic luster for the species" },
       { value: 80, label: "Fine",                   hint: "Brilliant; high reflectivity that stands out in collections" },
       { value: 95, label: "Exceptional",            hint: "Mirror, adamantine, or metallic — finest known for the species" },
+    ],
+  },
+  {
+    key: "optical",
+    label: "Optical Quality",
+    icon: "🔮",
+    desc: "Clarity/transparency and optical phenomena (chatoyancy, asterism, iridescence, play-of-color, etc.)",
+    anchors: [
+      { value: 10, label: "Poor",                   hint: "Heavily included, cloudy, or optical character severely compromised for the species" },
+      { value: 30, label: "Marginal",               hint: "Below-average clarity; weak or muddy phenomena if present" },
+      { value: 55, label: "Good",                   hint: "Clarity typical for the species; phenomena (if any) clearly visible — lack of a special effect is fine" },
+      { value: 80, label: "Fine",                   hint: "High clarity for the species, and/or strong well-developed optical phenomena" },
+      { value: 95, label: "Exceptional",            hint: "Gem-like clarity or world-class optical phenomena for the species" },
     ],
   },
 ];

@@ -122,20 +122,20 @@ function CrystalSVG({ level }) {
 }
 
 const CRYSTAL_LEVELS = [
-  { key: "gem",     score: "85–100", label: "Gem / Perfect",    color: "#00d4ff",
-    traits: ["Edges razor-sharp under loupe", "Faces flat and mirror-lustrous", "No chips, contacts, or etching", "Termination complete and undamaged", "Matrix attachment clean"],
-    redFlags: ["'Gem quality' with frosted faces", "'Perfect' but no loupe offered", "Only shown under bright light at one angle"] },
+  { key: "gem",     score: "85–100", label: "Pristine",         color: "#00d4ff",
+    traits: ["Edges razor-sharp under loupe", "No chips, contacts, or breaks", "Termination complete and undamaged", "Matrix attachment clean (if present)"],
+    redFlags: ["'Pristine' but no loupe offered", "Contact damage on the display face not disclosed", "Only shown under bright light at one angle"] },
   { key: "fine",    score: "65–84",  label: "Very Fine",        color: "#90c0f0",
-    traits: ["One or two trivial chips on secondary edges", "Main display face fully intact", "Crystal faces largely lustrous", "Termination complete"],
+    traits: ["One or two trivial chips on secondary edges", "Main display face fully intact", "Termination complete"],
     redFlags: ["'Minor chip' that actually cleaves through a main face", "Contact along the display face called 'trivial'"] },
   { key: "good",    score: "40–64",  label: "Good / Collector", color: "#0a7a52",
-    traits: ["Several chips, visible without loupe", "Some faces etched or frosted", "Termination may be slightly off-center or worn", "Still clearly identifiable crystal form"],
+    traits: ["Several chips, visible without loupe", "Some abrasion or contact damage", "Termination may be slightly worn", "Still clearly identifiable crystal form"],
     redFlags: ["Described as 'fine' when chips are obvious to the naked eye", "Random frosting across all surfaces called 'natural etching' — true etching follows crystallographic patterns, not random wear"] },
   { key: "rough",   score: "20–39",  label: "Rough / Study",    color: "#b0a060",
     traits: ["Multiple significant chips and breaks", "Faces abraded or partially missing", "Crystal form recognizable but imperfect", "Suitable for scientific study or beginners"],
     redFlags: ["Sold as 'collector grade' without mention of damage", "Heavy matrix hiding breakage"] },
   { key: "damaged", score: "0–19",   label: "Heavily Damaged",  color: "#c06060",
-    traits: ["Major breakage across crystal body", "Missing faces or partial crystal only", "Significant instability or reconstruction", "Value largely in species/locality, not form"],
+    traits: ["Major breakage across crystal body", "Missing faces or partial crystal only", "Significant instability or reconstruction", "Value largely in species/locality, not condition"],
     redFlags: ["Any attempt to grade this as 'good' or 'fine'", "'Repairs' not disclosed", "Sold as broken piece of a larger specimen at full specimen price"] },
 ];
 
@@ -153,7 +153,7 @@ const NATURAL_CHARACTER = [
     examples: "Tanzanian garnets, Erongo aquamarine, many fluorites",
     looks: "Geometric etch pits, trigonal or hexagonal channels, corrosion grooves running parallel to crystal edges. The surface has texture but the underlying crystal form is preserved.",
     howToID: "Natural etching follows the crystal symmetry — pits are triangular on octahedra, hexagonal on quartz prisms. Random frosting that ignores crystal geometry is likely wear or acid damage.",
-    scoring: "Crystal Quality: may drop 10–25 pts from 'perfect' baseline. Aesthetics: can increase significantly if the patterns are striking. Scientific: slight increase for well-developed forms. Net result: often scores comparably to a clean specimen of similar quality.",
+    scoring: "Specimen Condition: may drop 10–25 pts from 'perfect' baseline if etching is deep. Aesthetics: can increase significantly if the patterns are striking. Scientific: slight increase for well-developed forms. Net result: often scores comparably to a clean specimen of similar quality.",
     noviceTip: "A garnet covered in beautiful geometric etch pits is not a 'damaged' garnet. It is a garnet that sat in a corrosive fluid long enough to show its internal symmetry on the outside. This is a feature, not a flaw.",
   },
   {
@@ -165,7 +165,7 @@ const NATURAL_CHARACTER = [
     examples: "Hoppered halite, skeletal quartz, skeletal bismuth, frame calcite",
     looks: "Crystals where edges and corners grew faster than faces, leaving hollow faces or step-like indentations inward. The crystal form is structurally complete but faces are not flat.",
     howToID: "Hoppered growth is perfectly symmetric — the indentations mirror the crystal symmetry exactly. You can trace the ghost of the 'perfect' crystal form in the skeleton. Damage is asymmetric and random.",
-    scoring: "Crystal Quality: 30–60 depending on how complete the form is. Scientific: 20–40 bonus for well-developed examples. Aesthetics: often high — skeletal forms are visually dramatic. Score the aesthetic impact generously.",
+    scoring: "Specimen Condition: score intactness of the skeletal framework, not flatness of faces. Scientific: 20–40 bonus for well-developed examples. Aesthetics → Form: often high — skeletal forms are visually dramatic.",
     noviceTip: "Hoppered halite cubes have stepped hollow faces — this is how they grew, not how they broke. They are among the most scientifically interesting crystal forms you can own.",
   },
   {
@@ -177,7 +177,7 @@ const NATURAL_CHARACTER = [
     examples: "Phantom quartz, zoned fluorite, color-zoned tourmaline, elestial quartz",
     looks: "Internal outlines of earlier growth stages visible through the crystal, often outlined by inclusions or color change. The crystal grew, stopped, then continued.",
     howToID: "Phantoms are internal and follow the crystal's own symmetry exactly. They are ghosts of earlier crystal faces. Internal features that don't follow crystal symmetry may be fractures or inclusions.",
-    scoring: "Crystal Quality: neutral to slightly positive — phantoms don't affect surface quality. Scientific: 20–50 increase. Aesthetics: highly variable — a 'ghost crystal within a crystal' is visually compelling and should score well.",
+    scoring: "Specimen Condition: neutral — phantoms don't affect surface integrity. Scientific: 20–50 increase. Aesthetics → Optical: often high when phantoms are clear and well-defined.",
     noviceTip: "A quartz crystal with a green chlorite phantom inside it grew in two stages: the chlorite coated it, then clear quartz continued growing over the top. You are looking at a record of geological time.",
   },
   {
@@ -189,7 +189,7 @@ const NATURAL_CHARACTER = [
     examples: "Tourmaline (always striated), pyrite cubes, quartz prism faces, stibnite",
     looks: "Parallel lines running along crystal faces, parallel to the crystal's growth direction. They are a record of step-growth during crystallisation.",
     howToID: "Striations are always parallel to each other and to a crystallographic axis. Scratches are random in direction and depth. Pyrite cubes are always striated on their faces — this is normal and expected.",
-    scoring: "Crystal Quality: do NOT penalize for species that always show striations (tourmaline, pyrite). Penalize only if striations are unusually coarse and obscure the crystal form entirely.",
+    scoring: "Specimen Condition: do NOT penalize for species that always show striations (tourmaline, pyrite). Penalize only if striations are unusually coarse and obscure the crystal form entirely.",
     noviceTip: "If every single tourmaline you've ever seen has striated faces — that's because all tourmalines have striated faces. It is not a defect.",
   },
   {
@@ -201,7 +201,7 @@ const NATURAL_CHARACTER = [
     examples: "Spessartine garnets (almost always rounded), hessonite, some corundum",
     looks: "Crystal faces are curved or rounded rather than flat. Edges are smooth rather than sharp. The crystal looks like it partially melted back.",
     howToID: "Resorption is uniform and smooth — rounding follows the crystal form evenly. It often occurs across an entire suite of crystals from the same locality. Chipping is sharp-edged and random.",
-    scoring: "Crystal Quality: drop 10–30 pts from 'ideal' for the species, but check: is this normal for the locality? Spessartine from Loliondo, Tanzania is always rounded and resorbed. Score it against what's achievable from that deposit.",
+    scoring: "Specimen Condition: drop 10–30 pts from 'ideal' sharp faces only if sharpness is expected for the locality. Spessartine from Loliondo, Tanzania is always rounded and resorbed — score against what's achievable from that deposit.",
     noviceTip: "Famous Loliondo spessartine garnets are vitreous, richly orange, and heavily rounded — that rounding is natural resorption in the host rock. The finest examples of this species look nothing like a 'perfect' crystal, and they're worth a great deal.",
   },
   {
@@ -213,7 +213,7 @@ const NATURAL_CHARACTER = [
     examples: "Labradorite (labradorescence), bornite (peacock ore), iris quartz, covellite",
     looks: "Colors that shift as the viewing angle changes. Can be surface iridescence (thin-film interference) or internal scattering.",
     howToID: "True iridescence shifts with angle and is repeatable. Surface coatings applied artificially also shift with angle — check whether iridescence is mentioned as typical for the species from that locality.",
-    scoring: "Aesthetics: significant increase — 30 to 50 point uplift for exceptional iridescence. Crystal Quality: neutral — iridescence is a surface optical property, not a crystal quality issue. Scientific: modest increase if phenomenon is well-documented.",
+    scoring: "Aesthetics → Optical Quality: significant increase for exceptional iridescence. Specimen Condition: neutral — iridescence is an optical property, not damage. Scientific: modest increase if phenomenon is well-documented.",
     noviceTip: "Peacock ore (bornite with tarnish iridescence) is one of the most visually striking beginner specimens. The iridescent surface colors are from a natural thin-film tarnish — real, natural, and beautiful. Beware acid-treated specimens sold as 'peacock ore.'",
   },
 ];
@@ -261,7 +261,7 @@ const AESTHETICS_FACTORS = [
   },
   {
     key: "form", label: "Crystal Form & Habit", icon: "⬡", color: "#a0c0e0",
-    desc: "How completely and elegantly the crystal expresses its characteristic habit and natural geometry.",
+    desc: "How completely and elegantly this specimen expresses its characteristic habit — not how rare that habit is worldwide (Variety / Form Uniqueness).",
     ranges: [
       { band: "80–100", label: "Exceptional",  text: "Textbook expression of the species habit. All characteristic faces present, well-proportioned, and geometrically ideal. The best possible form for this mineral." },
       { band: "60–79",  label: "Good",         text: "Main habit features present and clearly expressed. Minor deviations from ideal that don’t detract from the characteristic form." },
@@ -269,7 +269,7 @@ const AESTHETICS_FACTORS = [
       { band: "20–39",  label: "Poor",         text: "Crystal outline present but habit poorly realized. Faces indistinct, no characteristic morphology expressed." },
       { band: "0–19",   label: "Formless",     text: "Massive, cleavage fragments, or so incomplete that the species habit is unrecognizable." },
     ],
-    tip: "Some species habitually develop imperfect forms — hoppered halite, rounded garnets, striated tourmaline. Score against the best achievable for the species from that deposit, not against an idealized textbook crystal.",
+    tip: "Some species habitually develop imperfect forms — hoppered halite, rounded garnets, striated tourmaline. Score against the best achievable for the species from that deposit, not against an idealized textbook crystal. Rarity of an unusual habit belongs under Variety / Form Uniqueness.",
   },
   {
     key: "presentation", label: "Presentation & Balance", icon: "⚖️", color: "#80d0c0",
@@ -294,6 +294,18 @@ const AESTHETICS_FACTORS = [
       { band: "0–19",   label: "None",         text: "Completely dull, heavily corroded, or surface so altered as to be unrecognizable." },
     ],
     tip: "Over-cleaning with acid removes luster permanently. 'Cleaned' specimens often suffer here compared to untouched material.",
+  },
+  {
+    key: "optical", label: "Optical Quality", icon: "🔮", color: "#80c0e8",
+    desc: "Clarity/transparency and optical phenomena — chatoyancy, asterism, iridescence, play-of-color, strong phantoms, and similar effects.",
+    ranges: [
+      { band: "80–100", label: "Exceptional",  text: "Gem-like clarity for the species, and/or world-class optical phenomena (sharp eye, vivid play-of-color, strong asterism, etc.)." },
+      { band: "60–79",  label: "Very Good",    text: "High clarity relative to the species, or clearly developed phenomena that stand out in a collection." },
+      { band: "40–59",  label: "Good / Typical", text: "Clarity typical for the species. Phenomena (if any) visible. Lack of a special optical effect is fine — do not penalize opaque species for having no chatoyancy." },
+      { band: "20–39",  label: "Weak",         text: "Below-average clarity (heavy inclusions, cloudiness) or weak/muddy phenomena when phenomena are the selling point." },
+      { band: "0–19",   label: "Compromised",  text: "Optical character severely compromised — nearly opaque when the species should be translucent, or claimed phenomena absent/spoiled." },
+    ],
+    tip: "Score against what the species can show. Opaque metals and massive ores are judged on their own optical character (e.g. iridescence on bornite), not against gem transparency.",
   },
 ];
 
@@ -334,30 +346,30 @@ const SCIENTIFIC_FACTORS = [
 // ── Score calibration rubric ────────────────────────────────────────────────
 const SCORE_CALIBRATION = [
   {
-    key: "crystal", label: "Crystal Quality", icon: "💎", color: "#00d4ff",
-    note: "Assess under 10× loupe in multiple lighting conditions. Natural features (etching, striations, resorption) follow crystal symmetry. Mechanical damage is random — they are not the same thing.",
+    key: "crystal", label: "Specimen Condition", icon: "💎", color: "#00d4ff",
+    note: "Assess under 10× loupe. Score chips, breaks, abrasion, and incomplete terminations only — not color, luster, or optical beauty. Natural features (etching, striations, resorption) follow crystal symmetry; mechanical damage is random.",
     ranges: [
-      { band: "80–100", label: "Gem / Museum",   text: "No damage visible under loupe. Complete termination, pristine faces, exceptional luster. Best-in-class example you could find." },
-      { band: "60–79",  label: "Very Fine",      text: "Minor damage in non-critical areas only. Excellent luster, complete or nearly complete termination. Passes the show-table test." },
-      { band: "40–59",  label: "Fine",           text: "Some visible damage, partial termination, or dulled surfaces — but clearly a quality specimen with real appeal." },
-      { band: "20–39",  label: "Average",        text: "Notable damage, heavy etching, or partial crystal development. Reference quality. Would not be a centrepiece." },
-      { band: "0–19",   label: "Below Grade",    text: "Heavily damaged fragment or surface so compromised that crystal quality is not a selling point." },
+      { band: "80–100", label: "Pristine",       text: "No meaningful damage under loupe. Complete terminations, sharp edges. Best-in-class condition for the species." },
+      { band: "60–79",  label: "Very Fine",      text: "Minor damage in non-critical areas only. Complete or nearly complete terminations. Passes the show-table condition test." },
+      { band: "40–59",  label: "Good",           text: "Some visible chips, partial termination, or contact damage — still a solid specimen." },
+      { band: "20–39",  label: "Compromised",    text: "Notable damage or incomplete crystals. Reference quality; would not be a centrepiece on condition alone." },
+      { band: "0–19",   label: "Heavily Damaged", text: "Heavily damaged fragment or crystals so compromised that condition is not a selling point." },
     ],
   },
   {
     key: "speciesRarity", label: "Species Rarity", icon: "🧬", color: "#e0a040",
-    note: "Score how rare the mineral species is globally, regardless of crystal quality. A perfect fluorite cube is beautiful, but fluorite as a species scores low — push quality into Crystal Quality and Aesthetics.",
+    note: "Score how rare the mineral species is globally, regardless of specimen condition. A pristine fluorite cube is beautiful, but fluorite as a species scores low — push condition into Specimen Condition and beauty into Aesthetics.",
     ranges: [
       { band: "80–100", label: "Extreme / Ultra-Rare", text: "Fewer than 5 known localities worldwide. Species described from a single deposit or known from only a handful of global occurrences." },
       { band: "60–79",  label: "Rare",                 text: "Genuinely rare species (5–30 localities globally). Collectors specifically seek this species, not just a nice example of it." },
       { band: "40–59",  label: "Uncommon",             text: "Not abundant in the market. Species exists in reasonable quantity but is not a common show-floor staple." },
       { band: "20–39",  label: "Common",               text: "Widely available species: quartz, calcite, pyrite, fluorite, galena, sphalerite, tourmaline. Fine crystals exist but species itself has no scarcity premium." },
-      { band: "0–19",   label: "Ubiquitous",            text: "Found virtually everywhere. No species rarity premium applies — all value is in crystal quality, locality, and aesthetics." },
+      { band: "0–19",   label: "Ubiquitous",            text: "Found virtually everywhere. No species rarity premium applies — all value is in specimen condition, locality, and aesthetics." },
     ],
   },
   {
     key: "varietyRarity", label: "Variety / Form Rarity", icon: "🔮", color: "#c090e0",
-    note: "Score how rare this specific variety, color form, or crystal habit is — completely independent of species rarity. A metallic-coated almandine from one locality scores 90+ here even though almandine as a species is common.",
+    note: "Score how rare this specific variety, color form, or crystal habit is worldwide — not how elegant the habit looks on this piece (that is Aesthetics → Form / Habit). A metallic-coated almandine from one locality scores 90+ here even though almandine as a species is common.",
     ranges: [
       { band: "80–100", label: "Unique variety",          text: "One or two localities worldwide produce this specific form, color, or coating. The variety is the primary value driver for this specimen." },
       { band: "60–79",  label: "Distinctive",             text: "Recognized variety from very few localities. Collectors specifically seek this form and it commands a meaningful premium over typical examples." },
@@ -377,7 +389,7 @@ const SCORE_CALIBRATION = [
       { band: "80–100", label: "Exhausted / Irreplaceable", text: "Mine closed or single known pocket. Essentially no new material. Tsumeb classics, unique finds, old-stock that cannot be replaced." },
       { band: "60–79",  label: "Limited Production",      text: "Pockets rare or mine intermittently active. Strong scarcity premium; material does not appear regularly at shows." },
       { band: "40–59",  label: "Occasional Supply",       text: "Known locality with moderate availability. Some collector interest; modest scarcity premium." },
-      { band: "20–39",  label: "Active / Common Pockets", text: "Material appears regularly at shows and auctions. Evaluate mainly on crystal quality and aesthetics." },
+      { band: "20–39",  label: "Active / Common Pockets", text: "Material appears regularly at shows and auctions. Evaluate mainly on specimen condition and aesthetics." },
       { band: "0–19",   label: "Unknown / Unverified",    text: "No verified locality. Cannot score scarcity meaningfully — keep this low and document the gap." },
     ],
   },
@@ -394,9 +406,9 @@ const SCORE_CALIBRATION = [
   },
   {
     key: "aesthetics", label: "Aesthetics", icon: "🎨", color: "#ff80a0",
-    note: "Score overall visual impact using the four aesthetic sub-dimensions: color saturation, crystal form expression, presentation quality, and luster.",
+    note: "Score overall visual impact using the five aesthetic sub-dimensions: color, form expression, presentation, luster, and optical quality. Physical damage belongs under Specimen Condition.",
     ranges: [
-      { band: "80–100", label: "Display Masterpiece", text: "Stops people in their tracks. Exceptional color, luster, composition, and matrix. Would be the centrepiece of any display." },
+      { band: "80–100", label: "Display Masterpiece", text: "Stops people in their tracks. Exceptional color, composition, optical character, and presentation. Would be the centrepiece of any display." },
       { band: "60–79",  label: "Display Quality",     text: "Clearly beautiful. Looks good in any collection. Good color, reasonable composition, no major flaws from display angle." },
       { band: "40–59",  label: "Presentable",         text: "Attractive but not remarkable. Solid for reference or mid-tier display. Visible flaws at close inspection." },
       { band: "20–39",  label: "Study Grade",         text: "Aesthetics are not a selling point. Scientifically or locality-interesting but not visually compelling." },
@@ -445,7 +457,7 @@ export default function BuyerGuide({ onClose }) {
     : LOCALITIES.filter(l => localitySigFilter === "all" ? true : l.significance === localitySigFilter);
 
   const tabs = [
-    { key: "crystal",    label: "Crystal Quality" },
+    { key: "crystal",    label: "Specimen Condition" },
     { key: "locality",   label: "Localities" },
     { key: "species",    label: "Common Species" },
     { key: "provenance", label: "Provenance" },
@@ -506,7 +518,7 @@ export default function BuyerGuide({ onClose }) {
           {tab === "crystal" && (
             <>
               <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, padding: "10px 12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-                <strong style={{ color: "var(--text)" }}>How to use:</strong> When a dealer describes crystal quality, compare to these diagrams under the same lighting conditions they use — then look again with your own loupe or from a different angle. Most inflation happens in the transition between "Gem" and "Very Fine" descriptions.
+                <strong style={{ color: "var(--text)" }}>How to use:</strong> When a dealer describes specimen condition, compare to these diagrams under the same lighting conditions they use — then look again with your own loupe or from a different angle. Most inflation happens in the transition between "Pristine" and "Very Fine" descriptions.
               </div>
 
               {CRYSTAL_LEVELS.map(level => {
@@ -721,7 +733,7 @@ export default function BuyerGuide({ onClose }) {
           {tab === "species" && (
             <>
               <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, padding: "10px 12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-                <strong style={{ color: "var(--text)" }}>How to use:</strong> Species rarity measures how uncommon the mineral species is, not how nice the crystal is. If a dealer implies a common species is rare to justify a high price, that's a red flag. Fine crystal quality of a common species should push Crystal Quality — not Species Rarity.
+                <strong style={{ color: "var(--text)" }}>How to use:</strong> Species rarity measures how uncommon the mineral species is, not how nice the crystal is. If a dealer implies a common species is rare to justify a high price, that's a red flag. Fine condition of a common species should push Specimen Condition — not Species Rarity.
               </div>
 
               {/* Search */}
@@ -824,7 +836,7 @@ export default function BuyerGuide({ onClose }) {
           {tab === "aesthetics" && (
             <>
               <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, padding: "10px 12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-                <strong style={{ color: "var(--text)" }}>What aesthetics measures:</strong> Visual impact — color saturation, crystal form expression, presentation quality, and luster. Score what you actually see, not what the specimen "should" look like for the species.
+                <strong style={{ color: "var(--text)" }}>What aesthetics measures:</strong> Visual impact — color, form expression, presentation, luster, and optical quality (clarity and phenomena). Score what you actually see, not what the specimen "should" look like for the species. Physical damage is Specimen Condition.
               </div>
 
               {AESTHETICS_FACTORS.map(factor => {
@@ -928,7 +940,7 @@ export default function BuyerGuide({ onClose }) {
               {[
                 {
                   title: "Quality is not volume",
-                  text: "A gem-quality thumbnail can outrank a damaged museum piece on crystal quality, aesthetics, rarity, and provenance. Folding size into the score would punish small masterpieces and inflate large mediocre rocks — the opposite of transparent evaluation.",
+                  text: "A pristine thumbnail can outrank a damaged museum piece on specimen condition, aesthetics, rarity, and provenance. Folding size into the score would punish small masterpieces and inflate large mediocre rocks — the opposite of transparent evaluation.",
                 },
                 {
                   title: "Size already shows up in price",

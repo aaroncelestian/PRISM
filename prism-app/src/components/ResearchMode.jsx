@@ -453,7 +453,7 @@ function PhotoCapture({ value, onChange, urlValue, onUrlChange }) {
 
 // ── MiniRadar ─────────────────────────────────────────────────────────────────
 
-const RADAR_SHORT = { crystal: "Xtal", speciesRarity: "Sp.R", varietyRarity: "Va.R", localityRarity: "Lo.R", aesthetics: "Aest", provenance: "Prov", scientific: "Sci" };
+const RADAR_SHORT = { crystal: "Cond", speciesRarity: "Sp.R", varietyRarity: "Va.R", localityRarity: "Lo.R", aesthetics: "Aest", provenance: "Prov", scientific: "Sci" };
 
 function MiniRadar({ scores }) {
   const data = DIM_DISPLAY.map(d => ({ dim: RADAR_SHORT[d.key] || d.label, v: scores?.[d.key] ?? 0 }));
