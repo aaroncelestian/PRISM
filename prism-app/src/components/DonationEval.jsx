@@ -107,22 +107,22 @@ function DonationPickerScreen({ initScores, initSpec, records, onSelect, onSkipC
             )}
           </div>
 
-          {/* Whole-collection skip */}
+          {/* Whole-collection path */}
           <div>
-            <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Or skip specimen selection</div>
+            <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Or donate without a PRISM score</div>
             <button
               onClick={onSkipCollection}
-              style={{ width: "100%", textAlign: "left", padding: "12px 14px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "7px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: "12px" }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.35)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+              style={{ width: "100%", textAlign: "left", padding: "12px 14px", background: "rgba(10,111,136,0.04)", border: "1px solid rgba(10,111,136,0.25)", borderRadius: "7px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: "12px" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.5)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.25)"}
             >
               <div style={{ fontSize: "18px", lineHeight: 1.2, flexShrink: 0 }}>📦</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", marginBottom: "3px" }}>
-                  Donate a whole collection
+                  Collection Donation
                 </div>
                 <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>
-                  Skip choosing a rated specimen. Continues with the Unknown / undocumented checklist — useful when you are offering many objects and do not have a PRISM score for each.
+                  Offering many objects at once? Open the Collection Donation guide — no need to pick or score each specimen first.
                 </div>
               </div>
             </button>
@@ -1243,9 +1243,100 @@ function UploadSlot({ slot, file, onFile }) {
   );
 }
 
+// ── Collection Donation intro (whole-collection path) ─────────────────────────
+
+function CollectionDonationIntroStep() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+      <div>
+        <h3 style={{ fontSize: "16px", fontWeight: 600, color: "var(--text)", marginBottom: "4px" }}>
+          Collection Donation
+        </h3>
+        <p style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55 }}>
+          Use this path when you are offering a group of specimens together — not a single rated piece.
+        </p>
+      </div>
+
+      <div style={{ padding: "14px 16px", background: "rgba(10,111,136,0.05)", border: "1px solid rgba(10,111,136,0.22)", borderRadius: "6px" }}>
+        <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", marginBottom: "8px" }}>What this guide is for</div>
+        <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.65, display: "flex", flexDirection: "column", gap: "6px" }}>
+          <li>You want to donate a whole collection, or many objects at once.</li>
+          <li>You do <strong style={{ color: "var(--text)" }}>not</strong> need a PRISM score for every specimen.</li>
+          <li>Stated locality stays blank — collections often mix many localities.</li>
+          <li>You can add optional notes for a curator on the next page.</li>
+        </ul>
+      </div>
+
+      <div style={{ padding: "12px 14px", background: "rgba(166,93,0,0.07)", border: "1px solid rgba(166,93,0,0.28)", borderRadius: "6px", fontSize: "12px", color: "#a65d00", lineHeight: 1.55 }}>
+        <strong>Important:</strong> Institutions still care about provenance and legality. Collection Donation uses a documentation checklist suited to mixed / incomplete histories. A weak paper trail usually limits what museums can accession.
+      </div>
+
+      <div style={{ padding: "12px 14px", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55 }}>
+        Next you will complete the <strong style={{ color: "var(--text)" }}>Collection Donation</strong> checklist, then review a summary you can share with a curator.
+      </div>
+    </div>
+  );
+}
+
+// ── Collection Donation checklist (unknown-provenance items, collection framing) ─
+
+function CollectionDonationStep({ checks, setChecks, collectionNotes, setCollectionNotes }) {
+  const toggle = id => setChecks(prev => ({ ...prev, [id]: !prev[id] }));
+  const questions = getProvenanceQuestions("unknown");
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+      <div>
+        <h3 style={{ fontSize: "16px", fontWeight: 600, color: "var(--text)", marginBottom: "4px" }}>
+          Collection Donation Checklist
+        </h3>
+        <p style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55 }}>
+          Check everything that applies across the collection. <span style={{ color: "#a65d00" }}>★ required</span> items are necessary for museum consideration. <span style={{ color: "#0a7a52" }}>⊕ highly recommended</span> items significantly strengthen the evaluation.
+        </p>
+      </div>
+
+      <div style={{ padding: "8px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border-dim)", fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>
+        📦 <strong style={{ color: "var(--text)" }}>Collection Donation:</strong>{" "}
+        No single specimen or locality is assumed. Answer for the collection as a whole where you can; note gaps honestly in the optional details below.
+      </div>
+
+      <div>
+        <div style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
+          Additional Details <span style={{ letterSpacing: "0.06em", textTransform: "none", color: "var(--text-dim)" }}>(optional)</span>
+        </div>
+        <p style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5, marginBottom: "8px" }}>
+          Stated locality is left blank — a collection may include objects from many different localities. Add any notes that may help a curator (regions represented, approximate collecting eras, catalog references, etc.).
+        </p>
+        <textarea
+          value={collectionNotes}
+          onChange={e => setCollectionNotes(e.target.value)}
+          rows={4}
+          placeholder="Optional notes about this collection…"
+          style={{
+            width: "100%", resize: "vertical", minHeight: "88px",
+            padding: "10px 12px", borderRadius: "5px",
+            background: "var(--bg-card)", border: "1px solid var(--border)",
+            color: "var(--text)", fontSize: "12px", lineHeight: 1.5,
+            fontFamily: "inherit",
+          }}
+        />
+      </div>
+
+      <div>
+        <div style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>
+          Provenance Documentation
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+          {questions.map(q => <CheckItem key={q.id} q={q} checked={!!checks[q.id]} onToggle={() => toggle(q.id)} />)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Step 3: Documentation ─────────────────────────────────────────────────────
 
-function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploads, setUploads, collectionMode = false, collectionNotes = "", setCollectionNotes }) {
+function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploads, setUploads }) {
   const toggle = id => setChecks(prev => ({ ...prev, [id]: !prev[id] }));
   const isSelf = acquisitionType === "self";
   const landQs = isSelf ? (LAND_QUESTIONS[landType] || []) : [];
@@ -1274,34 +1365,7 @@ function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploa
           {acquisitionType === "auction" && "Auction-purchased specimens often have published catalog descriptions which serve as provenance documentation. Request the catalog page if available. Diligence focuses on sale records and stated origin, not your own field permits."}
           {acquisitionType === "gift" && "Gift or inherited specimens are accepted but require documentation of the donor's acquisition history where possible. You are responsible for reasonable diligence on legal origin, not for having collected the specimen yourself."}
           {acquisitionType === "self" && "Self-collected specimens have the strongest potential provenance — full locality, date, and legal collection documentation can be provided firsthand."}
-          {acquisitionType === "unknown" && (collectionMode
-            ? "Whole-collection donations often span many localities. No single stated locality is assumed — add optional notes below if helpful. Most institutions still require clear provenance for accession."
-            : "Most institutions will not accept specimens with entirely unknown acquisition history into permanent collections.")}
-        </div>
-      )}
-
-      {/* Optional collection notes — whole-collection path (no single stated locality) */}
-      {collectionMode && setCollectionNotes && (
-        <div>
-          <div style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
-            Additional Details <span style={{ letterSpacing: "0.06em", textTransform: "none", color: "var(--text-dim)" }}>(optional)</span>
-          </div>
-          <p style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5, marginBottom: "8px" }}>
-            Stated locality is left blank — a collection may include objects from many different localities. Add any notes that may help a curator (regions represented, approximate collecting eras, catalog references, etc.).
-          </p>
-          <textarea
-            value={collectionNotes}
-            onChange={e => setCollectionNotes(e.target.value)}
-            rows={4}
-            placeholder="Optional notes about this collection…"
-            style={{
-              width: "100%", resize: "vertical", minHeight: "88px",
-              padding: "10px 12px", borderRadius: "5px",
-              background: "var(--bg-card)", border: "1px solid var(--border)",
-              color: "var(--text)", fontSize: "12px", lineHeight: 1.5,
-              fontFamily: "inherit",
-            }}
-          />
+          {acquisitionType === "unknown" && "Most institutions will not accept specimens with entirely unknown acquisition history into permanent collections."}
         </div>
       )}
 
@@ -1417,7 +1481,7 @@ function buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, 
   }
   lines.push(
     `PROVENANCE CHAIN: ${chainStrength.label}`,
-    `  Acquisition type: ${acqMeta?.label || acquisitionType}`,
+    `  Acquisition type: ${collectionMode ? "Collection Donation" : (acqMeta?.label || acquisitionType)}`,
   );
   if (acquisitionDetails?.dealerName)     lines.push(`  Dealer:       ${acquisitionDetails.dealerName}`);
   if (acquisitionDetails?.collectorNames) lines.push(`  Collector(s): ${acquisitionDetails.collectorNames}`);
@@ -1494,11 +1558,15 @@ function buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, 
       locality: collectionMode ? null : (spec?.locality || null),
     },
     assessment: {
-      ...(collectionMode ? { scope: "whole_collection" } : {}),
+      ...(collectionMode ? { scope: "collection_donation" } : {}),
       provenanceChainLabel: chainStrength.label,
       ...(notes ? { additionalDetails: notes } : {}),
     },
-    acquisition: { type: acquisitionType, details: acquisitionDetails },
+    acquisition: {
+      type: collectionMode ? "collection_donation" : acquisitionType,
+      label: collectionMode ? "Collection Donation" : undefined,
+      details: acquisitionDetails,
+    },
     location: collectionMode
       ? {
           locality: null,
@@ -1567,19 +1635,25 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
         <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase" }}>Provenance Chain</div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
           <div style={{ fontSize: "11px", color: "var(--text-dim)" }}>
-            {acqMeta?.icon} <strong style={{ color: "var(--text)" }}>{acqMeta?.label}</strong>
-            {acquisitionDetails?.dealerName ? ` — ${acquisitionDetails.dealerName}` : ""}
-            {acquisitionDetails?.collectorNames ? ` — ${acquisitionDetails.collectorNames}` : ""}
-            {acquisitionDetails?.auctionHouse ? ` — ${acquisitionDetails.auctionHouse}` : ""}
-            {acquisitionDetails?.donorName ? ` — ${acquisitionDetails.donorName}` : ""}
+            {collectionMode ? (
+              <>📦 <strong style={{ color: "var(--text)" }}>Collection Donation</strong></>
+            ) : (
+              <>
+                {acqMeta?.icon} <strong style={{ color: "var(--text)" }}>{acqMeta?.label}</strong>
+                {acquisitionDetails?.dealerName ? ` — ${acquisitionDetails.dealerName}` : ""}
+                {acquisitionDetails?.collectorNames ? ` — ${acquisitionDetails.collectorNames}` : ""}
+                {acquisitionDetails?.auctionHouse ? ` — ${acquisitionDetails.auctionHouse}` : ""}
+                {acquisitionDetails?.donorName ? ` — ${acquisitionDetails.donorName}` : ""}
+              </>
+            )}
           </div>
-          {isWeakChain && (
+          {(collectionMode || isWeakChain) && (
             <div style={{ fontSize: "12px", fontWeight: 700, color: "#ff6060", letterSpacing: "0.04em", flexShrink: 0 }}>
               Weak
             </div>
           )}
         </div>
-        <div style={{ fontSize: "10px", color: isWeakChain ? "#ff8080" : "var(--text-muted)" }}>{chainStrength.label}</div>
+        <div style={{ fontSize: "10px", color: (collectionMode || isWeakChain) ? "#ff8080" : "var(--text-muted)" }}>{chainStrength.label}</div>
       </div>
 
       {/* Country flag (if any) */}
@@ -1732,7 +1806,7 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
 // ── Main modal ───────────────────────────────────────────────────────────────
 
 const STEPS = ["Acquisition", "Origin & Location", "Documentation", "Assessment"];
-const COLLECTION_STEPS = ["Documentation", "Assessment"];
+const COLLECTION_STEPS = ["Overview", "Collection Donation", "Assessment"];
 
 export default function DonationEval({ scores: initScores, spec: initSpec, records = [], onClose }) {
   const [showPicker, setShowPicker]           = useState(true);
@@ -1779,7 +1853,7 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
   const handleSkipCollection = () => {
     setCollectionMode(true);
     setWorkingScores(null);
-    setWorkingSpec({ name: "Whole collection donation" });
+    setWorkingSpec({ name: "Collection Donation" });
     setAcquisitionType("unknown");
     resetGuideState();
     setStep(0);
@@ -1813,8 +1887,10 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
   };
 
   const showingLocation = !collectionMode && step === 1;
-  const showingDocs = collectionMode ? step === 0 : step === 2;
-  const showingAssessment = collectionMode ? step === 1 : step === 3;
+  const showingCollectionIntro = collectionMode && step === 0;
+  const showingCollectionChecklist = collectionMode && step === 1;
+  const showingDocs = !collectionMode && step === 2;
+  const showingAssessment = collectionMode ? step === 2 : step === 3;
 
   return (
     <div style={{
@@ -1844,15 +1920,13 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
         }}>
           <div>
             <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: "7px" }}>
-              🏛️ Museum Donation Evaluation
+              🏛️ {collectionMode ? "Collection Donation" : "Museum Donation Evaluation"}
             </div>
-            {(spec?.name || spec?.species) && (
-              <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>
-                {collectionMode
-                  ? "Whole collection · Unknown / undocumented checklist"
-                  : [spec.name, spec.species].filter(Boolean).join(" · ")}
-              </div>
-            )}
+            <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>
+              {collectionMode
+                ? "Whole-collection guide — no PRISM score required"
+                : [spec?.name, spec?.species].filter(Boolean).join(" · ")}
+            </div>
           </div>
           <button onClick={guardedClose} style={{ background: "none", border: "none", color: "var(--text-muted)", padding: "4px", display: "flex" }}>
             <X size={16} />
@@ -1892,13 +1966,18 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
               acquisitionType={acquisitionType}
             />
           )}
+          {showingCollectionIntro && <CollectionDonationIntroStep />}
+          {showingCollectionChecklist && (
+            <CollectionDonationStep
+              checks={checks} setChecks={setChecks}
+              collectionNotes={collectionNotes} setCollectionNotes={setCollectionNotes}
+            />
+          )}
           {showingDocs && (
             <DocumentationStep
               acquisitionType={acquisitionType} landType={landType}
               checks={checks} setChecks={setChecks}
               uploads={uploads} setUploads={setUploads}
-              collectionMode={collectionMode}
-              collectionNotes={collectionNotes} setCollectionNotes={setCollectionNotes}
             />
           )}
           {showingAssessment && (
