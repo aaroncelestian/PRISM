@@ -19,7 +19,7 @@ function _bestScore(scores) {
 
 // ── Specimen Picker ───────────────────────────────────────────────────────────
 
-function DonationPickerScreen({ initScores, initSpec, records, onSelect, onClose }) {
+function DonationPickerScreen({ initScores, initSpec, records, onSelect, onSkipCollection, onClose }) {
   const { score: curScore, grade: curGrade } = _bestScore(initScores);
 
   return (
@@ -106,6 +106,27 @@ function DonationPickerScreen({ initScores, initSpec, records, onSelect, onClose
               </div>
             )}
           </div>
+
+          {/* Whole-collection skip */}
+          <div>
+            <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>Or skip specimen selection</div>
+            <button
+              onClick={onSkipCollection}
+              style={{ width: "100%", textAlign: "left", padding: "12px 14px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "7px", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: "12px" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.35)"}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+            >
+              <div style={{ fontSize: "18px", lineHeight: 1.2, flexShrink: 0 }}>📦</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", marginBottom: "3px" }}>
+                  Donate a whole collection
+                </div>
+                <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>
+                  Skip choosing a rated specimen. Continues with the Unknown / undocumented checklist — useful when you are offering many objects and do not have a PRISM score for each.
+                </div>
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Footer */}
@@ -138,14 +159,14 @@ const ACQUISITION_TYPES = [
   { key: "unknown",   icon: "❓",  label: "Unknown / undocumented",  desc: "Acquisition history is unclear or cannot be verified." },
 ];
 
-// Chain strength rating per acquisition type — affects summary score
+// Qualitative chain strength per acquisition type (no numeric score in assessment)
 const CHAIN_STRENGTH = {
-  self:      { base: 90, label: "Strong" },
-  dealer:    { base: 65, label: "Variable — depends on dealer documentation" },
-  collector: { base: 60, label: "Variable — depends on chain completeness" },
-  auction:   { base: 55, label: "Moderate — auction records help considerably" },
-  gift:      { base: 50, label: "Moderate — prior-owner history often uncertain" },
-  unknown:   { base: 10, label: "Weak — severely limits donation value" },
+  self:      { label: "Strong" },
+  dealer:    { label: "Variable — depends on dealer documentation" },
+  collector: { label: "Variable — depends on chain completeness" },
+  auction:   { label: "Moderate — auction records help considerably" },
+  gift:      { label: "Moderate — prior-owner history often uncertain" },
+  unknown:   { label: "Weak — not acceptable for institutional acquisition" },
 };
 
 // ── Land types ────────────────────────────────────────────────────────────────
@@ -311,6 +332,20 @@ const PROVENANCE_QUESTIONS = [
   { id: "no_deaccession", label: "Not an accessioned museum specimen", desc: "Confirm title is free and clear — this specimen has not been formally accessioned into another institutional collection and was not improperly removed from one.", required: true  },
 ];
 
+/** Unknown / undocumented path — softer GPS/date expectations; knowledge-qualified export attestation. */
+const UNKNOWN_PROVENANCE_QUESTIONS = [
+  { id: "field_label",   label: "Original field label exists",              desc: "A label written at or near the time of collection accompanies the specimen. Significantly strengthens institutional confidence.", required: false, recommended: true  },
+  { id: "gps_coords",    label: "GPS / precise location recorded",          desc: "GPS coordinates, UTM grid, or a detailed locality description was documented.", required: false, recommended: true  },
+  { id: "date_known",    label: "Collection date documented",               desc: "The year (at minimum) the specimen was collected is known and recorded. Undated specimens are often declined by institutions.", required: false },
+  { id: "chain_doc",     label: "Full chain of custody documented",         desc: "All owners since original collection can be accounted for with records.", required: false },
+  { id: "no_cites",      label: "No known international export restrictions", desc: "To the best of my knowledge, the specimen was not illegally exported from its country of origin; no CITES issues.", required: true  },
+  { id: "no_deaccession", label: "Not an accessioned museum specimen",      desc: "Confirm title is free and clear — this specimen has not been formally accessioned into another institutional collection and was not improperly removed from one.", required: true  },
+];
+
+function getProvenanceQuestions(acquisitionType) {
+  return acquisitionType === "unknown" ? UNKNOWN_PROVENANCE_QUESTIONS : PROVENANCE_QUESTIONS;
+}
+
 // ── Acquisition-specific documentation questions ─────────────────────────────
 
 const DEALER_QUESTIONS = [
@@ -397,7 +432,7 @@ function getDocumentationQuestions(acquisitionType, landType) {
     ...(isSelf ? (LAND_QUESTIONS[landType] || []) : []),
     ...getAcquisitionQuestions(acquisitionType),
     ...getDueDiligenceQuestions(acquisitionType),
-    ...PROVENANCE_QUESTIONS,
+    ...getProvenanceQuestions(acquisitionType),
   ];
 }
 
@@ -1210,7 +1245,7 @@ function UploadSlot({ slot, file, onFile }) {
 
 // ── Step 3: Documentation ─────────────────────────────────────────────────────
 
-function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploads, setUploads }) {
+function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploads, setUploads, collectionMode = false, collectionNotes = "", setCollectionNotes }) {
   const toggle = id => setChecks(prev => ({ ...prev, [id]: !prev[id] }));
   const isSelf = acquisitionType === "self";
   const landQs = isSelf ? (LAND_QUESTIONS[landType] || []) : [];
@@ -1239,7 +1274,34 @@ function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploa
           {acquisitionType === "auction" && "Auction-purchased specimens often have published catalog descriptions which serve as provenance documentation. Request the catalog page if available. Diligence focuses on sale records and stated origin, not your own field permits."}
           {acquisitionType === "gift" && "Gift or inherited specimens are accepted but require documentation of the donor's acquisition history where possible. You are responsible for reasonable diligence on legal origin, not for having collected the specimen yourself."}
           {acquisitionType === "self" && "Self-collected specimens have the strongest potential provenance — full locality, date, and legal collection documentation can be provided firsthand."}
-          {acquisitionType === "unknown" && "Most institutions will not accept specimens with entirely unknown acquisition history into permanent collections."}
+          {acquisitionType === "unknown" && (collectionMode
+            ? "Whole-collection donations often span many localities. No single stated locality is assumed — add optional notes below if helpful. Most institutions still require clear provenance for accession."
+            : "Most institutions will not accept specimens with entirely unknown acquisition history into permanent collections.")}
+        </div>
+      )}
+
+      {/* Optional collection notes — whole-collection path (no single stated locality) */}
+      {collectionMode && setCollectionNotes && (
+        <div>
+          <div style={{ fontSize: "9px", letterSpacing: "0.2em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
+            Additional Details <span style={{ letterSpacing: "0.06em", textTransform: "none", color: "var(--text-dim)" }}>(optional)</span>
+          </div>
+          <p style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5, marginBottom: "8px" }}>
+            Stated locality is left blank — a collection may include objects from many different localities. Add any notes that may help a curator (regions represented, approximate collecting eras, catalog references, etc.).
+          </p>
+          <textarea
+            value={collectionNotes}
+            onChange={e => setCollectionNotes(e.target.value)}
+            rows={4}
+            placeholder="Optional notes about this collection…"
+            style={{
+              width: "100%", resize: "vertical", minHeight: "88px",
+              padding: "10px 12px", borderRadius: "5px",
+              background: "var(--bg-card)", border: "1px solid var(--border)",
+              color: "var(--text)", fontSize: "12px", lineHeight: 1.5,
+              fontFamily: "inherit",
+            }}
+          />
         </div>
       )}
 
@@ -1304,7 +1366,7 @@ function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploa
           Universal Provenance Documentation
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-          {PROVENANCE_QUESTIONS.map(q => <CheckItem key={q.id} q={q} checked={!!checks[q.id]} onToggle={() => toggle(q.id)} />)}
+          {getProvenanceQuestions(acquisitionType).map(q => <CheckItem key={q.id} q={q} checked={!!checks[q.id]} onToggle={() => toggle(q.id)} />)}
         </div>
       </div>
 
@@ -1335,49 +1397,63 @@ function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploa
 
 // ── Curator export helpers ────────────────────────────────────────────────────
 
-function buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location, checks, uploads, pct, chainScore, reqPassed, optPassed, required, attestorName }) {
+function buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location, checks, uploads, reqPassed, optPassed, required, attestorName, collectionMode, collectionNotes }) {
   const now = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const acqMeta  = ACQUISITION_TYPES.find(a => a.key === acquisitionType);
   const landMeta = LAND_TYPES.find(lt => lt.key === landType);
   const flag     = lookupCountryFlag(originCountry);
-  const status   = pct === 100 ? "READY FOR CONSIDERATION" : pct >= 60 ? "CONDITIONALLY SUITABLE" : "NOT CURRENTLY SUITABLE";
+  const chainStrength = CHAIN_STRENGTH[acquisitionType] || { label: "Unknown" };
   const isSelf   = acquisitionType === "self";
   const allQs    = getDocumentationQuestions(acquisitionType, landType);
+  const notes    = (collectionNotes || "").trim();
   const LINE = "\u2500".repeat(52);
   const lines = ["PRISM \u2014 MINERAL DONATION EVALUATION REPORT", `Generated: ${now}`, LINE, ""];
   if (spec?.name || spec?.species || spec?.locality) {
-    lines.push("SPECIMEN");
+    lines.push(collectionMode ? "DONATION SCOPE" : "SPECIMEN");
     if (spec?.name)     lines.push(`  Name:      ${spec.name}`);
     if (spec?.species)  lines.push(`  Species:   ${spec.species}`);
-    if (spec?.locality) lines.push(`  Locality:  ${spec.locality}`);
+    if (spec?.locality && !collectionMode) lines.push(`  Locality:  ${spec.locality}`);
     lines.push("");
   }
   lines.push(
-    `OVERALL STATUS: ${status}`,
-    `  Required criteria: ${reqPassed.length} of ${required.length} met`,
-    ...(optPassed.length > 0 ? [`  Optional criteria: ${optPassed.length} met`] : []),
-    "",
-    `PROVENANCE CHAIN SCORE: ${chainScore}/100`,
+    `PROVENANCE CHAIN: ${chainStrength.label}`,
     `  Acquisition type: ${acqMeta?.label || acquisitionType}`,
   );
   if (acquisitionDetails?.dealerName)     lines.push(`  Dealer:       ${acquisitionDetails.dealerName}`);
   if (acquisitionDetails?.collectorNames) lines.push(`  Collector(s): ${acquisitionDetails.collectorNames}`);
   if (acquisitionDetails?.auctionHouse)   lines.push(`  Auction/Show: ${acquisitionDetails.auctionHouse}`);
   if (acquisitionDetails?.donorName)      lines.push(`  Donor:        ${acquisitionDetails.donorName}`);
-  lines.push("", isSelf ? "COLLECTION SITE" : "STATED LOCALITY");
-  lines.push(`  Country:   ${originCountry || "Unknown"}`);
-  if (landMeta) {
-    lines.push(isSelf
-      ? `  Land type: ${landMeta.label}`
-      : `  Stated locality land context: ${landMeta.label}`);
-  }
-  if (localityText) lines.push(`  Locality:  ${localityText}`);
-  if (location) lines.push(`  Coordinates: ${location.lat.toFixed(5)}\u00b0, ${location.lng.toFixed(5)}\u00b0`);
-  lines.push("");
-  if (flag) {
-    lines.push(`COUNTRY FLAG: \u2691 ${flag.name}`, `  ${flag.heading}`);
-    if (flag.action) lines.push(`  \u279c ${flag.action}`);
+  lines.push(
+    "",
+    "DOCUMENTATION CHECKLIST SUMMARY",
+    `  Required criteria checked: ${reqPassed.length} of ${required.length}`,
+    ...(optPassed.length > 0 ? [`  Optional criteria checked: ${optPassed.length}`] : []),
+    "",
+  );
+  if (collectionMode) {
+    lines.push("STATED LOCALITY");
+    lines.push("  (left blank — collection may include objects from many localities)");
+    if (notes) {
+      lines.push("", "ADDITIONAL DETAILS");
+      notes.split("\n").forEach(line => lines.push(`  ${line}`));
+    }
     lines.push("");
+  } else {
+    lines.push(isSelf ? "COLLECTION SITE" : "STATED LOCALITY");
+    lines.push(`  Country:   ${originCountry || "Unknown"}`);
+    if (landMeta) {
+      lines.push(isSelf
+        ? `  Land type: ${landMeta.label}`
+        : `  Stated locality land context: ${landMeta.label}`);
+    }
+    if (localityText) lines.push(`  Locality:  ${localityText}`);
+    if (location) lines.push(`  Coordinates: ${location.lat.toFixed(5)}\u00b0, ${location.lng.toFixed(5)}\u00b0`);
+    lines.push("");
+    if (flag) {
+      lines.push(`COUNTRY FLAG: \u2691 ${flag.name}`, `  ${flag.heading}`);
+      if (flag.action) lines.push(`  \u279c ${flag.action}`);
+      lines.push("");
+    }
   }
   lines.push("DOCUMENTATION CHECKLIST");
   allQs.forEach(q => lines.push(`  ${checks[q.id] ? "\u2713" : "\u2717"} ${q.label}`));
@@ -1405,25 +1481,38 @@ function buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, 
   return lines.join("\n");
 }
 
-function buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location, checks, uploads, pct, chainScore, attestorName }) {
+function buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location, checks, uploads, attestorName, collectionMode, collectionNotes }) {
   const isSelf = acquisitionType === "self";
+  const chainStrength = CHAIN_STRENGTH[acquisitionType] || { label: "Unknown" };
+  const notes = (collectionNotes || "").trim() || null;
   return JSON.stringify({
     generated: new Date().toISOString(),
     generator: "PRISM Mineral Donation Evaluator v1",
-    specimen: { name: spec?.name || null, species: spec?.species || null, locality: spec?.locality || null },
+    specimen: {
+      name: spec?.name || null,
+      species: spec?.species || null,
+      locality: collectionMode ? null : (spec?.locality || null),
+    },
     assessment: {
-      status: pct === 100 ? "ready" : pct >= 60 ? "conditional" : "not_suitable",
-      readinessPercent: pct,
-      provenanceChainScore: chainScore,
+      ...(collectionMode ? { scope: "whole_collection" } : {}),
+      provenanceChainLabel: chainStrength.label,
+      ...(notes ? { additionalDetails: notes } : {}),
     },
     acquisition: { type: acquisitionType, details: acquisitionDetails },
-    location: {
-      locality: localityText || null,
-      country: originCountry || null,
-      landType: landType || null,
-      landTypeRole: isSelf ? "collector_compliance" : "stated_locality_context",
-      coordinates: location ? { lat: location.lat, lng: location.lng } : null,
-    },
+    location: collectionMode
+      ? {
+          locality: null,
+          country: null,
+          landType: null,
+          note: "Stated locality left blank — collection may include objects from many localities",
+        }
+      : {
+          locality: localityText || null,
+          country: originCountry || null,
+          landType: landType || null,
+          landTypeRole: isSelf ? "collector_compliance" : "stated_locality_context",
+          coordinates: location ? { lat: location.lat, lng: location.lng } : null,
+        },
     attestation: {
       statement: "To the best of my knowledge, all information provided in this evaluation is accurate and complete to the best of my ability.",
       signedBy: attestorName || null,
@@ -1438,7 +1527,7 @@ function buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, 
 
 // ── Step 4: Donation Assessment ───────────────────────────────────────────────
 
-function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, location, originCountry, localityText, spec, uploads, onExported }) {
+function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, location, originCountry, localityText, spec, uploads, onExported, collectionMode = false, collectionNotes = "" }) {
   const [copied, setCopied] = useState(false);
   const [attestorName, setAttestorName] = useState("");
   const isSelf = acquisitionType === "self";
@@ -1450,25 +1539,17 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
   const reqFailed = required.filter(q => !checks[q.id]);
   const optPassed = optional.filter(q => checks[q.id]);
 
-  const pct = required.length > 0 ? Math.round((reqPassed.length / required.length) * 100)
-    : (isSelf && landType === "unknown") ? 0 : 100;
-
   const acqMeta     = ACQUISITION_TYPES.find(a => a.key === acquisitionType);
-  const chainStrength = CHAIN_STRENGTH[acquisitionType] || { base: 50, label: "Unknown" };
+  const chainStrength = CHAIN_STRENGTH[acquisitionType] || { label: "Unknown" };
   const flag          = lookupCountryFlag(originCountry);
   const landMeta      = LAND_TYPES.find(lt => lt.key === landType);
+  const isWeakChain   = acquisitionType === "unknown";
+  const notes         = (collectionNotes || "").trim();
 
-  // Adjust chain strength up based on documentation checked
-  const docBoost = Math.round((reqPassed.length / Math.max(required.length, 1)) * 20);
-  const chainScore = Math.min(100, chainStrength.base + docBoost);
-
-  const statusColor = pct === 100 ? "#0a7a52" : pct >= 60 ? "#a65d00" : "#ff5050";
-  const statusLabel = pct === 100
-    ? "Ready for Museum Donation Consideration"
-    : pct >= 60
-    ? "Conditionally Suitable — Documentation Gaps Exist"
-    : "Not Currently Suitable — Critical Requirements Unmet";
-  const statusEmoji = pct === 100 ? "✅" : pct >= 60 ? "⚠️" : "❌";
+  const reportArgs = {
+    spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText,
+    location, checks, uploads, reqPassed, optPassed, required, attestorName, collectionMode, collectionNotes,
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -1477,24 +1558,14 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
           Donation Assessment
         </h3>
         <p style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55 }}>
-          Based on the information provided. Not legal advice — consult the receiving institution for their requirements.
+          Checklist summary based on the documentation items. Not legal advice — consult the receiving institution for their requirements.
         </p>
       </div>
 
-      {/* Readiness badge */}
-      <div style={{ padding: "16px", borderRadius: "6px", textAlign: "center", background: `${statusColor}0a`, border: `1px solid ${statusColor}30` }}>
-        <div style={{ fontSize: "28px", marginBottom: "6px" }}>{statusEmoji}</div>
-        <div style={{ fontSize: "13px", fontWeight: 600, color: statusColor, lineHeight: 1.4, marginBottom: "5px" }}>{statusLabel}</div>
-        <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-          {reqPassed.length} of {required.length} required criteria met
-          {optPassed.length > 0 && ` · ${optPassed.length} optional criteria also met`}
-        </div>
-      </div>
-
-      {/* Provenance chain summary */}
+      {/* Provenance chain summary — qualitative only, no numeric score */}
       <div style={{ padding: "10px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: "8px" }}>
         <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase" }}>Provenance Chain</div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
           <div style={{ fontSize: "11px", color: "var(--text-dim)" }}>
             {acqMeta?.icon} <strong style={{ color: "var(--text)" }}>{acqMeta?.label}</strong>
             {acquisitionDetails?.dealerName ? ` — ${acquisitionDetails.dealerName}` : ""}
@@ -1502,14 +1573,13 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
             {acquisitionDetails?.auctionHouse ? ` — ${acquisitionDetails.auctionHouse}` : ""}
             {acquisitionDetails?.donorName ? ` — ${acquisitionDetails.donorName}` : ""}
           </div>
-          <div style={{ fontSize: "13px", fontWeight: 700, color: chainScore >= 70 ? "#0a7a52" : chainScore >= 45 ? "#a65d00" : "#ff6060" }}>
-            {chainScore}/100
-          </div>
+          {isWeakChain && (
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#ff6060", letterSpacing: "0.04em", flexShrink: 0 }}>
+              Weak
+            </div>
+          )}
         </div>
-        <div style={{ height: "4px", background: "var(--bg)", borderRadius: "2px", overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${chainScore}%`, background: chainScore >= 70 ? "#0a7a52" : chainScore >= 45 ? "#a65d00" : "#ff6060", borderRadius: "2px", transition: "width 0.4s" }} />
-        </div>
-        <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>{chainStrength.label}</div>
+        <div style={{ fontSize: "10px", color: isWeakChain ? "#ff8080" : "var(--text-muted)" }}>{chainStrength.label}</div>
       </div>
 
       {/* Country flag (if any) */}
@@ -1519,12 +1589,6 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
           {flag.action && <div style={{ marginTop: "3px", fontSize: "10px", opacity: 0.85 }}>➜ {flag.action}</div>}
         </div>
       )}
-
-      {/* PRISM note */}
-      <div style={{ padding: "9px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border)", fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>
-        📊 PRISM <strong style={{ color: "var(--text)" }}>Museum Specimen</strong> context weights Provenance at 42% and Scientific Value at 21%.
-        Improving documentation directly raises your museum-context PRISM score.
-      </div>
 
       {/* Unmet requirements */}
       {reqFailed.length > 0 && (
@@ -1550,8 +1614,25 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
         </div>
       )}
 
-      {/* Location summary */}
-      {(originCountry || localityText || location || spec?.locality) && (
+      {/* Location summary — omitted for whole collections (many localities); optional notes instead */}
+      {collectionMode ? (
+        <div style={{ padding: "9px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border)" }}>
+          <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
+            Stated Locality
+          </div>
+          <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5, fontStyle: "italic" }}>
+            Left blank — this donation is a collection of objects that may come from many different localities.
+          </div>
+          {notes && (
+            <>
+              <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginTop: "12px", marginBottom: "6px" }}>
+                Additional Details
+              </div>
+              <div style={{ fontSize: "12px", color: "var(--text)", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{notes}</div>
+            </>
+          )}
+        </div>
+      ) : (originCountry || localityText || location || spec?.locality) && (
         <div style={{ padding: "9px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border)" }}>
           <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
             {isSelf ? "Collection Site" : "Stated Locality"}
@@ -1605,7 +1686,7 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px" }}>
           <button
             onClick={() => {
-              const txt = buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location, checks, uploads, pct, chainScore, reqPassed, optPassed, required, attestorName });
+              const txt = buildTextReport(reportArgs);
               navigator.clipboard.writeText(txt)
                 .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); onExported?.(); })
                 .catch(() => {});
@@ -1617,7 +1698,7 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
           </button>
           <button
             onClick={() => {
-              const json = buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location, checks, uploads, pct, chainScore, attestorName });
+              const json = buildJSONReport(reportArgs);
               const blob = new Blob([json], { type: "application/json" });
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
@@ -1651,9 +1732,11 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
 // ── Main modal ───────────────────────────────────────────────────────────────
 
 const STEPS = ["Acquisition", "Origin & Location", "Documentation", "Assessment"];
+const COLLECTION_STEPS = ["Documentation", "Assessment"];
 
 export default function DonationEval({ scores: initScores, spec: initSpec, records = [], onClose }) {
   const [showPicker, setShowPicker]           = useState(true);
+  const [collectionMode, setCollectionMode]   = useState(false);
   const [workingScores, setWorkingScores]     = useState(initScores);
   const [workingSpec, setWorkingSpec]         = useState(initSpec);
   const [step, setStep]                       = useState(0);
@@ -1665,12 +1748,41 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
   const [landType, setLandType]               = useState(null);
   const [checks, setChecks]                   = useState({});
   const [uploads, setUploads]                 = useState({});
+  const [collectionNotes, setCollectionNotes] = useState("");
   const [exported, setExported]               = useState(false);
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
 
+  const activeSteps = collectionMode ? COLLECTION_STEPS : STEPS;
+
+  const resetGuideState = () => {
+    setAcquisitionDetails({});
+    setOriginCountry("");
+    setLocalityText("");
+    setLocation(null);
+    setLandType(null);
+    setChecks({});
+    setUploads({});
+    setCollectionNotes("");
+    setExported(false);
+  };
+
   const handlePickerSelect = (scores, spec) => {
+    setCollectionMode(false);
     setWorkingScores(scores);
     setWorkingSpec(spec);
+    setAcquisitionType(null);
+    resetGuideState();
+    setStep(0);
+    setShowPicker(false);
+  };
+
+  const handleSkipCollection = () => {
+    setCollectionMode(true);
+    setWorkingScores(null);
+    setWorkingSpec({ name: "Whole collection donation" });
+    setAcquisitionType("unknown");
+    resetGuideState();
+    setStep(0);
     setShowPicker(false);
   };
 
@@ -1680,24 +1792,29 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
         initScores={initScores} initSpec={initSpec}
         records={records}
         onSelect={handlePickerSelect}
+        onSkipCollection={handleSkipCollection}
         onClose={onClose}
       />
     );
   }
 
-  const scores = workingScores;
-  const spec   = workingSpec;
+  const spec = workingSpec;
 
   const guardedClose = () => {
-    if (step === STEPS.length - 1 && !exported) { setShowLeaveWarning(true); }
+    if (step === activeSteps.length - 1 && !exported) { setShowLeaveWarning(true); }
     else { onClose(); }
   };
 
   const canAdvance = () => {
+    if (collectionMode) return true;
     if (step === 0) return !!acquisitionType;
     if (step === 1) return originCountry.trim().length >= 2 && (acquisitionType !== "self" || !!landType);
     return true;
   };
+
+  const showingLocation = !collectionMode && step === 1;
+  const showingDocs = collectionMode ? step === 0 : step === 2;
+  const showingAssessment = collectionMode ? step === 1 : step === 3;
 
   return (
     <div style={{
@@ -1708,7 +1825,7 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
       padding: "20px",
     }}>
       <div style={{
-        width: "100%", maxWidth: step === 1 ? "920px" : "660px",
+        width: "100%", maxWidth: showingLocation ? "920px" : "660px",
         maxHeight: "92vh",
         background: "var(--bg)",
         border: "1px solid var(--border)",
@@ -1731,7 +1848,9 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
             </div>
             {(spec?.name || spec?.species) && (
               <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>
-                {[spec.name, spec.species].filter(Boolean).join(" · ")}
+                {collectionMode
+                  ? "Whole collection · Unknown / undocumented checklist"
+                  : [spec.name, spec.species].filter(Boolean).join(" · ")}
               </div>
             )}
           </div>
@@ -1742,7 +1861,7 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
 
         {/* Step tabs */}
         <div style={{ display: "flex", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
-          {STEPS.map((s, i) => (
+          {activeSteps.map((s, i) => (
             <div key={i} style={{
               flex: 1, padding: "9px 0", textAlign: "center",
               fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase",
@@ -1758,13 +1877,13 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
 
         {/* Scrollable content */}
         <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "22px 24px" }}>
-          {step === 0 && (
+          {!collectionMode && step === 0 && (
             <AcquisitionStep
               acquisitionType={acquisitionType} setAcquisitionType={setAcquisitionType}
               acquisitionDetails={acquisitionDetails} setAcquisitionDetails={setAcquisitionDetails}
             />
           )}
-          {step === 1 && (
+          {!collectionMode && step === 1 && (
             <LocationStep
               location={location} setLocation={setLocation}
               landType={landType} setLandType={setLandType}
@@ -1773,19 +1892,22 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
               acquisitionType={acquisitionType}
             />
           )}
-          {step === 2 && (
+          {showingDocs && (
             <DocumentationStep
               acquisitionType={acquisitionType} landType={landType}
               checks={checks} setChecks={setChecks}
               uploads={uploads} setUploads={setUploads}
+              collectionMode={collectionMode}
+              collectionNotes={collectionNotes} setCollectionNotes={setCollectionNotes}
             />
           )}
-          {step === 3 && (
+          {showingAssessment && (
             <SummaryStep
               acquisitionType={acquisitionType} acquisitionDetails={acquisitionDetails}
               landType={landType} checks={checks}
               location={location} originCountry={originCountry} localityText={localityText} spec={spec}
-              uploads={uploads} onExported={() => { setExported(true); setShowLeaveWarning(false); }}
+              uploads={uploads} collectionMode={collectionMode} collectionNotes={collectionNotes}
+              onExported={() => { setExported(true); setShowLeaveWarning(false); }}
             />
           )}
         </div>
@@ -1830,10 +1952,10 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
             }}
           >
             <ChevronLeft size={13} />
-            {step === 0 ? "Change Specimen" : "Back"}
+            {step === 0 ? (collectionMode ? "Change Path" : "Change Specimen") : "Back"}
           </button>
 
-          {step < STEPS.length - 1 ? (
+          {step < activeSteps.length - 1 ? (
             <button
               onClick={() => setStep(s => s + 1)}
               disabled={!canAdvance()}
