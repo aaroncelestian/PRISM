@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { X, ChevronLeft, ChevronRight, RotateCcw, Scale } from "lucide-react";
 import {
   LEGALITY_META,
+  LEGAL_SOURCES,
   LAND_MANAGERS,
   WITHDRAWAL_STATUSES,
   MATERIAL_CLASSES,
@@ -335,6 +336,32 @@ function ScopeStep() {
 
       <BlmPermitGuide />
 
+      <div style={{ padding: "12px 14px", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "6px", marginBottom: "10px" }}>
+        <div style={{ fontSize: "11px", color: "var(--cyan)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>
+          Laws still in effect
+        </div>
+        <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.5, marginBottom: "10px" }}>
+          These older statutes and regulations remain current law. Open the official text when you want the source, not just a summary.
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {LEGAL_SOURCES.map((src) => (
+            <div key={src.id} style={{ paddingBottom: "8px", borderBottom: "1px solid var(--border-dim)" }}>
+              <a
+                href={src.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: "12px", color: "var(--cyan)", fontWeight: 600, textDecoration: "underline", lineHeight: 1.4 }}
+              >
+                {src.label}
+              </a>
+              <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.45, marginTop: "2px" }}>
+                {src.title} — {src.note}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div style={{
         display: "flex", gap: "10px", padding: "10px 14px", borderRadius: "6px",
         background: "rgba(var(--accent-rgb), 0.06)", border: "1px solid rgba(var(--accent-rgb), 0.22)",
@@ -380,7 +407,19 @@ function ResultPanel({ result }) {
         </div>
         {result.authority && (
           <div style={{ fontSize: "11px", fontFamily: "var(--mono)", color: "var(--cyan)", letterSpacing: "0.02em" }}>
-            Rule: {result.authority}
+            Rule:{" "}
+            {result.authorityHref ? (
+              <a
+                href={result.authorityHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "var(--cyan)", textDecoration: "underline" }}
+              >
+                {result.authority}
+              </a>
+            ) : (
+              result.authority
+            )}
           </div>
         )}
       </div>

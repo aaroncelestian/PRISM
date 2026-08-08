@@ -16,6 +16,78 @@ export const LEGALITY_META = {
     "This tool summarizes common agency rules for hobby collecting. It is not legal advice. There is no single nationwide weight limit for ordinary rock collecting — local BLM offices and national forests often have their own rules. Always check with the local land office before you collect.",
 };
 
+/**
+ * Enduring federal statutes and regulations still in effect that underpin
+ * the checklist. Prefer official eCFR / U.S. Code hosts.
+ */
+export const LEGAL_SOURCES = [
+  {
+    id: "nps_2_1",
+    label: "36 CFR § 2.1",
+    title: "National Park Service — preservation of natural resources",
+    href: "https://www.ecfr.gov/current/title-36/chapter-I/part-2/section-2.1",
+    note: "Bars removing rocks, minerals, and paleontological resources from NPS areas without a permit.",
+  },
+  {
+    id: "usfws_27_51",
+    label: "50 CFR § 27.51",
+    title: "National Wildlife Refuges — disturbing or collecting",
+    href: "https://www.ecfr.gov/current/title-50/chapter-I/subchapter-C/part-27/subpart-E/section-27.51",
+    note: "Generally prohibits collecting natural objects on refuge lands without authorization.",
+  },
+  {
+    id: "wilderness_act",
+    label: "Wilderness Act of 1964 · 16 U.S.C. § 1133(c)",
+    title: "Prohibited uses in wilderness",
+    href: "https://www.law.cornell.edu/uscode/text/16/1133",
+    note: "No commercial enterprise, permanent road, motor vehicles, or structure — collecting is generally treated as prohibited.",
+  },
+  {
+    id: "prpa",
+    label: "Paleontological Resources Preservation Act · 16 U.S.C. § 470aaa",
+    title: "Federal fossil collecting",
+    href: "https://www.law.cornell.edu/uscode/text/16/470aaa",
+    note: "Vertebrate fossils on federal land require a permit; casual hobby collecting is not allowed.",
+  },
+  {
+    id: "arpa",
+    label: "Archaeological Resources Protection Act · 16 U.S.C. § 470aa",
+    title: "Archaeological and cultural resources",
+    href: "https://www.law.cornell.edu/uscode/text/16/470aa",
+    note: "Artifacts, ruins, and cultural materials are protected — outside rockhound collecting.",
+  },
+  {
+    id: "petrified_wood_cfr",
+    label: "43 CFR § 3622.4",
+    title: "BLM free use of petrified wood — collection rules",
+    href: "https://www.ecfr.gov/current/title-43/subtitle-B/chapter-II/subchapter-C/part-3620/subpart-3622/section-3622.4",
+    note: "Still in effect: 25 lb + one piece per day, 250 lb per year; no power equipment or sale.",
+  },
+  {
+    id: "petrified_wood_act",
+    label: "Petrified Wood Act of 1962 (Pub. L. 87-713)",
+    title: "Congressional free-use authority for petrified wood",
+    href: "https://www.govinfo.gov/content/pkg/STATUTE-76/pdf/STATUTE-76-Pg652.pdf",
+    note: "1962 statute that authorized limited free personal use of petrified wood on public lands.",
+  },
+  {
+    id: "antiquities",
+    label: "Antiquities Act · 54 U.S.C. § 320301",
+    title: "National monuments",
+    href: "https://www.law.cornell.edu/uscode/text/54/320301",
+    note: "Authority for monument proclamations — many monuments restrict or ban collecting in their management rules.",
+  },
+  {
+    id: "flpma",
+    label: "FLPMA · 43 U.S.C. § 1701 et seq.",
+    title: "Federal Land Policy and Management Act",
+    href: "https://www.law.cornell.edu/uscode/text/43/1701",
+    note: "Organic statute for BLM land management, including mineral materials and recreation use.",
+  },
+];
+
+const SRC = Object.fromEntries(LEGAL_SOURCES.map((s) => [s.id, s]));
+
 export const LAND_MANAGERS = [
   { id: "BLM", label: "BLM", desc: "Bureau of Land Management — most open public land" },
   { id: "USFS", label: "USFS", desc: "U.S. Forest Service — National Forests" },
@@ -194,7 +266,8 @@ export function evaluateLegality(input) {
   if (land_manager === "NPS") {
     return {
       tag: "PROHIBITED",
-      authority: "36 CFR 2.1",
+      authority: SRC.nps_2_1.label,
+      authorityHref: SRC.nps_2_1.href,
       message:
         "Collecting rocks, minerals, or fossils is not allowed in National Parks unless you have a research permit. There is no hobby exception.",
       notes,
@@ -203,7 +276,8 @@ export function evaluateLegality(input) {
   if (land_manager === "USFWS") {
     return {
       tag: "PROHIBITED",
-      authority: "50 CFR 27.51",
+      authority: SRC.usfws_27_51.label,
+      authorityHref: SRC.usfws_27_51.href,
       message:
         "Collecting is usually not allowed on National Wildlife Refuges. Check with that specific refuge before going.",
       notes,
@@ -238,7 +312,8 @@ export function evaluateLegality(input) {
   if (withdrawal_status === "wilderness") {
     return {
       tag: "PROHIBITED",
-      authority: "Wilderness Act of 1964, 16 U.S.C. § 1133(c)",
+      authority: SRC.wilderness_act.label,
+      authorityHref: SRC.wilderness_act.href,
       message:
         "Collecting is generally not allowed in designated wilderness. Power tools and vehicles for collecting are also banned.",
       notes,
@@ -247,6 +322,8 @@ export function evaluateLegality(input) {
   if (withdrawal_status === "national_monument") {
     return {
       tag: "CONDITIONAL_REVIEW_REQUIRED",
+      authority: SRC.antiquities.label,
+      authorityHref: SRC.antiquities.href,
       message:
         "Many national monuments ban or limit rock collecting. Rules differ by monument — check that monument's proclamation and management plan before you go.",
       notes,
@@ -281,7 +358,8 @@ export function evaluateLegality(input) {
   if (material_class === "vertebrate_fossil") {
     return {
       tag: "PROHIBITED_CASUAL_PERMIT_REQUIRED",
-      authority: "Paleontological Resources Preservation Act, 16 U.S.C. § 470aaa",
+      authority: SRC.prpa.label,
+      authorityHref: SRC.prpa.href,
       message:
         "Bones, teeth, and other vertebrate fossils cannot be collected as a hobby on federal land. You need a permit — amount doesn't matter.",
       notes,
@@ -290,7 +368,8 @@ export function evaluateLegality(input) {
   if (material_class === "archaeological_cultural") {
     return {
       tag: "PROHIBITED",
-      authority: "Archaeological Resources Protection Act, 16 U.S.C. § 470aa et seq.",
+      authority: SRC.arpa.label,
+      authorityHref: SRC.arpa.href,
       message:
         "Artifacts and cultural materials are protected by law and are outside rock-and-mineral collecting. Do not collect them.",
       notes,
@@ -332,9 +411,12 @@ export function evaluateLegality(input) {
   if (land_manager === "BLM" && material_class === "petrified_wood") {
     const { dailyLb, annualLb, note } = QUANTITY_THRESHOLDS.blm_petrified_wood;
     notes.push(note);
+    notes.push(`Statutory limits: ${SRC.petrified_wood_cfr.label} (still in effect).`);
     if ((hasTrip && trip > dailyLb) || (hasAnnual && annual > annualLb)) {
       return {
         tag: "EXCEEDS_CASUAL_THRESHOLD",
+        authority: SRC.petrified_wood_cfr.label,
+        authorityHref: SRC.petrified_wood_cfr.href,
         message: `This amount of petrified wood looks above common BLM hobby limits (about ${dailyLb} lb + one piece per day, ${annualLb} lb per year). Contact the local BLM office — you may need a sale contract, or a special museum free-use authorization for a single piece over 250 lb.`,
         notes,
       };
@@ -342,6 +424,14 @@ export function evaluateLegality(input) {
     if (!hasTrip && !hasAnnual) {
       notes.push(`Keep track of weight: commonly ≤${dailyLb} lb + one piece/day and ≤${annualLb} lb/year. Local offices may set different limits.`);
     }
+    return {
+      tag: "PERMITTED_CASUAL",
+      authority: SRC.petrified_wood_cfr.label,
+      authorityHref: SRC.petrified_wood_cfr.href,
+      message:
+        "Based on your answers, this looks like normal hobby collecting for this land manager — but local offices can add their own rules. Check posted signs and call the field office if you're unsure.",
+      notes,
+    };
   } else if (land_manager === "BLM" || land_manager === "USFS") {
     notes.push(
       "There is no single federal weight limit for ordinary rock and mineral hobby collecting. Stay within a reasonable personal amount. National forests often have their own local rules."
