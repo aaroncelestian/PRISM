@@ -87,9 +87,9 @@ export const WIZARD_GOALS = [
     hope: "Cultural or historical significance",
     pitch: "Value from history, named collections, or heritage — not just mineralogy.",
     tips: [
-      "Provenance is the main lever — named collections, estates, and deaccession records score highest.",
-      "Cultural / historical checklist items (media, awards, notable ownership) add direct points.",
-      "Locality history supports the narrative; beauty alone will not carry this context.",
+      "Cultural / Historical checklist (~34% weight) is the main lever — media/exhibition, named collections, and documented specimen narratives score highest.",
+      "Provenance (~22%) still matters; closed-mine cultural memory and verified human use of the mineral (not artifacts) add further points.",
+      "Beauty alone will not carry this context — heritage must be documented.",
     ],
   },
   {
@@ -97,7 +97,7 @@ export const WIZARD_GOALS = [
     hope: "Research / scientific study",
     pitch: "A reference or research specimen where documentation and science outweigh looks.",
     tips: [
-      "Scientific Value (~40%) dominates — type locality, literature, and compositional significance.",
+      "Scientific Value (~40%) dominates — type locality and literature are the heaviest checks; morphology/twinning and associations also count.",
       "Provenance (~26%) must support research use; undocumented material scores poorly.",
       "A visually plain but well-documented piece can outscore a beautiful undocumented one.",
     ],

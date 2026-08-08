@@ -1,3 +1,5 @@
+import { scoreFromCriteria } from "../data/prism.js";
+
 export default function CriteriaChecklist({ criteria, checked, onChange }) {
   const toggle = (i) => {
     const next = [...checked];
@@ -6,7 +8,7 @@ export default function CriteriaChecklist({ criteria, checked, onChange }) {
   };
 
   const count = checked.filter(Boolean).length;
-  const score = count * 20;
+  const score = scoreFromCriteria(criteria, checked);
   const scoreColor = score >= 80 ? "#0a7a52" : score >= 40 ? "var(--cyan)" : "var(--text-muted)";
 
   return (
@@ -33,14 +35,26 @@ export default function CriteriaChecklist({ criteria, checked, onChange }) {
                 cursor: "pointer",
               }}
             />
-            <div>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                fontSize: "12px",
-                fontWeight: checked[i] ? 600 : 500,
-                color: checked[i] ? "var(--cyan)" : "var(--text)",
-                marginBottom: "2px",
+                display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                gap: "10px", marginBottom: "2px",
               }}>
-                {c.label}
+                <div style={{
+                  fontSize: "12px",
+                  fontWeight: checked[i] ? 600 : 500,
+                  color: checked[i] ? "var(--cyan)" : "var(--text)",
+                }}>
+                  {c.label}
+                </div>
+                {c.points != null && (
+                  <span style={{
+                    fontFamily: "var(--mono)", fontSize: "11px", flexShrink: 0,
+                    color: checked[i] ? "var(--cyan)" : "var(--text-muted)",
+                  }}>
+                    +{c.points}
+                  </span>
+                )}
               </div>
               <div style={{
                 fontSize: "11px", lineHeight: 1.45,
@@ -60,7 +74,7 @@ export default function CriteriaChecklist({ criteria, checked, onChange }) {
         display: "flex", justifyContent: "space-between", alignItems: "center",
       }}>
         <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-          {count} of 5 criteria met
+          {count} of {criteria.length} criteria met
         </span>
         <span style={{
           fontFamily: "var(--mono)", fontSize: "20px", fontWeight: 600,

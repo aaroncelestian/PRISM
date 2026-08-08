@@ -1,9 +1,9 @@
 export const WEIGHTS = {
-  //                                                                                                                              ↓ cultural context gives this 20%
+  //                                                                                                                              ↓ cultural context emphasizes heritage recognition
   museum:     { crystal: 0.12,  speciesRarity: 0.10,  varietyRarity: 0.10,  localityRarity: 0.23, provenance: 0.22, aesthetics: 0.04, scientific: 0.12, culturalSignificance: 0.07 },
   exhibition: { crystal: 0.41,  speciesRarity: 0.035, varietyRarity: 0.035, localityRarity: 0.12, provenance: 0.06, aesthetics: 0.29, scientific: 0.03, culturalSignificance: 0.02 },
   collector:  { crystal: 0.22,  speciesRarity: 0.13,  varietyRarity: 0.13,  localityRarity: 0.24, provenance: 0.10, aesthetics: 0.11, scientific: 0.03, culturalSignificance: 0.04 },
-  cultural:   { crystal: 0.12,  speciesRarity: 0.10,  varietyRarity: 0.02,  localityRarity: 0.13, provenance: 0.27, aesthetics: 0.06, scientific: 0.10, culturalSignificance: 0.20 },
+  cultural:   { crystal: 0.10,  speciesRarity: 0.08,  varietyRarity: 0.01,  localityRarity: 0.12, provenance: 0.22, aesthetics: 0.05, scientific: 0.08, culturalSignificance: 0.34 },
   study:      { crystal: 0.11,  speciesRarity: 0.04,  varietyRarity: 0.04,  localityRarity: 0.08, provenance: 0.26, aesthetics: 0.05, scientific: 0.40, culturalSignificance: 0.02 },
   systematic: { crystal: 0.06,  speciesRarity: 0.10,  varietyRarity: 0.02,  localityRarity: 0.15, provenance: 0.30, aesthetics: 0.02, scientific: 0.33, culturalSignificance: 0.02 },
   commercial: { crystal: 0.20,  speciesRarity: 0.15,  varietyRarity: 0.05,  localityRarity: 0.12, provenance: 0.05, aesthetics: 0.22, scientific: 0.18, culturalSignificance: 0.03 },
@@ -50,9 +50,9 @@ export const CONTEXTS = [
     key: "cultural",
     label: "Cultural / Historical",
     gradeLabel: "Collector",
-    icon: "�",
+    icon: "🏺",
     desc: "Evaluating for cultural, historical, or heritage significance.",
-    detail: "Cultural and historical specimens derive value primarily from their documented chain of custody and historical context. Provenance (40%) dominates — a specimen from a famous historical collection, estate, or deaccessioned from an institution carries far more weight than one with unknown origins. Locality history and scientific significance support the narrative.",
+    detail: "Cultural and historical specimens are driven by documented heritage recognition (34%) with provenance (22%) close behind. Media or exhibition history, named collections, famous specimen narratives, closed-mine cultural memory, and verified human cultural use of the mineral matter most — beauty alone will not carry this context.",
   },
   {
     key: "study",
@@ -443,7 +443,8 @@ export function detectInconsistencies(scores, spec, sciCriteria, culturalCriteri
   }
 
   // Literature refs entered but 'literature' scientific criterion is not checked
-  if (Array.isArray(spec?.literatureRefs) && spec.literatureRefs.filter(r => r?.trim()).length > 0 && Array.isArray(sciCriteria) && !sciCriteria[3]) {
+  const litIdx = DIMS.find(d => d.key === "scientific")?.criteria?.findIndex(c => c.key === "literature") ?? -1;
+  if (Array.isArray(spec?.literatureRefs) && spec.literatureRefs.filter(r => r?.trim()).length > 0 && Array.isArray(sciCriteria) && litIdx >= 0 && !sciCriteria[litIdx]) {
     warnings.push({
       key: "lit_ref_no_criterion", level: "info", dim: "scientific",
       msg: "Literature citations are documented — consider checking the 'Literature citation' scientific criterion.",
@@ -579,13 +580,13 @@ export const DIMS = [
     short: "Science",
     icon: "🔬",
     desc: "Does this specimen have special research or educational significance?",
-    detail: "Scientific value is scored by checking which of five objective criteria apply. Each criterion that applies adds 20 points. A specimen meeting all five criteria scores 100.",
+    detail: "Scientific value is scored by five weighted criteria (points sum to 100). Type locality and literature carry the most weight; morphological/crystallographic interest (twinning, rare habit) and associations also count. Aesthetics still scores form separately.",
     criteria: [
-      { key: "typeLocality",    label: "Type locality",              desc: "This is the described type locality for the species" },
-      { key: "emerging",        label: "Emerging science",           desc: "Species has documented applications in technology, medicine, or materials research (e.g. solar, batteries, pharmaceuticals, semiconductors)" },
-      { key: "paragenetic",     label: "Paragenetic complexity",     desc: "Two or more associated species present" },
-      { key: "literature",      label: "Literature citation",        desc: "This specimen or the locality it is from appears in a published mineralogical study" },
-      { key: "compositional",   label: "Compositional significance", desc: "Represents an end-member or unusual composition for the species" },
+      { key: "typeLocality",              label: "Type locality",                                points: 30, desc: "This is the described type locality for the species" },
+      { key: "literature",                label: "Literature citation",                          points: 25, desc: "This specimen or the locality it is from appears in a published mineralogical study" },
+      { key: "morphology",                label: "Morphological / crystallographic significance", points: 20, desc: "Documented twinning, rare habit, skeletal/hopper growth, or other crystallographic features of scientific interest (beyond ordinary aesthetics)" },
+      { key: "paragenetic",               label: "Associations / paragenetic complexity",         points: 15, desc: "Two or more associated species in a meaningful paragenetic relationship" },
+      { key: "compositionalOrEmerging",   label: "Compositional or emerging-science significance", points: 10, desc: "End-member or unusual composition, or documented applications in technology, medicine, or materials research" },
     ],
   },
   {
@@ -594,16 +595,46 @@ export const DIMS = [
     short: "Cultural",
     icon: "🏺",
     desc: "Does this specimen have documented cultural, historical, or heritage significance?",
-    detail: "Cultural and historical significance reflects a specimen's place in human history beyond its mineralogy. Public media recognition, named-collection provenance, or a major show award represents measurable institutional recognition — and real market premium — that raw quality and rarity alone cannot command. Each criterion that applies adds 20 points.",
+    detail: "Cultural and historical significance reflects a specimen's place in human history beyond its mineralogy. Weighted criteria (points sum to 100) reward media/exhibition recognition, named collections, famous specimen narratives, closed-mine cultural memory, and documented human cultural use of the mineral — not cultural artifacts.",
     criteria: [
-      { key: "stamp",           label: "Featured in media or public exhibition",     desc: "Displayed in a museum exhibit, featured in a documentary, magazine, major online publication, or other widely distributed public media" },
-      { key: "namedCollection", label: "Named historical collection",                desc: "From a documented named collection (Pinch, Vaux, Canfield, Bement, Faber, Krantz, or equivalent) with attribution" },
-      { key: "published",       label: "Major publication reference",               desc: "Pictured or cited as a key specimen in a book, exhibition catalog, auction catalog, or peer-reviewed journal" },
-      { key: "showAward",       label: "Major show award",                          desc: "Won first place or Best-of-Show at a recognized international show (Tucson, Denver, Munich, Sainte-Marie, Hamburg)" },
-      { key: "notableOwner",    label: "Notable individual or institutional history", desc: "Documented ownership by royalty, a head of state, a famous scientist, or formal deaccession from an institutional collection" },
+      { key: "stamp",             label: "Featured in media or public exhibition",              points: 30, desc: "Displayed in a museum exhibit, featured in a documentary, magazine, major online publication, or other widely distributed public media" },
+      { key: "namedOrNotable",    label: "Named historical collection or notable ownership",    points: 25, desc: "From a documented named collection (Pinch, Vaux, Canfield, Bement, Faber, Krantz, or equivalent), or documented ownership by a notable individual or formal institutional deaccession" },
+      { key: "heritageNarrative", label: "Documented heritage narrative / famous specimen story", points: 20, desc: "A verifiable specimen-specific backstory with historical documentation (famous named stones, well-published individual pieces) — not marketing fluff" },
+      { key: "historicMine",      label: "Closed or exhausted historic mine / locality",        points: 15, desc: "From a closed or exhausted mine or locality with documented cultural memory — heritage of the place, distinct from locality-rarity scoring alone" },
+      { key: "humanCulturalUse",  label: "Documented human cultural use (peoples past or present)", points: 10, desc: "Mineral with a verified role in human history or living culture (e.g. navigation crystal lore, historic pigment source, documented workshop use). Do not use for indigenous, archaeological, or sacred artifacts — those are not appropriate for collector scoring or trade." },
     ],
   },
 ];
+
+/** Sum points for checked criteria (boolean array aligned to criteria order). Capped at 100. */
+export function scoreFromCriteria(criteria, checked) {
+  if (!Array.isArray(criteria) || !Array.isArray(checked)) return 0;
+  const total = criteria.reduce((sum, c, i) => sum + (checked[i] ? (c.points ?? 0) : 0), 0);
+  return Math.min(100, total);
+}
+
+/**
+ * Best-effort reconstruct a checked[] array from a saved numeric score
+ * (records historically stored only the score, not which boxes were ticked).
+ * Greedily selects highest-point criteria without exceeding the target.
+ */
+export function criteriaCheckedFromScore(criteria, score) {
+  if (!Array.isArray(criteria) || criteria.length === 0) return [];
+  const target = Math.max(0, Math.min(100, Math.round(score ?? 0)));
+  const checked = criteria.map(() => false);
+  if (target <= 0) return checked;
+  const order = criteria
+    .map((c, i) => ({ i, pts: c.points ?? 0 }))
+    .sort((a, b) => b.pts - a.pts);
+  let remaining = target;
+  for (const { i, pts } of order) {
+    if (pts > 0 && pts <= remaining) {
+      checked[i] = true;
+      remaining -= pts;
+    }
+  }
+  return checked;
+}
 
 export const SIZE_CLASSES = [
   { key: "thumbnail",  label: "Thumbnail",     range: "< 2.5 cm" },

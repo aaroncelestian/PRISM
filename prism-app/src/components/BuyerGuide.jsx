@@ -405,23 +405,23 @@ const SCORE_CALIBRATION = [
   },
   {
     key: "cultural", label: "Cultural / Historical Significance", icon: "🏺", color: "#d4a840",
-    note: "Most specimens score 0–20 here — that is normal. Score rises only with verified criteria: media/exhibition recognition, named historical collection, major publication, show award, or notable ownership.",
+    note: "Most specimens score 0 here — that is normal. Weighted checklist: media/exhibition (30), named collection or notable ownership (25), heritage narrative (20), closed historic mine (15), documented human cultural use of the mineral (10). Not for indigenous or archaeological artifacts.",
     ranges: [
-      { band: "80–100", label: "Multiple Verified Criteria", text: "Several checklist items apply — e.g. named collection plus publication or show award. Documented, attributable heritage." },
-      { band: "60–79",  label: "Strong Attribution", text: "Named historical collection with attribution, major publication reference, or Best-of-Show / first-place award at a recognized international show." },
-      { band: "40–59",  label: "Partial Record",          text: "Some historical context with partial evidence. Old collection attribution with approximate documentation." },
-      { band: "20–39",  label: "Reported",               text: "Seller reports old collection origin or approximate age with no verifiable documentation." },
-      { band: "0–19",   label: "None",                    text: "No cultural or historical significance. Contemporary specimen or undocumented heritage. Normal for the vast majority of specimens." },
+      { band: "80–100", label: "Multiple Verified Criteria", text: "Several weighted checklist items apply — e.g. media plus named collection and a documented specimen narrative." },
+      { band: "60–79",  label: "Strong Attribution", text: "Media/exhibition recognition plus named collection or notable ownership, or a well-documented famous-specimen story with supporting criteria." },
+      { band: "40–59",  label: "Partial Record",          text: "One strong criterion (e.g. media 30 + historic mine 15) or two mid-weight items with verifiable evidence." },
+      { band: "20–39",  label: "Single Criterion",         text: "One mid-weight criterion such as media/exhibition (30) or named/notable ownership (25). Document further to climb." },
+      { band: "0–19",   label: "None / light use only",    text: "No cultural or historical significance, or only the lightest criterion (human cultural use of the mineral at 10). Normal for most specimens." },
     ],
   },
   {
     key: "scientific", label: "Scientific Value", icon: "🔬", color: "#5090ff",
-    note: "Most collector specimens score 0–20 here. That is normal — not a failure. In Expert Mode, score via checklist: type locality, emerging science, paragenesis, literature citation, compositional significance (20 pts each).",
+    note: "Most collector specimens score low here — that is normal. Weighted checklist: type locality (30), literature (25), morphological/crystallographic interest (20), associations/paragenesis (15), compositional or emerging science (10).",
     ranges: [
-      { band: "80–100", label: "Publication Quality", text: "Type locality material, exceptional pseudomorph, or feature that represents undocumented science. Publishable interest." },
-      { band: "60–79",  label: "Research Interest",   text: "Unusual habit, well-documented paragenesis, or historically significant mine with original labels." },
-      { band: "40–59",  label: "Educational Value",   text: "Good teaching specimen. Clearly illustrates crystal forms, species traits, or paragenetic relationships." },
-      { band: "20–39",  label: "Reference Quality",   text: "Correctly identified with locality. Suitable for reference collection. Standard educational use." },
+      { band: "80–100", label: "Publication Quality", text: "Type locality plus literature and further criteria. Publishable scientific interest." },
+      { band: "60–79",  label: "Research Interest",   text: "Type locality + literature (55) with morphology or associations, or a dense cluster of mid-weight criteria." },
+      { band: "40–59",  label: "Clear Science Interest", text: "Two strong checks — e.g. type locality + literature (55), or literature + morphology + associations." },
+      { band: "20–39",  label: "Focused Interest",     text: "Morphology/twinning (20) plus associations (15), or literature alone (25). Recognizable science without overclaiming." },
       { band: "0–19",   label: "No Special Value",    text: "Common species, no documentation, nothing unusual. Score reflects absence of scientific interest, not specimen failure." },
     ],
   },
@@ -868,7 +868,7 @@ export default function BuyerGuide({ onClose }) {
           {tab === "scientific" && (
             <>
               <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.6, padding: "10px 12px", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)" }}>
-                <strong style={{ color: "var(--text)" }}>What scientific value measures:</strong> Objective research interest via checklist criteria — type locality, emerging science applications, paragenetic complexity, literature citation, and compositional significance. Most collector specimens score 0–20 here — that is normal. This dimension is weighted heavily in Study (40%) and modestly in Museum (12%).
+                <strong style={{ color: "var(--text)" }}>What scientific value measures:</strong> Objective research interest via a weighted checklist — type locality (30), literature (25), morphological/crystallographic significance such as twinning or rare habit (20), associations/paragenesis (15), and compositional or emerging-science significance (10). Most collector specimens score low here — that is normal. This dimension is weighted heavily in Study (40%) and modestly in Museum (12%).
               </div>
 
               <div style={{ padding: "8px 12px", background: "rgba(80,144,255,0.06)", border: "1px solid rgba(80,144,255,0.2)", borderRadius: "5px", fontSize: "11px", color: "#78a8ff", lineHeight: 1.5 }}>

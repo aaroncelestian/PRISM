@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ListOrdered, SlidersHorizontal, RotateCcw, Search, Sun, Moon } from "lucide-react";
-import { CONTEXTS, WEIGHTS, GRADES, THRESHOLD, detectCompoundGrades } from "../data/prism.js";
+import { CONTEXTS, WEIGHTS, GRADES, THRESHOLD, detectCompoundGrades, DIMS, scoreFromCriteria, criteriaCheckedFromScore } from "../data/prism.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import { useTheme } from "../hooks/useTheme.js";
 import ExpertMode from "./ExpertMode.jsx";
@@ -171,9 +171,12 @@ export default function PRISM() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const sciDimCriteria = DIMS.find(d => d.key === "scientific")?.criteria || [];
+  const culturalDimCriteria = DIMS.find(d => d.key === "culturalSignificance")?.criteria || [];
+
   const handleSciCriteria = (newCriteria) => {
     setSciCriteria(newCriteria);
-    setScores(s => ({ ...s, scientific: newCriteria.filter(Boolean).length * 20 }));
+    setScores(s => ({ ...s, scientific: scoreFromCriteria(sciDimCriteria, newCriteria) }));
   };
 
   const handleAestheticsSubScores = (newSubScores) => {
@@ -185,7 +188,7 @@ export default function PRISM() {
 
   const handleCulturalCriteria = (newCriteria) => {
     setCulturalCriteria(newCriteria);
-    setScores(s => ({ ...s, culturalSignificance: newCriteria.filter(Boolean).length * 20 }));
+    setScores(s => ({ ...s, culturalSignificance: scoreFromCriteria(culturalDimCriteria, newCriteria) }));
   };
 
   const reset = () => {
@@ -464,10 +467,8 @@ export default function PRISM() {
             setSpec({ name: "", species: "", variety: "", locality: "", size: "", exhibitions: [], literatureRefs: [], ...(rec.spec || {}) });
             setCtx(rec.ctx || "collector");
             setLastSavedKey(JSON.stringify({ scores: loadedScores, spec: rec.spec, ctx: rec.ctx }));
-            const sciCount = Math.round((loadedScores.scientific ?? 0) / 20);
-            setSciCriteria(Array(5).fill(false).map((_, i) => i < sciCount));
-            const culturalCount = Math.round((loadedScores.culturalSignificance ?? 0) / 20);
-            setCulturalCriteria(Array(5).fill(false).map((_, i) => i < culturalCount));
+            setSciCriteria(criteriaCheckedFromScore(sciDimCriteria, loadedScores.scientific ?? 0));
+            setCulturalCriteria(criteriaCheckedFromScore(culturalDimCriteria, loadedScores.culturalSignificance ?? 0));
             setAestheticsSubScores(rec.aestheticsSub && Object.keys(rec.aestheticsSub).length > 0 ? rec.aestheticsSub : initAestheticsSub(loadedScores.aesthetics));
             setTreatmentFlags({ ...DEFAULT_TREATMENT_FLAGS, ...(rec.treatmentFlags || {}) });
             setScoringCompId(null);

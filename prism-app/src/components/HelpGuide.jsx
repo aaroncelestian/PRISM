@@ -280,10 +280,10 @@ function TabDimensions() {
           desc="Overall visual appeal: color saturation, form expression, presentation, and luster. In Expert mode these four sub-scores average to the aesthetics dimension. Stunning color and composition score 80+. Dull or awkwardly presented pieces score lower." />
         <DimCard icon="🔬" name="Scientific Value"
           weight="3–40% weight (highest in Scientific Study)"
-          desc="Scored by checklist: type locality, emerging science applications, paragenetic complexity, literature citation, and compositional significance. Each verified criterion adds 20 points up to 100. Most collector specimens score 0–20 here — that is normal." />
+          desc="Weighted checklist (points sum to 100): type locality (30), literature (25), morphological/crystallographic significance such as twinning or rare habit (20), associations/paragenesis (15), and compositional or emerging-science significance (10). Most collector specimens score low here — that is normal." />
         <DimCard icon="🏺" name="Cultural / Historical"
-          weight="2–20% weight (highest in Cultural/Historical)"
-          desc="Heritage value beyond mineralogy: media or public exhibition, named historical collection, major publication, show award, or notable ownership. Scored via checklist — each verified item adds 20 points. Most specimens score 0–20 here; that is expected." />
+          weight="2–34% weight (highest in Cultural/Historical)"
+          desc="Weighted heritage checklist: media or public exhibition (30), named collection or notable ownership (25), famous specimen narrative (20), closed/exhausted historic mine (15), and documented human cultural use of the mineral (10). Not for indigenous or archaeological artifacts. In the Cultural context this dimension carries 34%." />
       </Section>
 
       <Section title="How the Score is Calculated">
@@ -328,8 +328,8 @@ function TabContexts() {
           focus="Crystal 22% · Species 13% · Variety 13% · Locality 24%"
           use="The classic collector context. Rarity drives the score — species scarcity, variety uniqueness, and locality rarity together account for half the weight." />
         <CtxCard icon="📜" name="Cultural / Historical"
-          focus="Provenance 27% · Cultural Significance 20% · Locality 13%"
-          use="For specimens with documented historical significance: named collection attribution, estate records, museum deaccession, or heritage provenance. Documentation is everything." />
+          focus="Cultural Significance 34% · Provenance 22% · Locality 12%"
+          use="For specimens with documented heritage recognition: media or exhibition history, named collections, famous specimen narratives, closed-mine cultural memory, or verified human use of the mineral — never cultural artifacts. Documentation is everything." />
         <CtxCard icon="🔬" name="Scientific Study"
           focus="Scientific 40% · Provenance 26% · Locality 8%"
           use="For research and reference specimens. A well-documented piece with research relevance outscores a beautiful specimen with no scientific context." />
