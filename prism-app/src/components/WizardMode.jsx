@@ -709,7 +709,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
       {/* ── Right: live score panel (desktop only) ── */}
       {!isMobile && (
         <div style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
-          <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} culturalCriteria={culturalCriteria} />
+          <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} culturalCriteria={culturalCriteria} onCtxChange={setCtx} />
         </div>
       )}
 
@@ -736,7 +736,7 @@ export default function WizardMode({ scores, setScores, ctx, setCtx, spec, setSp
             </button>
           </div>
           <div style={{ flex: 1, overflowY: "auto" }}>
-            <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} culturalCriteria={culturalCriteria} />
+            <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} culturalCriteria={culturalCriteria} onCtxChange={setCtx} />
           </div>
         </div>
       )}

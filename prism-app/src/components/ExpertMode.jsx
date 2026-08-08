@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { HelpCircle, X } from "lucide-react";
 import { DIMS, WEIGHTS, GRADES, CONTEXTS, SIZE_CLASSES, TREATMENT_FLAGS, AESTHETICS_SUB_DIMS } from "../data/prism.js";
+import { WIZARD_GOALS, getWizardGoal, formatTopWeights } from "../data/wizardGoals.js";
 import { useBreakpoint } from "../hooks/useWindowSize.js";
 import ScorePanel from "./ScorePanel.jsx";
 import TierSelector from "./TierSelector.jsx";
@@ -285,8 +286,9 @@ function DimRow({ dim, score, onChange, criteriaValues, onCriteriaChange, subSco
   );
 }
 
-export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciCriteria, onSciCriteriaChange, culturalCriteria, onCulturalCriteriaChange, aestheticsSubScores, onAestheticsSubScoresChange, treatmentFlags, onTreatmentFlagsChange, onExport = null, onSaveToCollection = null, scoringComp = null, onSaveToComp = null }) {
-  const W = WEIGHTS[ctx];
+export default function ExpertMode({ scores, setScores, ctx, setCtx, spec, setSpec, sciCriteria, onSciCriteriaChange, culturalCriteria, onCulturalCriteriaChange, aestheticsSubScores, onAestheticsSubScoresChange, treatmentFlags, onTreatmentFlagsChange, onExport = null, onSaveToCollection = null, scoringComp = null, onSaveToComp = null }) {
+  const W = WEIGHTS[ctx] || WEIGHTS.collector;
+  const goal = getWizardGoal(ctx);
   const { isMobile } = useBreakpoint();
   const [showScorePanel, setShowScorePanel] = useState(false);
   const [saveFlash, setSaveFlash] = useState(false);
@@ -294,6 +296,7 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
     Math.round(Object.entries(W).reduce((a, [k, w]) => a + (scores[k] ?? 50) * w, 0)),
   [scores, ctx]); // eslint-disable-line react-hooks/exhaustive-deps
   const quickGrade = GRADES.find(g => quickScore >= g.min) || GRADES[GRADES.length - 1];
+  const ctxMeta = CONTEXTS.find(c => c.key === ctx);
 
   return (
     <div style={{
@@ -344,6 +347,14 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
               }}>
                 {quickGrade.label}
               </span>
+              <span style={{
+                padding: "3px 8px", borderRadius: "3px",
+                background: "rgba(10,111,136,0.08)",
+                border: "1px solid rgba(10,111,136,0.30)",
+                color: "var(--cyan)", fontSize: "9px", fontWeight: 600, letterSpacing: "0.06em",
+              }}>
+                {ctxMeta?.label || ctx}
+              </span>
             </div>
             <span style={{ fontSize: "10px", color: "rgba(10,111,136,0.55)", letterSpacing: "0.06em" }}>View Score ›</span>
           </button>
@@ -374,6 +385,47 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
             >
               Save to Research
             </button>
+          </div>
+        )}
+
+        {/* Rating goal — selects WEIGHTS[ctx] for Analysis / Grade Profile */}
+        {setCtx && (
+          <div style={{ marginBottom: "18px" }}>
+            <div style={{
+              fontSize: "9px", letterSpacing: "0.22em", color: "var(--text-muted)",
+              textTransform: "uppercase", marginBottom: "8px",
+            }}>
+              Why are you rating this?
+            </div>
+            <select
+              value={ctx}
+              onChange={e => setCtx(e.target.value)}
+              style={{
+                width: "100%", background: "var(--bg-card)", border: "1px solid var(--border)",
+                borderRadius: "5px", color: "var(--text)", padding: "8px 10px", fontSize: "12px",
+                marginBottom: "8px",
+              }}
+            >
+              {WIZARD_GOALS.map(g => {
+                const meta = CONTEXTS.find(c => c.key === g.key);
+                return (
+                  <option key={g.key} value={g.key}>
+                    {meta?.label || g.hope}
+                  </option>
+                );
+              })}
+            </select>
+            <div style={{
+              padding: "9px 11px", borderRadius: "5px",
+              background: "rgba(10,111,136,0.05)", border: "1px solid rgba(10,111,136,0.22)",
+              fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5,
+            }}>
+              <strong style={{ color: "var(--cyan)" }}>{ctxMeta?.label || goal.hope}</strong>
+              {" — "}{goal.pitch}
+              <div style={{ marginTop: "4px", fontFamily: "var(--mono)", fontSize: "10px", color: "var(--cyan)" }}>
+                Top weights: {formatTopWeights(ctx, 3)}
+              </div>
+            </div>
           </div>
         )}
 
@@ -519,7 +571,7 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
       {/* ── Right: score panel (desktop only) ── */}
       {!isMobile && (
         <div style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
-          <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} culturalCriteria={culturalCriteria} />
+          <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} culturalCriteria={culturalCriteria} onCtxChange={setCtx} />
         </div>
       )}
 
@@ -546,7 +598,7 @@ export default function ExpertMode({ scores, setScores, ctx, spec, setSpec, sciC
             </button>
           </div>
           <div style={{ flex: 1, overflowY: "auto" }}>
-            <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} culturalCriteria={culturalCriteria} />
+            <ScorePanel scores={scores} ctx={ctx} spec={spec} sciCriteria={sciCriteria} culturalCriteria={culturalCriteria} onCtxChange={setCtx} />
           </div>
         </div>
       )}

@@ -109,7 +109,7 @@ function generateNarrative(scores, primaryCtx, allCtxData) {
   };
 }
 
-export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCriteria, compact = false }) {
+export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCriteria, compact = false, onCtxChange = null }) {
   const [tab, setTab] = useState("grade");
   const [openCtxTip, setOpenCtxTip] = useState(null);
   const { isMobile } = useBreakpoint();
@@ -196,19 +196,10 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
                 <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.4, marginBottom: "6px" }}>
                   {compoundGrades[0].shortDesc}
                 </div>
-                {/* Context grade demoted to secondary */}
-                <div style={{
-                  display: "inline-flex", alignItems: "center", gap: "5px", padding: "2px 8px",
-                  borderRadius: "2px", border: `1px solid ${primaryCtx.grade.color}30`,
-                  color: primaryCtx.grade.color, fontSize: "9px", fontWeight: 500,
-                  letterSpacing: "0.08em", textTransform: "uppercase",
-                }}>
-                  <span>{primaryCtx.grade.label}{primaryCtx.passes ? " ✓" : ` · +${THRESHOLD - primaryCtx.score} pts`}</span>
-                </div>
               </>
             ) : (
               <>
-                {/* No compound grade — context grade is the headline */}
+                {/* No compound grade — numeric grade band is the headline */}
                 <div style={{
                   display: "inline-flex", alignItems: "center", gap: "6px", marginBottom: "7px",
                   padding: "4px 13px", borderRadius: "3px",
@@ -224,6 +215,20 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
                 </div>
               </>
             )}
+            {/* Always show which rating goal / weight set is active */}
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: "5px", marginTop: compoundGrades.length > 0 || !primaryCtx.passes ? "6px" : "0",
+              padding: "3px 9px", borderRadius: "3px",
+              border: `1px solid ${primaryCtx.passes ? "rgba(10,111,136,0.45)" : "rgba(166,93,0,0.40)"}`,
+              background: primaryCtx.passes ? "rgba(10,111,136,0.08)" : "rgba(166,93,0,0.08)",
+              color: primaryCtx.passes ? "var(--cyan)" : "var(--warn)",
+              fontSize: "9px", fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase",
+            }}>
+              <span>
+                Rating for: {primaryCtx.label}
+                {primaryCtx.passes ? " ✓" : ` · ${primaryCtx.score}/${THRESHOLD}`}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -244,7 +249,7 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
             background: "rgba(166,93,0,0.08)",
           }}>
             <div style={{ fontSize: "11px", color: "var(--warn)", lineHeight: 1.5, marginBottom: "4px" }}>
-              <strong>+{THRESHOLD - primaryCtx.score} pts needed</strong> to reach {GRADE_FOR[primaryCtx.key].label} grade.
+              <strong>+{THRESHOLD - primaryCtx.score} pts needed</strong> to pass {primaryCtx.label} (threshold {THRESHOLD}).
             </div>
             {primaryCtx.bottleneck && (
               <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.5 }}>
@@ -312,13 +317,21 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
               {visibleCtxData.map(c => {
                 const isSelected = c.key === ctx;
                 return (
-                <div key={c.key} style={{
+                <div
+                  key={c.key}
+                  role={onCtxChange ? "button" : undefined}
+                  tabIndex={onCtxChange ? 0 : undefined}
+                  onClick={onCtxChange ? () => onCtxChange(c.key) : undefined}
+                  onKeyDown={onCtxChange ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onCtxChange(c.key); } } : undefined}
+                  title={onCtxChange ? `Rate using ${c.label} weights` : undefined}
+                  style={{
                   display: "flex", alignItems: "flex-start", gap: "9px",
                   padding: "9px 12px", marginBottom: "5px", borderRadius: "5px",
                   background: c.passes ? `${c.grade.color}1e` : isSelected ? "rgba(10,111,136,0.04)" : "transparent",
                   border: `1px solid ${c.passes ? c.grade.color + "55" : isSelected ? "rgba(10,111,136,0.30)" : "var(--border-dim)"}`,
                   boxShadow: c.passes ? `inset 3px 0 0 ${c.grade.color}` : isSelected ? "inset 3px 0 0 rgba(10,111,136,0.4)" : "none",
                   transition: "background 0.25s, border-color 0.25s",
+                  cursor: onCtxChange ? "pointer" : "default",
                 }}>
                   <span style={{ fontFamily: "var(--mono)", fontSize: "11px", flexShrink: 0, marginTop: "2px", color: c.passes ? c.grade.color : "var(--text-muted)" }}>
                     {c.passes ? "✓" : "✗"}
@@ -326,11 +339,21 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "5px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
-                        <span style={{ fontSize: "12px", fontWeight: c.passes ? 600 : 400, color: c.passes ? c.grade.color : isSelected ? "var(--text)" : "var(--text-muted)" }}>
+                        <span style={{ fontSize: "12px", fontWeight: c.passes || isSelected ? 600 : 400, color: c.passes ? c.grade.color : isSelected ? "var(--text)" : "var(--text-muted)" }}>
                           {c.label}
                         </span>
+                        {isSelected && (
+                          <span style={{
+                            fontSize: "8px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                            padding: "1px 5px", borderRadius: "2px",
+                            background: "rgba(10,111,136,0.12)", border: "1px solid rgba(10,111,136,0.35)",
+                            color: "var(--cyan)", flexShrink: 0,
+                          }}>
+                            Rating for
+                          </span>
+                        )}
                         <button
-                          onClick={() => setOpenCtxTip(openCtxTip === c.key ? null : c.key)}
+                          onClick={(e) => { e.stopPropagation(); setOpenCtxTip(openCtxTip === c.key ? null : c.key); }}
                           style={{ background: "none", border: "none", padding: "1px 2px", cursor: "pointer", color: openCtxTip === c.key ? "var(--cyan)" : "var(--text-muted)", flexShrink: 0, display: "flex", alignItems: "center" }}
                         >
                           <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11zm0 3.25a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5zm-.75 1.5h1.5v3.5h-1.5V7.25z"/></svg>

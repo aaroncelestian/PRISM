@@ -505,6 +505,7 @@ export default function PRISM() {
             scores={scores}
             setScores={setScores}
             ctx={ctx}
+            setCtx={setCtx}
             spec={spec}
             setSpec={setSpec}
             sciCriteria={sciCriteria}

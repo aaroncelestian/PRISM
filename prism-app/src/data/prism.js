@@ -49,7 +49,7 @@ export const CONTEXTS = [
   {
     key: "cultural",
     label: "Cultural / Historical",
-    gradeLabel: "Collector",
+    gradeLabel: "Collector", // numeric grade band when score is mid-tier; UI threshold copy uses context label, not this
     icon: "🏺",
     desc: "Evaluating for cultural, historical, or heritage significance.",
     detail: "Cultural and historical specimens are driven by documented heritage recognition (34%) with provenance (22%) close behind. Media or exhibition history, named collections, famous specimen narratives, closed-mine cultural memory, and verified human cultural use of the mineral matter most — beauty alone will not carry this context.",
