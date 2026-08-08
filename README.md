@@ -1,11 +1,11 @@
 # PRISM v1.1.0
 **Precision Rating Index of Specimen Minerals**
 
-A 6-dimensional, non-linear specimen scoring system that evaluates mineral specimens across 5 weighted evaluation contexts to produce a compound classification — visualized as a spectrum of simultaneously scored qualities.
+A multi-dimensional specimen evaluation system that scores mineral specimens across several quality dimensions and evaluation contexts, then produces a compound classification — visualized as a spectrum of simultaneously scored qualities.
 
 ## Overview
 
-PRISM addresses the fundamental information asymmetry problem in mineral specimen markets by making implicit expert heuristics explicit, auditable, and comparable across transactions. Unlike simple rating systems, PRISM applies dimension-specific non-linear transforms across 6 independent inputs and evaluates them simultaneously through 5 distinct context lenses — producing a compound classification (e.g. "Full Spectrum") that reflects a specimen's multi-dimensional profile rather than a single collapsed number.
+PRISM addresses the fundamental information asymmetry problem in mineral specimen markets by making expert judgment structured, auditable, and comparable across transactions. Rather than collapsing everything into one opaque number, it evaluates specimens across independent quality dimensions and several purpose-specific contexts — producing a compound classification (e.g. "Full Spectrum") that reflects what the specimen is good for.
 
 **Size is a pricing variable, not a quality variable. PRISM scores quality.** Physical size class is recorded for market comparison only and never enters the score. A perfect 2 mm specimen and a perfect 4 cm specimen of the same material can earn identical PRISM scores; the larger one is typically worth more money — that is a pricing question for market analysis, not a quality question for scoring.
 
@@ -25,54 +25,30 @@ PRISM addresses the fundamental information asymmetry problem in mineral specime
 
 ### Scoring System
 
-#### 6 Input Dimensions
+#### Input Dimensions
 
-Each specimen is scored independently across six qualities:
+Each specimen is scored independently across several qualities, including:
 
-| # | Dimension | What it measures |
-|---|-----------|------------------|
-| 1 | **Crystal Quality** | Symmetry, termination completeness, surface condition |
-| 2 | **Species / Variety Rarity** | Relative scarcity of the mineral species or variety |
-| 3 | **Locality Rarity** | Mine status, pocket frequency, auction appearance |
-| 4 | **Provenance** | Documentation quality and chain of custody (T1–T5 tiers) |
-| 5 | **Aesthetics** | Visual impact and display quality |
-| 6 | **Scientific Value** | Research significance, type locality, emerging science |
+| Dimension | What it measures |
+|-----------|------------------|
+| **Crystal Quality** | Symmetry, termination completeness, surface condition |
+| **Species / Variety Rarity** | Relative scarcity of the mineral species or variety |
+| **Locality Rarity** | Mine status, pocket frequency, auction appearance |
+| **Provenance** | Documentation quality and chain of custody |
+| **Aesthetics** | Visual impact and display quality |
+| **Scientific Value** | Research significance, type locality, emerging science |
 
-#### Non-Linear Transforms
+#### Evaluation Contexts
 
-Raw dimension scores are passed through **dimension-specific non-linear functions** before weighting — reflecting real-world value curves where the top end is disproportionately rare:
-
-| Dimension | Transform | Effect |
-|-----------|-----------|--------|
-| Aesthetics, Crystal | Power function (x^0.7) | High performers boosted; diminishing penalty at low end |
-| Species Rarity, Locality Rarity | Sigmoid curve (k=3.5) | Sharp S-curve — truly exceptional rarity scores much higher than merely uncommon |
-| Provenance | Asymmetric sigmoid boost | Excellent provenance earns a bonus; poor provenance is not catastrophically penalized |
-| Scientific Value | One-sided sigmoid boost | Presence amplifies; absence is neutral |
-
-#### 5 Evaluation Contexts
-
-The same 6 transformed scores are then weighted differently across 5 independent evaluation contexts. Each context answers a distinct question about the specimen:
-
-| Context | Primary weights | Purpose |
-|---------|----------------|---------|
-| **Museum Specimen** | Locality rarity 25%, Provenance 25%, Species rarity 20% | Irreplaceability and documentation |
-| **Display / Show** | Crystal quality 42%, Aesthetics 30% | Visual impact for exhibition |
-| **Collector's Piece** | Species rarity 26%, Locality rarity 26%, Crystal 22% | Rarity-driven collector appeal |
-| **Scientific Study** | Scientific value 42%, Provenance 26% | Research and educational use |
-| **General Market** | Crystal quality 38%, Aesthetics 15%, Species/locality rarity ~31% | Broad retail appeal |
+The same dimension scores are evaluated through several independent contexts. Each context answers a different question about the specimen — for example museum suitability, display impact, collector appeal, scientific use, or general market quality. Contexts emphasize different qualities depending on purpose.
 
 #### Compound Classification
 
-When multiple contexts simultaneously pass the quality threshold (70/100), a **compound grade** names the specimen's evaluative profile — which purposes it meets — without implying prestige or price:
+When a specimen qualifies in more than one context, a **compound grade** names that profile — which purposes it meets — without implying prestige or price. Examples include Full Spectrum, Institutional Display, and Display Collection.
 
-- **Full Spectrum** — all contexts qualify simultaneously
-- **Core Spectrum** — museum + exhibition + collector + science
-- **Institutional Display Collection** — museum + exhibition + collector
-- **Institutional Display** — museum + exhibition
-- **Display Collection** — exhibition + collector
-- *(and more; “Institutional” appears only when the Museum context is in the mix)*
+The compound classification is the primary output of PRISM — a single number cannot capture a multi-dimensional, multi-context analysis. The spectrum bar visualization shows all context results simultaneously.
 
-The compound classification is the primary output of PRISM — a single number cannot capture a multi-dimensional, multi-context analysis. The spectrum bar visualization shows all context results simultaneously as colored bands, one per context, glowing when that context's threshold is met.
+Scoring internals (exact weights, transforms, and thresholds) are proprietary and not documented here.
 
 ### Additional Tools
 
@@ -119,10 +95,10 @@ Specimens are evaluated using a standardized JSON schema:
 
 ### Key Design Principles
 
-- **Species-Specific Benchmarks**: Scoring parameters are calibrated per mineral species to ensure meaningful comparisons
-- **Context-Aware Weighting**: Different evaluation contexts (museum, exhibition, collector) apply different weight distributions
-- **Provenance Tracking**: Date-of-collection cross-referenced with regulatory enactment dates for legal compliance
-- **Market Data Integration**: Price-per-PRISM-score-unit analysis for anomaly detection
+- **Species-Specific Benchmarks**: Evaluation is calibrated so comparisons stay meaningful within a species
+- **Context-Aware Evaluation**: Museum, exhibition, collector, science, and market contexts ask different questions of the same specimen
+- **Provenance Tracking**: Collection history and documentation feed both quality scoring and legal-compliance tools
+- **Market Data Integration**: Quality scores support price comparison and anomaly detection without treating size as a quality input
 
 ## Installation
 
@@ -203,4 +179,4 @@ See repository for license information.
 
 ## Contributing
 
-This project is designed to serve the mineral collecting community. Contributions that improve scoring accuracy, expand market data coverage, or enhance legal compliance features are welcome.
+This project is designed to serve the mineral collecting community. Contributions that expand market data coverage, improve documentation tools, or enhance legal compliance features are welcome. Scoring-engine changes are maintained privately.
