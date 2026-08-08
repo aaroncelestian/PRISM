@@ -141,7 +141,7 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
         {/* Score card — horizontal 2-column layout */}
         <div style={{
           display: "flex", alignItems: "center", gap: "16px", padding: "14px 18px 12px",
-          background: `radial-gradient(ellipse at 30% 0%, ${compoundGrades.length > 0 ? compoundGrades[0].color : primaryCtx.grade.color}09, transparent 60%)`,
+          background: `radial-gradient(ellipse at 30% 0%, ${primaryCtx.passes ? primaryCtx.grade.color : "var(--warn)"}09, transparent 60%)`,
         }}>
           {/* Left: PRISM spectrum bar */}
           <div style={{ textAlign: "center", flexShrink: 0 }}>
@@ -169,29 +169,10 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
           </div>
           {/* Divider */}
           <div style={{ width: "1px", alignSelf: "stretch", background: "var(--border-dim)", margin: "4px 0" }} />
-          {/* Right: compound grade hero OR context grade */}
+          {/* Right: selected-context hero; compound grades are secondary */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            {compoundGrades.length > 0 ? (
+            {primaryCtx.passes ? (
               <>
-                {/* Compound grade is the headline */}
-                <div style={{
-                  display: "inline-flex", alignItems: "center", gap: "6px", marginBottom: "6px",
-                  padding: "4px 13px", borderRadius: "3px",
-                  border: `1px solid ${compoundGrades[0].color}45`,
-                  background: `${compoundGrades[0].color}12`,
-                  color: compoundGrades[0].color, fontSize: "12px", fontWeight: 700,
-                  letterSpacing: "0.09em", textTransform: "uppercase",
-                }}>
-                  <span>{compoundGrades[0].label}</span>
-                  <span style={{ fontSize: "7px", padding: "1px 5px", borderRadius: "2px", background: `${compoundGrades[0].color}20`, border: `1px solid ${compoundGrades[0].color}30`, marginLeft: "2px" }}>{compoundGrades[0].rarity}</span>
-                </div>
-                <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.4, marginBottom: "6px" }}>
-                  {compoundGrades[0].shortDesc}
-                </div>
-              </>
-            ) : (
-              <>
-                {/* No compound grade — numeric grade band is the headline */}
                 <div style={{
                   display: "inline-flex", alignItems: "center", gap: "6px", marginBottom: "7px",
                   padding: "4px 13px", borderRadius: "3px",
@@ -206,10 +187,28 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
                   {primaryCtx.grade.desc}
                 </div>
               </>
+            ) : (
+              <>
+                <div style={{
+                  display: "inline-flex", alignItems: "center", gap: "6px", marginBottom: "6px",
+                  padding: "4px 13px", borderRadius: "3px",
+                  border: "1px solid rgba(166,93,0,0.45)",
+                  background: "rgba(166,93,0,0.10)",
+                  color: "var(--warn)", fontSize: "12px", fontWeight: 700,
+                  letterSpacing: "0.08em", textTransform: "uppercase",
+                }}>
+                  <span>{primaryCtx.label} · {primaryCtx.score}/{THRESHOLD}</span>
+                </div>
+                <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.4 }}>
+                  +{THRESHOLD - primaryCtx.score} pts needed to pass
+                  {primaryCtx.bottleneck ? (
+                    <> · bottleneck: <strong style={{ color: "var(--text)" }}>{primaryCtx.bottleneck.label}</strong></>
+                  ) : null}
+                </div>
+              </>
             )}
-            {/* Always show which rating goal / weight set is active */}
             <div style={{
-              display: "inline-flex", alignItems: "center", gap: "5px", marginTop: compoundGrades.length > 0 || !primaryCtx.passes ? "6px" : "0",
+              display: "inline-flex", alignItems: "center", gap: "5px", marginTop: "6px",
               padding: "3px 9px", borderRadius: "3px",
               border: `1px solid ${primaryCtx.passes ? "rgba(10,111,136,0.45)" : "rgba(166,93,0,0.40)"}`,
               background: primaryCtx.passes ? "rgba(10,111,136,0.08)" : "rgba(166,93,0,0.08)",
@@ -218,9 +217,46 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
             }}>
               <span>
                 Rating for: {primaryCtx.label}
-                {primaryCtx.passes ? " ✓" : ` · ${primaryCtx.score}/${THRESHOLD}`}
+                {primaryCtx.passes ? " ✓" : ` · below threshold`}
               </span>
             </div>
+            {compoundGrades.length > 0 && (
+              <div style={{ marginTop: "8px" }}>
+                <div style={{
+                  fontSize: "8px", letterSpacing: "0.1em", textTransform: "uppercase",
+                  color: "var(--text-muted)", marginBottom: "4px",
+                }}>
+                  Also qualifies as
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+                  {compoundGrades.map((cg) => (
+                    <div
+                      key={cg.key}
+                      title={cg.detail || cg.shortDesc}
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: "5px",
+                        padding: "3px 8px", borderRadius: "3px",
+                        border: `1px solid ${cg.color}40`,
+                        background: `${cg.color}10`,
+                        color: cg.color, fontSize: "9px", fontWeight: 600,
+                        letterSpacing: "0.06em", textTransform: "uppercase",
+                      }}
+                    >
+                      <span>{cg.label}</span>
+                      {cg.rarity && (
+                        <span style={{
+                          fontSize: "7px", padding: "1px 4px", borderRadius: "2px",
+                          background: `${cg.color}18`, border: `1px solid ${cg.color}28`,
+                          opacity: 0.9,
+                        }}>
+                          {cg.rarity}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -233,26 +269,16 @@ export default function ScorePanel({ scores, ctx, spec, sciCriteria, culturalCri
           Size is a pricing variable, not a quality variable. <strong style={{ color: "var(--text-dim)" }}>PRISM scores quality.</strong>
         </div>
 
-        {/* Context status callout — shown when selected context is below threshold */}
-        {!primaryCtx.passes && (
+        {/* Tip when selected context fails but another purpose still passes */}
+        {!primaryCtx.passes && bestPassingCtx && (
           <div style={{
-            margin: "0 14px 10px", padding: "10px 13px", borderRadius: "5px",
-            border: "1px solid rgba(166,93,0,0.35)",
-            background: "rgba(166,93,0,0.08)",
+            margin: "0 14px 10px", padding: "8px 12px", borderRadius: "5px",
+            border: "1px solid var(--border-dim)",
+            background: "var(--bg-panel)",
+            fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.5, fontStyle: "italic",
           }}>
-            <div style={{ fontSize: "11px", color: "var(--warn)", lineHeight: 1.5, marginBottom: "4px" }}>
-              <strong>+{THRESHOLD - primaryCtx.score} pts needed</strong> to pass {primaryCtx.label} (threshold {THRESHOLD}).
-            </div>
-            {primaryCtx.bottleneck && (
-              <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.5 }}>
-                Bottleneck: <strong style={{ color: "var(--text)" }}>{primaryCtx.bottleneck.label}</strong> is the largest gap.
-              </div>
-            )}
-            {bestPassingCtx && (
-              <div style={{ marginTop: "4px", fontSize: "10px", color: "var(--text-muted)", lineHeight: 1.5, fontStyle: "italic" }}>
-                Highest grade achieved: <strong style={{ color: bestPassingCtx.grade.color }}>{bestPassingCtx.grade.label}</strong> — {bestPassingCtx.label}.
-              </div>
-            )}
+            Strongest passing purpose: <strong style={{ color: bestPassingCtx.grade.color, fontStyle: "normal" }}>{bestPassingCtx.grade.label}</strong>
+            {" "}— {bestPassingCtx.label}.
           </div>
         )}
 

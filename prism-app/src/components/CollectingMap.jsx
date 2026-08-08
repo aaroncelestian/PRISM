@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, Copy, Check, MapPin, Phone, Mail, Home } from "lucide-react";
+import { X, Copy, Check, MapPin, Phone, Mail, Home, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -29,7 +29,7 @@ const TABS = [
   { key: "templates", label: "Templates" },
 ];
 
-function MapInvalidateSize({ active }) {
+function MapInvalidateSize({ active, layoutKey }) {
   const map = useMap();
   useEffect(() => {
     if (!active) return;
@@ -43,7 +43,7 @@ function MapInvalidateSize({ active }) {
       clearTimeout(t2);
       window.removeEventListener("resize", run);
     };
-  }, [map, active]);
+  }, [map, active, layoutKey]);
   return null;
 }
 
@@ -123,7 +123,7 @@ function CopyButton({ text, label = "Copy" }) {
   );
 }
 
-function SitePopup({ site, onOpenTemplate }) {
+function SitePopup({ site, onOpenTemplate, compact = false }) {
   const meta = STATUS_META[site.status] || STATUS_META.casual;
   const { contacts, feeDig, template } = getSiteOutreach(site);
   const filled = fillTemplateForSite(template, site);
@@ -131,40 +131,46 @@ function SitePopup({ site, onOpenTemplate }) {
   const hotlines = contacts.filter((c) => c.secondary);
 
   return (
-    <div style={{ minWidth: 240, maxWidth: 320, fontFamily: "var(--sans)" }}>
+    <div style={{ minWidth: compact ? 200 : 240, maxWidth: compact ? 280 : 320, fontFamily: "var(--sans)" }}>
       <span style={{
         display: "inline-block", fontFamily: "var(--mono)", fontSize: "9px", fontWeight: 600,
         letterSpacing: "0.06em", textTransform: "uppercase", padding: "2px 7px", borderRadius: "3px",
-        marginBottom: "6px", color: "#fff", background: meta.color,
+        marginBottom: compact ? "4px" : "6px", color: "#fff", background: meta.color,
       }}>
         {meta.label}
       </span>
-      <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)", marginBottom: "8px", lineHeight: 1.25 }}>
+      <div style={{ fontSize: compact ? "13px" : "14px", fontWeight: 700, color: "var(--text)", marginBottom: compact ? "6px" : "8px", lineHeight: 1.25 }}>
         {site.name}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "62px 1fr", gap: "4px 8px", fontSize: "11px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "62px 1fr", gap: compact ? "3px 6px" : "4px 8px", fontSize: "11px" }}>
         <span style={{ fontFamily: "var(--mono)", fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase" }}>Manager</span>
         <span style={{ color: "var(--text-dim)", lineHeight: 1.35 }}>{site.managerFull}</span>
         <span style={{ fontFamily: "var(--mono)", fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase" }}>Material</span>
         <span style={{ color: "var(--text-dim)", lineHeight: 1.35 }}>{site.materialLabel}</span>
-        <span style={{ fontFamily: "var(--mono)", fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase" }}>Limit</span>
-        <span style={{ color: "var(--text-dim)", lineHeight: 1.35 }}>{site.limit}</span>
-        <span style={{ fontFamily: "var(--mono)", fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase" }}>Tools</span>
-        <span style={{ color: "var(--text-dim)", lineHeight: 1.35 }}>{site.tools}</span>
+        {!compact && (
+          <>
+            <span style={{ fontFamily: "var(--mono)", fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase" }}>Limit</span>
+            <span style={{ color: "var(--text-dim)", lineHeight: 1.35 }}>{site.limit}</span>
+            <span style={{ fontFamily: "var(--mono)", fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase" }}>Tools</span>
+            <span style={{ color: "var(--text-dim)", lineHeight: 1.35 }}>{site.tools}</span>
+          </>
+        )}
       </div>
       <div style={{
-        marginTop: "8px", paddingTop: "8px", borderTop: "1px dashed var(--border-dim)",
+        marginTop: compact ? "6px" : "8px", paddingTop: compact ? "6px" : "8px", borderTop: "1px dashed var(--border-dim)",
         fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.45,
       }}>
         {site.note}
       </div>
-      <div style={{ fontFamily: "var(--mono)", fontSize: "10px", color: "var(--text-muted)", marginTop: "6px" }}>
-        {site.lat.toFixed(4)}, {site.lng.toFixed(4)} — {site.coordNote}
-      </div>
+      {!compact && (
+        <div style={{ fontFamily: "var(--mono)", fontSize: "10px", color: "var(--text-muted)", marginTop: "6px" }}>
+          {site.lat.toFixed(4)}, {site.lng.toFixed(4)} — {site.coordNote}
+        </div>
+      )}
 
       {(primaryContacts.length > 0 || feeDig) && (
         <div style={{
-          marginTop: "10px", paddingTop: "9px", borderTop: "1px solid var(--border-dim)",
+          marginTop: compact ? "8px" : "10px", paddingTop: compact ? "7px" : "9px", borderTop: "1px solid var(--border-dim)",
         }}>
           <div style={{
             fontFamily: "var(--mono)", fontSize: "9px", letterSpacing: "0.1em",
@@ -173,7 +179,7 @@ function SitePopup({ site, onOpenTemplate }) {
             Who to call / email
           </div>
           {primaryContacts.map((c) => (
-            <div key={c.id} style={{ marginBottom: "8px" }}>
+            <div key={c.id} style={{ marginBottom: compact ? "6px" : "8px" }}>
               <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>{c.office}</div>
               {c.phone && c.phone !== "—" && (
                 <div style={{ display: "flex", gap: "5px", alignItems: "center", marginTop: "3px", fontSize: "11px", color: "var(--text-dim)" }}>
@@ -190,13 +196,13 @@ function SitePopup({ site, onOpenTemplate }) {
             </div>
           ))}
           {hotlines.map((c) => (
-            <div key={c.id} style={{ marginBottom: "8px", fontSize: "11px", color: "var(--text-dim)" }}>
+            <div key={c.id} style={{ marginBottom: compact ? "6px" : "8px", fontSize: "11px", color: "var(--text-dim)" }}>
               <span style={{ fontWeight: 600, color: "var(--text)" }}>{c.office}:</span>{" "}
               <span style={{ fontFamily: "var(--mono)" }}>{c.phone}</span>
             </div>
           ))}
           {feeDig && (
-            <div style={{ marginBottom: "8px" }}>
+            <div style={{ marginBottom: compact ? "6px" : "8px" }}>
               <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>{feeDig.operator}</div>
               {feeDig.phone && feeDig.phone !== "—" && (
                 <div style={{ display: "flex", gap: "5px", alignItems: "center", marginTop: "3px", fontSize: "11px", color: "var(--text-dim)" }}>
@@ -217,7 +223,7 @@ function SitePopup({ site, onOpenTemplate }) {
 
       {template && (
         <div style={{
-          marginTop: "4px", padding: "8px 10px", borderRadius: "5px",
+          marginTop: "4px", padding: compact ? "7px 9px" : "8px 10px", borderRadius: "5px",
           background: "rgba(var(--accent-rgb), 0.06)", border: "1px solid rgba(var(--accent-rgb), 0.22)",
         }}>
           <div style={{
@@ -226,9 +232,11 @@ function SitePopup({ site, onOpenTemplate }) {
           }}>
             Email draft (hobby collector)
           </div>
-          <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.4, marginBottom: "8px" }}>
-            {filled.subject}
-          </div>
+          {!compact && (
+            <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.4, marginBottom: "8px" }}>
+              {filled.subject}
+            </div>
+          )}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             <CopyButton text={filled.full} label="Copy email" />
             {onOpenTemplate && (
@@ -259,6 +267,7 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial,
   const [homeRequestId, setHomeRequestId] = useState(0);
   const [mapReady, setMapReady] = useState(false);
   const [query, setQuery] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const { isMobile } = useBreakpoint();
 
   useEffect(() => {
@@ -288,9 +297,16 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial,
 
   const flyTarget = selectedIdx != null ? CA_COLLECTING_SITES[selectedIdx] : null;
   const visibleIdx = new Set(filtered.map((f) => f.i));
+  const activeFilterCount = [status, manager, material].filter((v) => v !== "all").length;
 
   const mapPane = (
-      <div style={{ position: "relative", minHeight: isMobile ? 220 : 0, height: isMobile ? "38vh" : "100%", flex: isMobile ? "0 0 auto" : 1, background: "var(--bg)" }}>
+      <div style={{
+        position: "relative",
+        minHeight: isMobile ? 260 : 0,
+        height: isMobile ? "auto" : "100%",
+        flex: isMobile ? "1 1 0" : 1,
+        background: "var(--bg)",
+      }}>
         {mapReady ? (
           <MapContainer
             center={CA_HOME.center}
@@ -303,7 +319,7 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial,
               attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
               opacity={0.92}
             />
-            <MapInvalidateSize active />
+            <MapInvalidateSize active layoutKey={isMobile ? (filtersOpen ? "filters-open" : "filters-closed") : "desktop"} />
             <FlyToSite target={flyTarget} />
             <FlyHome requestId={homeRequestId} />
             {CA_COLLECTING_SITES.map((s, i) => {
@@ -322,8 +338,15 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial,
                   }}
                   eventHandlers={{ click: () => setSelectedIdx(i) }}
                 >
-                  <Popup maxWidth={340} minWidth={260}>
-                    <SitePopup site={s} onOpenTemplate={onOpenTemplate} />
+                  <Popup
+                    maxWidth={isMobile ? 300 : 340}
+                    minWidth={isMobile ? 220 : 260}
+                    maxHeight={isMobile ? Math.round(window.innerHeight * 0.42) : undefined}
+                    autoPanPadding={isMobile ? [28, 48] : [50, 50]}
+                    autoPanPaddingTopLeft={isMobile ? [12, 56] : undefined}
+                    autoPanPaddingBottomRight={isMobile ? [12, 24] : undefined}
+                  >
+                    <SitePopup site={s} onOpenTemplate={onOpenTemplate} compact={isMobile} />
                   </Popup>
                 </CircleMarker>
               );
@@ -340,7 +363,7 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial,
           title="Zoom out to California"
           aria-label="Zoom out to California"
           style={{
-            position: "absolute", top: 76, left: 12, zIndex: 500,
+            position: "absolute", top: isMobile ? 12 : 76, left: isMobile ? 52 : 12, zIndex: 500,
             display: "inline-flex", alignItems: "center", gap: "5px",
             padding: "6px 10px", borderRadius: "5px", cursor: "pointer",
             background: "var(--bg-panel)", border: "1px solid var(--border)",
@@ -352,13 +375,30 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial,
         </button>
         <div style={{
           position: "absolute", bottom: 12, right: 12, zIndex: 500,
-          maxWidth: 280, padding: "6px 10px", borderRadius: "4px",
+          maxWidth: isMobile ? 160 : 280, padding: "6px 10px", borderRadius: "4px",
           background: "var(--bg-panel)", border: "1px solid var(--border)",
           fontFamily: "var(--mono)", fontSize: "9px", color: "var(--text-muted)", lineHeight: 1.4,
         }}>
-          Updated {CA_MAP_META.lastUpdated}. Confirm status before collecting.
+          Updated {CA_MAP_META.lastUpdated}{isMobile ? "" : ". Confirm status before collecting."}
         </div>
       </div>
+  );
+
+  const filterControls = (
+    <>
+      <div style={{ marginBottom: "8px" }}>
+        <div style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "5px" }}>Access</div>
+        <ChipRow options={STATUS_FILTERS} value={status} onChange={setStatus} />
+      </div>
+      <div style={{ marginBottom: "8px" }}>
+        <div style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "5px" }}>Manager</div>
+        <ChipRow options={MANAGER_FILTERS} value={manager} onChange={setManager} />
+      </div>
+      <div>
+        <div style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "5px" }}>Material</div>
+        <ChipRow options={MATERIAL_FILTERS} value={material} onChange={setMaterial} />
+      </div>
+    </>
   );
 
   return (
@@ -371,41 +411,73 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial,
       {isMobile && mapPane}
       {/* Sidebar */}
       <div style={{
-        display: "flex", flexDirection: "column", minHeight: 0, flex: isMobile ? 1 : undefined,
+        display: "flex", flexDirection: "column", minHeight: 0,
+        flex: isMobile ? "0 0 auto" : undefined,
+        maxHeight: isMobile ? (filtersOpen ? "48%" : "36%") : undefined,
         borderRight: isMobile ? "none" : "1px solid var(--border)",
         borderTop: isMobile ? "1px solid var(--border)" : "none",
         background: "var(--bg-card)",
       }}>
-        <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--border-dim)", flexShrink: 0 }}>
-          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "10px", lineHeight: 1.5 }}>
-            {CA_MAP_META.disclaimer}
+        <div style={{ padding: isMobile ? "10px 12px" : "12px 14px", borderBottom: "1px solid var(--border-dim)", flexShrink: 0 }}>
+          {!isMobile && (
+            <div style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "10px", lineHeight: 1.5 }}>
+              {CA_MAP_META.disclaimer}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: isMobile ? (filtersOpen ? "10px" : 0) : "10px" }}>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search sites…"
+              style={{
+                flex: 1, minWidth: 0, padding: "8px 10px", borderRadius: "5px",
+                border: "1px solid var(--border-input)", background: "var(--bg-input)",
+                color: "var(--text)", fontSize: "12px",
+              }}
+            />
+            {isMobile && (
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((o) => !o)}
+                aria-expanded={filtersOpen}
+                aria-label="Toggle filters"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: "5px", flexShrink: 0,
+                  padding: "8px 10px", borderRadius: "5px", cursor: "pointer",
+                  background: filtersOpen || activeFilterCount > 0 ? "rgba(var(--accent-rgb), 0.12)" : "var(--bg-input)",
+                  border: `1px solid ${filtersOpen || activeFilterCount > 0 ? "rgba(var(--accent-rgb), 0.45)" : "var(--border-input)"}`,
+                  color: filtersOpen || activeFilterCount > 0 ? "var(--cyan)" : "var(--text-muted)",
+                  fontFamily: "var(--mono)", fontSize: "10px", letterSpacing: "0.04em",
+                }}
+              >
+                <SlidersHorizontal size={13} />
+                {activeFilterCount > 0 ? activeFilterCount : "Filter"}
+                {filtersOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              </button>
+            )}
           </div>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search sites…"
-            style={{
-              width: "100%", padding: "8px 10px", borderRadius: "5px", marginBottom: "10px",
-              border: "1px solid var(--border-input)", background: "var(--bg-input)",
-              color: "var(--text)", fontSize: "12px",
-            }}
-          />
-          <div style={{ marginBottom: "8px" }}>
-            <div style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "5px" }}>Access</div>
-            <ChipRow options={STATUS_FILTERS} value={status} onChange={setStatus} />
-          </div>
-          <div style={{ marginBottom: "8px" }}>
-            <div style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "5px" }}>Manager</div>
-            <ChipRow options={MANAGER_FILTERS} value={manager} onChange={setManager} />
-          </div>
-          <div>
-            <div style={{ fontSize: "9px", fontFamily: "var(--mono)", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "5px" }}>Material</div>
-            <ChipRow options={MATERIAL_FILTERS} value={material} onChange={setMaterial} />
-          </div>
-          <div style={{ fontFamily: "var(--mono)", fontSize: "10px", color: "var(--text-muted)", marginTop: "10px" }}>
-            <span style={{ color: "var(--cyan)", fontWeight: 600 }}>{filtered.length}</span> / {CA_COLLECTING_SITES.length} shown
-          </div>
+          {isMobile ? (filtersOpen && (
+            <div style={{ marginTop: "2px" }}>
+              {filterControls}
+              <div style={{ fontFamily: "var(--mono)", fontSize: "10px", color: "var(--text-muted)", marginTop: "10px" }}>
+                <span style={{ color: "var(--cyan)", fontWeight: 600 }}>{filtered.length}</span> / {CA_COLLECTING_SITES.length} shown
+              </div>
+            </div>
+          )) : (
+            <>
+              {filterControls}
+              <div style={{ fontFamily: "var(--mono)", fontSize: "10px", color: "var(--text-muted)", marginTop: "10px" }}>
+                <span style={{ color: "var(--cyan)", fontWeight: 600 }}>{filtered.length}</span> / {CA_COLLECTING_SITES.length} shown
+              </div>
+            </>
+          )}
+          {isMobile && !filtersOpen && (
+            <div style={{ fontFamily: "var(--mono)", fontSize: "10px", color: "var(--text-muted)", marginTop: "8px" }}>
+              <span style={{ color: "var(--cyan)", fontWeight: 600 }}>{filtered.length}</span> / {CA_COLLECTING_SITES.length} shown
+              <span style={{ color: "var(--text-muted)" }}> · Confirm status before collecting</span>
+            </div>
+          )}
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
@@ -419,7 +491,7 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial,
                 onClick={() => setSelectedIdx(i)}
                 style={{
                   display: "block", width: "100%", textAlign: "left",
-                  padding: "11px 14px", cursor: "pointer",
+                  padding: isMobile ? "10px 12px" : "11px 14px", cursor: "pointer",
                   background: sel ? "rgba(var(--accent-rgb), 0.08)" : "transparent",
                   border: "none", borderBottom: "1px solid var(--border-dim)",
                 }}
@@ -446,17 +518,19 @@ function MapTab({ status, setStatus, manager, setManager, material, setMaterial,
           )}
         </div>
 
-        <div style={{ padding: "10px 14px", borderTop: "1px solid var(--border-dim)", flexShrink: 0 }}>
-          <div style={{ fontSize: "9px", fontFamily: "var(--mono)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "6px" }}>
-            Legend
-          </div>
-          {Object.entries(STATUS_META).map(([k, m]) => (
-            <div key={k} style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "10px", color: "var(--text-dim)", marginBottom: "3px", fontFamily: "var(--mono)" }}>
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: m.color }} />
-              {m.label}
+        {!isMobile && (
+          <div style={{ padding: "10px 14px", borderTop: "1px solid var(--border-dim)", flexShrink: 0 }}>
+            <div style={{ fontSize: "9px", fontFamily: "var(--mono)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "6px" }}>
+              Legend
             </div>
-          ))}
-        </div>
+            {Object.entries(STATUS_META).map(([k, m]) => (
+              <div key={k} style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "10px", color: "var(--text-dim)", marginBottom: "3px", fontFamily: "var(--mono)" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: m.color }} />
+                {m.label}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {!isMobile && mapPane}
@@ -674,6 +748,7 @@ export default function CollectingMap({ onClose }) {
   const [manager, setManager] = useState("all");
   const [material, setMaterial] = useState("all");
   const [templateFocus, setTemplateFocus] = useState(null);
+  const { isMobile } = useBreakpoint();
 
   const openTemplate = (id) => {
     setTemplateFocus(id);
@@ -684,24 +759,29 @@ export default function CollectingMap({ onClose }) {
     <div style={{
       position: "fixed", inset: 0, zIndex: 1000,
       background: "rgba(0,0,0,0.72)", display: "flex", alignItems: "center", justifyContent: "center",
-      padding: "12px",
+      padding: isMobile ? 0 : "12px",
     }}>
       <div style={{
-        width: "100%", maxWidth: "1100px", height: "92vh", maxHeight: "920px",
-        background: "var(--bg-panel)", border: "1px solid var(--border)",
-        borderRadius: "10px", display: "flex", flexDirection: "column", overflow: "hidden",
+        width: "100%", maxWidth: isMobile ? "100%" : "1100px",
+        height: isMobile ? "100dvh" : "92vh", maxHeight: isMobile ? "none" : "920px",
+        background: "var(--bg-panel)", border: isMobile ? "none" : "1px solid var(--border)",
+        borderRadius: isMobile ? 0 : "10px", display: "flex", flexDirection: "column", overflow: "hidden",
+        paddingTop: isMobile ? "env(safe-area-inset-top)" : 0,
+        paddingBottom: isMobile ? "env(safe-area-inset-bottom)" : 0,
       }}>
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "12px 18px", borderBottom: "1px solid var(--border)", flexShrink: 0,
+          padding: isMobile ? "10px 14px" : "12px 18px", borderBottom: "1px solid var(--border)", flexShrink: 0,
         }}>
           <div>
-            <div style={{ fontSize: "14px", fontFamily: "var(--mono)", color: "var(--cyan)", fontWeight: 700, letterSpacing: "0.1em" }}>
+            <div style={{ fontSize: isMobile ? "13px" : "14px", fontFamily: "var(--mono)", color: "var(--cyan)", fontWeight: 700, letterSpacing: "0.1em" }}>
               COLLECTING PLACES
             </div>
-            <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.06em" }}>
-              {CA_MAP_META.subtitle}
-            </div>
+            {!isMobile && (
+              <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.06em" }}>
+                {CA_MAP_META.subtitle}
+              </div>
+            )}
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "4px" }} aria-label="Close">
             <X size={16} />
@@ -709,7 +789,7 @@ export default function CollectingMap({ onClose }) {
         </div>
 
         <div style={{
-          display: "flex", gap: "2px", padding: "0 14px",
+          display: "flex", gap: "2px", padding: isMobile ? "0 10px" : "0 14px",
           borderBottom: "1px solid var(--border-dim)", background: "var(--bg-card)", flexShrink: 0,
         }}>
           {TABS.map((t) => (
@@ -718,7 +798,7 @@ export default function CollectingMap({ onClose }) {
               type="button"
               onClick={() => setTab(t.key)}
               style={{
-                padding: "10px 14px", background: "none", border: "none",
+                padding: isMobile ? "9px 12px" : "10px 14px", background: "none", border: "none",
                 borderBottom: tab === t.key ? "2px solid var(--cyan)" : "2px solid transparent",
                 color: tab === t.key ? "var(--cyan)" : "var(--text-muted)",
                 fontSize: "11px", fontWeight: tab === t.key ? 600 : 400,
