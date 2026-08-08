@@ -17,10 +17,33 @@ function _bestScore(scores) {
   return { score: best.score, grade };
 }
 
+const COLLECTION_THRESHOLD = 11; // more than 10 → Collection Donation
+
+function _routeHint(n) {
+  if (n === 0) return "Select one or more saved specimens, or use Current Evaluation / Collection Donation.";
+  if (n === 1) return "1 selected → single specimen guide";
+  if (n < COLLECTION_THRESHOLD) return `${n} selected → batch donation guide`;
+  return `${n} selected → Collection Donation (more than 10)`;
+}
+
 // ── Specimen Picker ───────────────────────────────────────────────────────────
 
-function DonationPickerScreen({ initScores, initSpec, records, onSelect, onSkipCollection, onClose }) {
+function DonationPickerScreen({ initScores, initSpec, records, onSelect, onContinueSelected, onSkipCollection, onClose }) {
   const { score: curScore, grade: curGrade } = _bestScore(initScores);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+
+  const toggleId = id => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectedRecords = records.filter(r => selectedIds.has(r.id));
+  const n = selectedRecords.length;
+  const canContinue = n > 0;
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(4,8,18,0.88)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
@@ -30,7 +53,9 @@ function DonationPickerScreen({ initScores, initSpec, records, onSelect, onSkipC
         <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-dim)", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: "7px" }}>🏛️ Museum Donation Evaluation</div>
-            <div style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "2px" }}>Select the specimen to evaluate</div>
+            <div style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "2px" }}>
+              Multi-select from history, or open a single evaluation
+            </div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={16} /></button>
         </div>
@@ -56,7 +81,7 @@ function DonationPickerScreen({ initScores, initSpec, records, onSelect, onSkipC
                     {[initSpec.species, initSpec.locality].filter(Boolean).join(" \u00b7 ")}
                   </div>
                 )}
-                <div style={{ marginTop: "4px", fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.08em" }}>Active session — not yet saved to history</div>
+                <div style={{ marginTop: "4px", fontSize: "9px", color: "var(--text-muted)", letterSpacing: "0.08em" }}>Active session — opens single specimen guide</div>
               </div>
               <div style={{ textAlign: "right", flexShrink: 0 }}>
                 <div style={{ fontSize: "20px", fontWeight: 700, fontFamily: "var(--mono)", color: curGrade.color, lineHeight: 1 }}>{curScore}</div>
@@ -65,11 +90,16 @@ function DonationPickerScreen({ initScores, initSpec, records, onSelect, onSkipC
             </button>
           </div>
 
-          {/* Saved collection */}
+          {/* Saved collection — multi-select */}
           <div>
-            <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>
+            <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
               Saved Collection {records.length > 0 ? `(${records.length})` : ""}
             </div>
+            {records.length > 0 && (
+              <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.5, marginBottom: "8px" }}>
+                Check specimens to donate. 1 → single guide · 2–10 → batch · 11+ → Collection Donation.
+              </div>
+            )}
             {records.length === 0 ? (
               <div style={{ padding: "16px", textAlign: "center", fontSize: "11px", color: "var(--text-muted)", background: "var(--bg-panel)", borderRadius: "6px", border: "1px solid var(--border-dim)", lineHeight: 1.6 }}>
                 No specimens saved to history yet.<br />Save a PRISM evaluation first using the Save button.
@@ -79,14 +109,26 @@ function DonationPickerScreen({ initScores, initSpec, records, onSelect, onSkipC
                 {records.map(rec => {
                   const gradeObj = GRADES.find(g => g.label === rec.grade) || GRADES[GRADES.length - 1];
                   const dateStr = new Date(rec.savedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                  const checked = selectedIds.has(rec.id);
                   return (
                     <button
                       key={rec.id}
-                      onClick={() => onSelect(rec.scores, rec.spec)}
-                      style={{ width: "100%", textAlign: "left", padding: "10px 14px", background: "var(--bg-panel)", border: "1px solid var(--border)", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px" }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(10,111,136,0.3)"}
-                      onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+                      type="button"
+                      onClick={() => toggleId(rec.id)}
+                      style={{
+                        width: "100%", textAlign: "left", padding: "10px 14px",
+                        background: checked ? "rgba(10,111,136,0.08)" : "var(--bg-panel)",
+                        border: `1px solid ${checked ? "rgba(10,111,136,0.45)" : "var(--border)"}`,
+                        borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "12px",
+                      }}
                     >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleId(rec.id)}
+                        onClick={e => e.stopPropagation()}
+                        style={{ flexShrink: 0, accentColor: "var(--cyan)", width: "14px", height: "14px", cursor: "pointer" }}
+                      />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", marginBottom: "2px" }}>
                           {rec.spec?.name || rec.spec?.species || "Unnamed Specimen"}
@@ -130,10 +172,28 @@ function DonationPickerScreen({ initScores, initSpec, records, onSelect, onSkipC
         </div>
 
         {/* Footer */}
-        <div style={{ padding: "12px 20px", borderTop: "1px solid var(--border-dim)", flexShrink: 0 }}>
-          <button onClick={onClose} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer" }}>
-            <X size={13} /> Cancel
-          </button>
+        <div style={{ padding: "12px 20px", borderTop: "1px solid var(--border-dim)", flexShrink: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div style={{ fontSize: "10px", color: "var(--text-dim)", lineHeight: 1.45 }}>{_routeHint(n)}</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
+            <button onClick={onClose} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", background: "none", border: "1px solid var(--border)", borderRadius: "4px", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer" }}>
+              <X size={13} /> Cancel
+            </button>
+            <button
+              onClick={() => canContinue && onContinueSelected(selectedRecords)}
+              disabled={!canContinue}
+              style={{
+                display: "flex", alignItems: "center", gap: "5px",
+                padding: "7px 16px",
+                background: canContinue ? "rgba(10,111,136,0.09)" : "transparent",
+                border: `1px solid ${canContinue ? "rgba(10,111,136,0.4)" : "var(--border)"}`,
+                borderRadius: "4px",
+                color: canContinue ? "var(--cyan)" : "var(--text-muted)",
+                fontSize: "11px", fontWeight: 600, cursor: canContinue ? "pointer" : "default",
+              }}
+            >
+              Continue{n > 0 ? ` with ${n}` : ""} <ChevronRight size={13} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1243,9 +1303,73 @@ function UploadSlot({ slot, file, onFile }) {
   );
 }
 
+function SpecimenRoster({ selectedRecords = [], title = "Selected Specimens" }) {
+  if (!selectedRecords.length) return null;
+  return (
+    <div style={{ padding: "10px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border)" }}>
+      <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>
+        {title} ({selectedRecords.length})
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "220px", overflowY: "auto" }}>
+        {selectedRecords.map(rec => {
+          const gradeObj = GRADES.find(g => g.label === rec.grade) || GRADES[GRADES.length - 1];
+          return (
+            <div key={rec.id} style={{ display: "flex", justifyContent: "space-between", gap: "10px", padding: "6px 8px", background: "var(--bg-panel)", borderRadius: "4px", border: "1px solid var(--border-dim)" }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text)" }}>
+                  {rec.spec?.name || rec.spec?.species || "Unnamed Specimen"}
+                </div>
+                <div style={{ fontSize: "10px", color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {[rec.spec?.species, rec.spec?.locality].filter(Boolean).join(" · ") || "—"}
+                </div>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0, fontSize: "10px", color: gradeObj.color, fontWeight: 600 }}>
+                {rec.prismScore} · {rec.gradeEmoji} {rec.grade}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function serializeSelectedSpecimens(selectedRecords = []) {
+  return selectedRecords.map(rec => ({
+    id: rec.id,
+    name: rec.spec?.name || null,
+    species: rec.spec?.species || null,
+    locality: rec.spec?.locality || null,
+    prismScore: rec.prismScore ?? null,
+    grade: rec.grade || null,
+  }));
+}
+
+// ── Batch path: selected specimens overview ───────────────────────────────────
+
+function BatchSelectedStep({ selectedRecords }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+      <div>
+        <h3 style={{ fontSize: "16px", fontWeight: 600, color: "var(--text)", marginBottom: "4px" }}>
+          Selected Specimens
+        </h3>
+        <p style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55 }}>
+          You selected {selectedRecords.length} specimens from history. Documentation and assessment will cover this batch together — one shared acquisition type and checklist.
+        </p>
+      </div>
+      <SpecimenRoster selectedRecords={selectedRecords} />
+      <div style={{ padding: "10px 12px", background: "var(--bg-card)", border: "1px solid var(--border-dim)", borderRadius: "5px", fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5 }}>
+        Localities from each specimen’s history are listed above. The Origin & Location map step is skipped for batch donations.
+      </div>
+    </div>
+  );
+}
+
 // ── Collection Donation intro (whole-collection path) ─────────────────────────
 
-function CollectionDonationIntroStep() {
+function CollectionDonationIntroStep({ selectedRecords = [] }) {
+  const fromHistory = selectedRecords.length > 0;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
       <div>
@@ -1253,9 +1377,13 @@ function CollectionDonationIntroStep() {
           Collection Donation
         </h3>
         <p style={{ fontSize: "12px", color: "var(--text-dim)", lineHeight: 1.55 }}>
-          Use this path when you are offering a group of specimens together — not a single rated piece.
+          {fromHistory
+            ? `You selected ${selectedRecords.length} specimens from history — treated as a collection donation (more than 10 items).`
+            : "Use this path when you are offering a group of specimens together — not a single rated piece."}
         </p>
       </div>
+
+      {fromHistory && <SpecimenRoster selectedRecords={selectedRecords} title="Selected from History" />}
 
       <div style={{ padding: "14px 16px", background: "rgba(10,111,136,0.05)", border: "1px solid rgba(10,111,136,0.22)", borderRadius: "6px" }}>
         <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", marginBottom: "8px" }}>What this guide is for</div>
@@ -1461,27 +1589,55 @@ function DocumentationStep({ acquisitionType, landType, checks, setChecks, uploa
 
 // ── Curator export helpers ────────────────────────────────────────────────────
 
-function buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location, checks, uploads, reqPassed, optPassed, required, attestorName, collectionMode, collectionNotes }) {
+const PRELIMINARY_NOTE =
+  "PRELIMINARY STEP ONLY: This report helps gather documentation for museum review. Acceptance or accession is decided solely by the receiving institution — not by PRISM.";
+
+function buildTextReport({
+  spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location,
+  checks, uploads, reqPassed, optPassed, required, attestorName, collectionMode, collectionNotes,
+  donationMode = "single", selectedRecords = [],
+}) {
   const now = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const acqMeta  = ACQUISITION_TYPES.find(a => a.key === acquisitionType);
   const landMeta = LAND_TYPES.find(lt => lt.key === landType);
   const flag     = lookupCountryFlag(originCountry);
   const chainStrength = CHAIN_STRENGTH[acquisitionType] || { label: "Unknown" };
   const isSelf   = acquisitionType === "self";
+  const isBatch  = donationMode === "batch";
   const allQs    = getDocumentationQuestions(acquisitionType, landType);
   const notes    = (collectionNotes || "").trim();
+  const roster   = serializeSelectedSpecimens(selectedRecords);
   const LINE = "\u2500".repeat(52);
-  const lines = ["PRISM \u2014 MINERAL DONATION EVALUATION REPORT", `Generated: ${now}`, LINE, ""];
-  if (spec?.name || spec?.species || spec?.locality) {
+  const lines = [
+    "PRISM \u2014 MINERAL DONATION EVALUATION REPORT",
+    `Generated: ${now}`,
+    LINE,
+    "",
+    PRELIMINARY_NOTE,
+    "",
+  ];
+  if (roster.length > 0) {
+    lines.push(`SELECTED SPECIMENS (${roster.length})`);
+    roster.forEach((s, i) => {
+      lines.push(`  ${i + 1}. ${s.name || s.species || "Unnamed"}`);
+      if (s.species) lines.push(`     Species:  ${s.species}`);
+      if (s.locality) lines.push(`     Locality: ${s.locality}`);
+      if (s.prismScore != null) lines.push(`     PRISM:    ${s.prismScore}${s.grade ? ` (${s.grade})` : ""}`);
+    });
+    lines.push("");
+  } else if (spec?.name || spec?.species || spec?.locality) {
     lines.push(collectionMode ? "DONATION SCOPE" : "SPECIMEN");
     if (spec?.name)     lines.push(`  Name:      ${spec.name}`);
     if (spec?.species)  lines.push(`  Species:   ${spec.species}`);
     if (spec?.locality && !collectionMode) lines.push(`  Locality:  ${spec.locality}`);
     lines.push("");
   }
+  const acqLabel = collectionMode ? "Collection Donation"
+    : isBatch ? `${acqMeta?.label || acquisitionType} (batch)`
+    : (acqMeta?.label || acquisitionType);
   lines.push(
     `PROVENANCE CHAIN: ${chainStrength.label}`,
-    `  Acquisition type: ${collectionMode ? "Collection Donation" : (acqMeta?.label || acquisitionType)}`,
+    `  Acquisition type: ${acqLabel}`,
   );
   if (acquisitionDetails?.dealerName)     lines.push(`  Dealer:       ${acquisitionDetails.dealerName}`);
   if (acquisitionDetails?.collectorNames) lines.push(`  Collector(s): ${acquisitionDetails.collectorNames}`);
@@ -1501,6 +1657,10 @@ function buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, 
       lines.push("", "ADDITIONAL DETAILS");
       notes.split("\n").forEach(line => lines.push(`  ${line}`));
     }
+    lines.push("");
+  } else if (isBatch) {
+    lines.push("STATED LOCALITY");
+    lines.push("  (per-specimen localities listed under SELECTED SPECIMENS)");
     lines.push("");
   } else {
     lines.push(isSelf ? "COLLECTION SITE" : "STATED LOCALITY");
@@ -1539,26 +1699,35 @@ function buildTextReport({ spec, acquisitionType, acquisitionDetails, landType, 
     "",
     LINE,
     "PRISM (Precision Rating Index of Specimen Minerals)",
-    "This report is for informational purposes and is not legal advice.",
-    "Consult the receiving institution for their specific requirements.",
+    "This report is a preliminary document-prep aid and is not legal advice.",
+    "Acceptance / accession is decided by the receiving institution, not by PRISM.",
   );
   return lines.join("\n");
 }
 
-function buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location, checks, uploads, attestorName, collectionMode, collectionNotes }) {
+function buildJSONReport({
+  spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText, location,
+  checks, uploads, attestorName, collectionMode, collectionNotes,
+  donationMode = "single", selectedRecords = [],
+}) {
   const isSelf = acquisitionType === "self";
+  const isBatch = donationMode === "batch";
   const chainStrength = CHAIN_STRENGTH[acquisitionType] || { label: "Unknown" };
   const notes = (collectionNotes || "").trim() || null;
+  const roster = serializeSelectedSpecimens(selectedRecords);
   return JSON.stringify({
     generated: new Date().toISOString(),
     generator: "PRISM Mineral Donation Evaluator v1",
+    preliminary: true,
+    preliminaryNote: "This report helps gather documentation for museum review. Acceptance or accession is decided solely by the receiving institution — not by PRISM.",
     specimen: {
       name: spec?.name || null,
       species: spec?.species || null,
-      locality: collectionMode ? null : (spec?.locality || null),
+      locality: collectionMode || isBatch ? null : (spec?.locality || null),
     },
+    selectedSpecimens: roster.length > 0 ? roster : undefined,
     assessment: {
-      ...(collectionMode ? { scope: "collection_donation" } : {}),
+      scope: collectionMode ? "collection_donation" : isBatch ? "batch_donation" : "single_specimen",
       provenanceChainLabel: chainStrength.label,
       ...(notes ? { additionalDetails: notes } : {}),
     },
@@ -1573,6 +1742,13 @@ function buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, 
           country: null,
           landType: null,
           note: "Stated locality left blank — collection may include objects from many localities",
+        }
+      : isBatch
+      ? {
+          locality: null,
+          country: null,
+          landType: null,
+          note: "Per-specimen localities are listed under selectedSpecimens",
         }
       : {
           locality: localityText || null,
@@ -1595,10 +1771,15 @@ function buildJSONReport({ spec, acquisitionType, acquisitionDetails, landType, 
 
 // ── Step 4: Donation Assessment ───────────────────────────────────────────────
 
-function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, location, originCountry, localityText, spec, uploads, onExported, collectionMode = false, collectionNotes = "" }) {
+function SummaryStep({
+  acquisitionType, acquisitionDetails, landType, checks, location, originCountry, localityText,
+  spec, uploads, onExported, collectionMode = false, collectionNotes = "",
+  donationMode = "single", selectedRecords = [],
+}) {
   const [copied, setCopied] = useState(false);
   const [attestorName, setAttestorName] = useState("");
   const isSelf = acquisitionType === "self";
+  const isBatch = donationMode === "batch";
   const allQs   = getDocumentationQuestions(acquisitionType, landType);
   const required = allQs.filter(q => q.required);
   const optional = allQs.filter(q => !q.required);
@@ -1617,6 +1798,7 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
   const reportArgs = {
     spec, acquisitionType, acquisitionDetails, landType, originCountry, localityText,
     location, checks, uploads, reqPassed, optPassed, required, attestorName, collectionMode, collectionNotes,
+    donationMode, selectedRecords,
   };
 
   return (
@@ -1630,6 +1812,29 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
         </p>
       </div>
 
+      {/* Preliminary step — all donation modes */}
+      <div style={{
+        padding: "12px 14px",
+        background: "rgba(10,111,136,0.07)",
+        border: "1px solid rgba(10,111,136,0.3)",
+        borderRadius: "6px",
+      }}>
+        <div style={{ fontSize: "10px", letterSpacing: "0.14em", color: "var(--cyan)", textTransform: "uppercase", fontWeight: 700, marginBottom: "6px" }}>
+          Preliminary document prep
+        </div>
+        <div style={{ fontSize: "12px", color: "var(--text)", lineHeight: 1.55 }}>
+          This guide is a <strong>preliminary step</strong> to gather checklist answers and supporting notes for the museum.
+          It does <strong>not</strong> decide acceptance. <strong>Accession is decided by the receiving institution</strong>, not by PRISM.
+        </div>
+      </div>
+
+      {selectedRecords.length > 0 && (
+        <SpecimenRoster
+          selectedRecords={selectedRecords}
+          title={collectionMode ? "Selected from History" : "Batch Specimens"}
+        />
+      )}
+
       {/* Provenance chain summary — qualitative only, no numeric score */}
       <div style={{ padding: "10px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: "8px" }}>
         <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase" }}>Provenance Chain</div>
@@ -1640,6 +1845,7 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
             ) : (
               <>
                 {acqMeta?.icon} <strong style={{ color: "var(--text)" }}>{acqMeta?.label}</strong>
+                {isBatch ? ` · ${selectedRecords.length} specimens` : ""}
                 {acquisitionDetails?.dealerName ? ` — ${acquisitionDetails.dealerName}` : ""}
                 {acquisitionDetails?.collectorNames ? ` — ${acquisitionDetails.collectorNames}` : ""}
                 {acquisitionDetails?.auctionHouse ? ` — ${acquisitionDetails.auctionHouse}` : ""}
@@ -1656,8 +1862,8 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
         <div style={{ fontSize: "10px", color: (collectionMode || isWeakChain) ? "#ff8080" : "var(--text-muted)" }}>{chainStrength.label}</div>
       </div>
 
-      {/* Country flag (if any) */}
-      {flag && (
+      {/* Country flag (if any) — single-specimen path only */}
+      {!isBatch && !collectionMode && flag && (
         <div style={{ padding: "9px 12px", borderRadius: "5px", background: `${STATUS_COLORS[flag.status]}0a`, border: `1px solid ${STATUS_COLORS[flag.status]}35`, fontSize: "11px", color: STATUS_COLORS[flag.status], lineHeight: 1.5 }}>
           ⚑ <strong>{flag.name}</strong> — {flag.heading}
           {flag.action && <div style={{ marginTop: "3px", fontSize: "10px", opacity: 0.85 }}>➜ {flag.action}</div>}
@@ -1688,7 +1894,7 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
         </div>
       )}
 
-      {/* Location summary — omitted for whole collections (many localities); optional notes instead */}
+      {/* Location summary */}
       {collectionMode ? (
         <div style={{ padding: "9px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border)" }}>
           <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
@@ -1705,6 +1911,15 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
               <div style={{ fontSize: "12px", color: "var(--text)", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{notes}</div>
             </>
           )}
+        </div>
+      ) : isBatch ? (
+        <div style={{ padding: "9px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border)" }}>
+          <div style={{ fontSize: "9px", letterSpacing: "0.16em", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
+            Stated Locality
+          </div>
+          <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5, fontStyle: "italic" }}>
+            Per-specimen localities are listed in the batch roster above.
+          </div>
         </div>
       ) : (originCountry || localityText || location || spec?.locality) && (
         <div style={{ padding: "9px 12px", background: "var(--bg-card)", borderRadius: "5px", border: "1px solid var(--border)" }}>
@@ -1806,11 +2021,19 @@ function SummaryStep({ acquisitionType, acquisitionDetails, landType, checks, lo
 // ── Main modal ───────────────────────────────────────────────────────────────
 
 const STEPS = ["Acquisition", "Origin & Location", "Documentation", "Assessment"];
+const BATCH_STEPS = ["Selected Specimens", "Acquisition", "Documentation", "Assessment"];
 const COLLECTION_STEPS = ["Overview", "Collection Donation", "Assessment"];
+
+function stepsForMode(mode) {
+  if (mode === "collection") return COLLECTION_STEPS;
+  if (mode === "batch") return BATCH_STEPS;
+  return STEPS;
+}
 
 export default function DonationEval({ scores: initScores, spec: initSpec, records = [], onClose }) {
   const [showPicker, setShowPicker]           = useState(true);
-  const [collectionMode, setCollectionMode]   = useState(false);
+  const [donationMode, setDonationMode]       = useState("single"); // single | batch | collection
+  const [selectedRecords, setSelectedRecords] = useState([]);
   const [workingScores, setWorkingScores]     = useState(initScores);
   const [workingSpec, setWorkingSpec]         = useState(initSpec);
   const [step, setStep]                       = useState(0);
@@ -1826,7 +2049,9 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
   const [exported, setExported]               = useState(false);
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
 
-  const activeSteps = collectionMode ? COLLECTION_STEPS : STEPS;
+  const collectionMode = donationMode === "collection";
+  const batchMode = donationMode === "batch";
+  const activeSteps = stepsForMode(donationMode);
 
   const resetGuideState = () => {
     setAcquisitionDetails({});
@@ -1840,8 +2065,9 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
     setExported(false);
   };
 
-  const handlePickerSelect = (scores, spec) => {
-    setCollectionMode(false);
+  const startSingle = (scores, spec) => {
+    setDonationMode("single");
+    setSelectedRecords([]);
     setWorkingScores(scores);
     setWorkingSpec(spec);
     setAcquisitionType(null);
@@ -1850,8 +2076,20 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
     setShowPicker(false);
   };
 
-  const handleSkipCollection = () => {
-    setCollectionMode(true);
+  const startBatch = (recs) => {
+    setDonationMode("batch");
+    setSelectedRecords(recs);
+    setWorkingScores(null);
+    setWorkingSpec({ name: `Batch donation (${recs.length} specimens)` });
+    setAcquisitionType(null);
+    resetGuideState();
+    setStep(0);
+    setShowPicker(false);
+  };
+
+  const startCollection = (recs = []) => {
+    setDonationMode("collection");
+    setSelectedRecords(recs);
     setWorkingScores(null);
     setWorkingSpec({ name: "Collection Donation" });
     setAcquisitionType("unknown");
@@ -1860,12 +2098,24 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
     setShowPicker(false);
   };
 
+  const handlePickerSelect = (scores, spec) => startSingle(scores, spec);
+
+  const handleContinueSelected = (recs) => {
+    const n = recs.length;
+    if (n === 1) startSingle(recs[0].scores, recs[0].spec);
+    else if (n >= COLLECTION_THRESHOLD) startCollection(recs);
+    else startBatch(recs);
+  };
+
+  const handleSkipCollection = () => startCollection([]);
+
   if (showPicker) {
     return (
       <DonationPickerScreen
         initScores={initScores} initSpec={initSpec}
         records={records}
         onSelect={handlePickerSelect}
+        onContinueSelected={handleContinueSelected}
         onSkipCollection={handleSkipCollection}
         onClose={onClose}
       />
@@ -1881,16 +2131,43 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
 
   const canAdvance = () => {
     if (collectionMode) return true;
+    if (batchMode) {
+      if (step === 0) return true;
+      if (step === 1) return !!acquisitionType;
+      return true;
+    }
     if (step === 0) return !!acquisitionType;
     if (step === 1) return originCountry.trim().length >= 2 && (acquisitionType !== "self" || !!landType);
     return true;
   };
 
-  const showingLocation = !collectionMode && step === 1;
+  const showingLocation = donationMode === "single" && step === 1;
+  const showingBatchSelected = batchMode && step === 0;
+  const showingBatchAcquisition = batchMode && step === 1;
+  const showingBatchDocs = batchMode && step === 2;
   const showingCollectionIntro = collectionMode && step === 0;
   const showingCollectionChecklist = collectionMode && step === 1;
-  const showingDocs = !collectionMode && step === 2;
-  const showingAssessment = collectionMode ? step === 2 : step === 3;
+  const showingSingleAcquisition = donationMode === "single" && step === 0;
+  const showingDocs = donationMode === "single" && step === 2;
+  const showingAssessment =
+    (donationMode === "single" && step === 3)
+    || (batchMode && step === 3)
+    || (collectionMode && step === 2);
+
+  const headerTitle = collectionMode ? "Collection Donation"
+    : batchMode ? "Batch Donation"
+    : "Museum Donation Evaluation";
+  const headerSub = collectionMode
+    ? (selectedRecords.length > 0
+      ? `${selectedRecords.length} from history · Collection Donation`
+      : "Whole-collection guide — no PRISM score required")
+    : batchMode
+    ? `${selectedRecords.length} specimens from history`
+    : [spec?.name, spec?.species].filter(Boolean).join(" · ");
+
+  const backLabel = step === 0
+    ? (collectionMode || batchMode ? "Change Selection" : "Change Specimen")
+    : "Back";
 
   return (
     <div style={{
@@ -1920,13 +2197,13 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
         }}>
           <div>
             <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: "7px" }}>
-              🏛️ {collectionMode ? "Collection Donation" : "Museum Donation Evaluation"}
+              🏛️ {headerTitle}
             </div>
-            <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>
-              {collectionMode
-                ? "Whole-collection guide — no PRISM score required"
-                : [spec?.name, spec?.species].filter(Boolean).join(" · ")}
-            </div>
+            {headerSub && (
+              <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>
+                {headerSub}
+              </div>
+            )}
           </div>
           <button onClick={guardedClose} style={{ background: "none", border: "none", color: "var(--text-muted)", padding: "4px", display: "flex" }}>
             <X size={16} />
@@ -1951,13 +2228,13 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
 
         {/* Scrollable content */}
         <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "22px 24px" }}>
-          {!collectionMode && step === 0 && (
+          {showingSingleAcquisition && (
             <AcquisitionStep
               acquisitionType={acquisitionType} setAcquisitionType={setAcquisitionType}
               acquisitionDetails={acquisitionDetails} setAcquisitionDetails={setAcquisitionDetails}
             />
           )}
-          {!collectionMode && step === 1 && (
+          {showingLocation && (
             <LocationStep
               location={location} setLocation={setLocation}
               landType={landType} setLandType={setLandType}
@@ -1966,14 +2243,21 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
               acquisitionType={acquisitionType}
             />
           )}
-          {showingCollectionIntro && <CollectionDonationIntroStep />}
+          {showingBatchSelected && <BatchSelectedStep selectedRecords={selectedRecords} />}
+          {showingBatchAcquisition && (
+            <AcquisitionStep
+              acquisitionType={acquisitionType} setAcquisitionType={setAcquisitionType}
+              acquisitionDetails={acquisitionDetails} setAcquisitionDetails={setAcquisitionDetails}
+            />
+          )}
+          {showingCollectionIntro && <CollectionDonationIntroStep selectedRecords={selectedRecords} />}
           {showingCollectionChecklist && (
             <CollectionDonationStep
               checks={checks} setChecks={setChecks}
               collectionNotes={collectionNotes} setCollectionNotes={setCollectionNotes}
             />
           )}
-          {showingDocs && (
+          {(showingDocs || showingBatchDocs) && (
             <DocumentationStep
               acquisitionType={acquisitionType} landType={landType}
               checks={checks} setChecks={setChecks}
@@ -1986,6 +2270,7 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
               landType={landType} checks={checks}
               location={location} originCountry={originCountry} localityText={localityText} spec={spec}
               uploads={uploads} collectionMode={collectionMode} collectionNotes={collectionNotes}
+              donationMode={donationMode} selectedRecords={selectedRecords}
               onExported={() => { setExported(true); setShowLeaveWarning(false); }}
             />
           )}
@@ -2031,7 +2316,7 @@ export default function DonationEval({ scores: initScores, spec: initSpec, recor
             }}
           >
             <ChevronLeft size={13} />
-            {step === 0 ? (collectionMode ? "Change Path" : "Change Specimen") : "Back"}
+            {backLabel}
           </button>
 
           {step < activeSteps.length - 1 ? (
